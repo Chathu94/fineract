@@ -275,8 +275,14 @@ public class SavingsAccountInterestPostingServiceImpl implements SavingsAccountI
 
         final SavingsInterestCalculationType interestCalculationType = SavingsInterestCalculationType
                 .fromInt(savingsAccountData.getInterestCalculationType());
-        final BigDecimal interestRateAsFraction = getEffectiveInterestRateAsFraction(mc, upToInterestCalculationDate, savingsAccountData);
-        final BigDecimal overdraftInterestRateAsFraction = getEffectiveOverdraftInterestRateAsFraction(mc, savingsAccountData);
+        BigDecimal interestRateAsFraction = BigDecimal.ZERO;
+        if (savingsAccountData.getNominalAnnualInterestRate() != null && savingsAccountData.getNominalAnnualInterestRate().compareTo(BigDecimal.ZERO) > 0) {
+            interestRateAsFraction = getEffectiveInterestRateAsFraction(mc, upToInterestCalculationDate, savingsAccountData);
+        }
+        BigDecimal overdraftInterestRateAsFraction = BigDecimal.ZERO;
+        if (savingsAccountData.getNominalAnnualInterestRateOverdraft() != null) {
+            overdraftInterestRateAsFraction = getEffectiveOverdraftInterestRateAsFraction(mc, savingsAccountData);
+        }
         final Collection<Long> interestPostTransactions = this.savingsHelper.fetchPostInterestTransactionIds(savingsAccountData.getId());
         final Money minBalanceForInterestCalculation = Money.of(savingsAccountData.currency(),
                 minBalanceForInterestCalculation(savingsAccountData));

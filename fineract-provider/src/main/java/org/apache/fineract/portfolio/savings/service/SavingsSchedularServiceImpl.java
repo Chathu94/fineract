@@ -103,6 +103,7 @@ public class SavingsSchedularServiceImpl implements SavingsSchedularService {
         List<SavingsAccountData> savingsAccounts = this.savingAccountReadPlatformService
                 .retrieveAllSavingsDataForInterestPosting(backdatedTxnsAllowedTill, pageSize, ACTIVE.getValue(), maxSavingsIdInList);
 
+        LOG.info("savingsAccounts size is {}", savingsAccounts.size());
         if (savingsAccounts != null && savingsAccounts.size() > 0) {
             savingsAccounts = Collections.synchronizedList(savingsAccounts);
             long finish = System.currentTimeMillis();

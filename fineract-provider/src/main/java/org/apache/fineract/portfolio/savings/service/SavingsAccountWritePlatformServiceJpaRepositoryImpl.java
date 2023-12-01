@@ -642,8 +642,8 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
                 .isSavingsInterestPostingAtCurrentPeriodEnd();
         final Integer financialYearBeginningMonth = this.configurationDomainService.retrieveFinancialYearBeginningMonth();
 
-        if (savingsAccountData.getNominalAnnualInterestRate().compareTo(BigDecimal.ZERO) > 0 || (savingsAccountData.isAllowOverdraft()
-                && savingsAccountData.getNominalAnnualInterestRateOverdraft().compareTo(BigDecimal.ZERO) > 0)) {
+        if ((savingsAccountData.getNominalAnnualInterestRate() != null && savingsAccountData.getNominalAnnualInterestRate().compareTo(BigDecimal.ZERO) > 0) || (savingsAccountData.isAllowOverdraft()
+                && savingsAccountData.getNominalAnnualInterestRateOverdraft() != null && savingsAccountData.getNominalAnnualInterestRateOverdraft().compareTo(BigDecimal.ZERO) > 0)) {
             final Set<Long> existingTransactionIds = new HashSet<>();
             final Set<Long> existingReversedTransactionIds = new HashSet<>();
             updateExistingTransactionsDetails(savingsAccountData, existingTransactionIds, existingReversedTransactionIds);

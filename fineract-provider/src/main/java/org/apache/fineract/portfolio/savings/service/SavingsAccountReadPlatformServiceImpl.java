@@ -265,17 +265,17 @@ public class SavingsAccountReadPlatformServiceImpl implements SavingsAccountRead
         LocalDate currentDate = DateUtils.getLocalDateOfTenant().minusDays(1);
 
         String sql = "select " + this.savingAccountMapperForInterestPosting.schema()
-                + "join (select a.id from m_savings_account a where a.id > ? and a.status_enum = ? limit ?) b on b.id = sa.id ";
+                + "join (select a.id from m_savings_account a where a.id > ? and a.status_enum = ?) b on b.id = sa.id ";
         if (backdatedTxnsAllowedTill) {
             sql = sql
                     + "where if (sa.interest_posted_till_date is not null, tr.transaction_date >= sa.interest_posted_till_date, tr.transaction_date >= sa.activatedon_date) ";
         }
 
-        sql = sql + "and apm.product_type=2 and sa.interest_posted_till_date<" + java.sql.Date.valueOf(currentDate);
+        sql = sql + "and apm.product_type=2 and (ISNULL(sa.interest_posted_till_date) OR sa.interest_posted_till_date<" + java.sql.Date.valueOf(currentDate) + ")";
         sql = sql + " order by sa.id, tr.transaction_date, tr.created_date, tr.id";
 
         List<SavingsAccountData> savingsAccountDataList = this.jdbcTemplate.query(sql, this.savingAccountMapperForInterestPosting,
-                new Object[] { maxSavingsId, status, pageSize });
+                new Object[] { maxSavingsId, status });
         for (SavingsAccountData savingsAccountData : savingsAccountDataList) {
             this.savingAccountAssembler.assembleSavings(savingsAccountData);
         }
