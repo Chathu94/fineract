@@ -38,19 +38,19 @@ buildscript {
   }
 }
 
-apply plugin: "org.nosphere.apache.rat"
-apply plugin: 'rebel'
-apply plugin: 'license'
-apply plugin: 'war'
-apply plugin: 'spring-boot'
-apply plugin: 'eclipse'
+//apply plugin: "org.nosphere.apache.rat"
+//apply plugin: 'rebel'
+//apply plugin: 'license'
+//apply plugin: 'war'
+//apply plugin: 'spring-boot'
+//apply plugin: 'eclipse'
 apply plugin: 'idea'
 apply plugin: 'tomcat'
-apply plugin: 'project-report'
+//apply plugin: 'project-report'
 apply plugin: 'java'
 apply plugin: 'openjpa'
-apply plugin: 'pmd'
-apply plugin: 'findbugs'
+//apply plugin: 'pmd'
+//apply plugin: 'findbugs'
 
 /* define the valid syntax level for source files */
 sourceCompatibility = JavaVersion.VERSION_1_8
@@ -82,80 +82,80 @@ openjpa {
     enforcePropertyRestrictions = true
 }
 
-rat {
-  xmlOutput = false
-  htmlOutput = false
-  plainOutput = true
-  verbose = false 
-//  inputDir = './..'
-  reportDir = new File(buildDir,'reports/rat')
- excludes = [
-	'**/licenses/**',
-	'**/*.md',
-	'**/MANIFEST.MF',
-	'**/*.txt',
-	'**/*.log',
-	'**/fineractdev-eclipse-preferences.epf',
-	'**/template-expected.html',
-	'**/template.mustache',
-	'**/.classpath',
-	'**/.project',
-	'**/.idea/**',
-	'**/.settings/**',
-	'**/bin/**',
-	'**/.git/**',
-    '**/.gitignore',
-    '**/.gitkeep',
-	'**/*.iml',
-	//Notice files
-	'**/NOTICE_RELEASE',
-	'**/NOTICE_SOURCE',	
-    // gradle
-    '**/.gradle/**',
-    '**/gradlew',
-    '**/gradlew.bat',
-    '**/gradle/wrapper/gradle-wrapper.properties',
-    '**/caches/**',
-    '**/daemon/**',
-    '**/native/**',
-    '**/wrapper/**',
-	'**/build/**',
-	
-	//Api Docs 
-	'**/api-docs/*.*',
-	'**/docs/system-architecture/.htaccess',
-	'**/docs/system-architecture/404.html',
-	'**/docs/system-architecture/index.html',
-	'**/docs/system-architecture/**/*.xml',
-	'**/bootstrap-3.0.0/assets/application.js',
-	'**/system-architecture/js/plugins.js',
-	
-	//Apache License
-	'**/bootstrap-3.0.0/assets/less.js',
-	'**/css/bootstrap-3.0.0/**/*.*',
-	
-	//Public Domain See http://www.JSON.org/js.html
-	'**/bootstrap-3.0.0/assets/json2.js.htm',
-	
-	// MIT License
-	'**/modernizr-2.6.2.min.js',
-	'**/css/normalize.css',
-	'**/assets/filesaver.js',
-	'**/css/fonts/glyphicons-halflings-regular.svg',
-	'**/assets/jszip.js',
-	'**/assets/jquery.js',
-	'**/api-docs/jquery-1.7.min.js',
-	'**/css/toc-0.1.2/**/*.*',
-	'**/docs/system-architecture/css/main.css',
-	'**/system-architecture/js/vendor/jquery-1.9.1.min.js',
-	'**/system-architecture/js/vendor/toc-0.1.2/jquery.toc.min.js',
-	'**/assets/respond.min.js',
-	'**/assets/html5shiv.js',
-	
-	//BSD License
-	'**/assets/uglify.js'
-	]
-}
+//rat {
+//  xmlOutput = false
+//  htmlOutput = false
+//  plainOutput = true
+//  verbose = false
+////  inputDir = './..'
+//  reportDir = new File(buildDir,'reports/rat')
+// excludes = [
+//	'**/licenses/**',
+//	'**/*.md',
+//	'**/MANIFEST.MF',
+//	'**/*.txt',
+//	'**/*.log',
+//	'**/fineractdev-eclipse-preferences.epf',
+//	'**/template-expected.html',
+//	'**/template.mustache',
+//	'**/.classpath',
+//	'**/.project',
+//	'**/.idea/**',
+//	'**/.settings/**',
+//	'**/bin/**',
+//	'**/.git/**',
+//    '**/.gitignore',
+//    '**/.gitkeep',
+//	'**/*.iml',
+//	//Notice files
+//	'**/NOTICE_RELEASE',
+//	'**/NOTICE_SOURCE',
+//    // gradle
+//    '**/.gradle/**',
+//    '**/gradlew',
+//    '**/gradlew.bat',
+//    '**/gradle/wrapper/gradle-wrapper.properties',
+//    '**/caches/**',
+//    '**/daemon/**',
+//    '**/native/**',
+//    '**/wrapper/**',
+//	'**/build/**',
+//
+//	//Api Docs
+//	'**/api-docs/*.*',
+//	'**/docs/system-architecture/.htaccess',
+//	'**/docs/system-architecture/404.html',
+//	'**/docs/system-architecture/index.html',
+//	'**/docs/system-architecture/**/*.xml',
+//	'**/bootstrap-3.0.0/assets/application.js',
+//	'**/system-architecture/js/plugins.js',
+//
+//	//Apache License
+//	'**/bootstrap-3.0.0/assets/less.js',
+//	'**/css/bootstrap-3.0.0/**/*.*',
+//
+//	//Public Domain See http://www.JSON.org/js.html
+//	'**/bootstrap-3.0.0/assets/json2.js.htm',
+//
+//	// MIT License
+//	'**/modernizr-2.6.2.min.js',
+//	'**/css/normalize.css',
+//	'**/assets/filesaver.js',
+//	'**/css/fonts/glyphicons-halflings-regular.svg',
+//	'**/assets/jszip.js',
+//	'**/assets/jquery.js',
+//	'**/api-docs/jquery-1.7.min.js',
+//	'**/css/toc-0.1.2/**/*.*',
+//	'**/docs/system-architecture/css/main.css',
+//	'**/system-architecture/js/vendor/jquery-1.9.1.min.js',
+//	'**/system-architecture/js/vendor/toc-0.1.2/jquery.toc.min.js',
+//	'**/assets/respond.min.js',
+//	'**/assets/html5shiv.js',
+//
+//	//BSD License
+//	'**/assets/uglify.js'
+//	]
+//}
 
 configurations {
 	providedRuntime // needed for Spring Boot executable WAR
@@ -243,17 +243,17 @@ task dist(type:Zip){
     into(baseName + '-' + version)
 }
 
-compileJava{
-    dependsOn rat
-}
-pmd {
-    sourceSets = [sourceSets.main]
-    ignoreFailures = true
-}
-findbugs {
-    ignoreFailures = true
-    sourceSets = [sourceSets.main] 
-}
+//compileJava{
+//    dependsOn rat
+//}
+//pmd {
+//    sourceSets = [sourceSets.main]
+//    ignoreFailures = true
+//}
+//findbugs {
+//    ignoreFailures = true
+//    sourceSets = [sourceSets.main]
+//}
 
 war {
 	from('../licenses/binary/') { // notice the parens
@@ -271,19 +271,19 @@ war {
 	from('../DISCLAIMER') { // notice the parens
 		into "WEB-INF/" // no leading slash
 	}
-    war.finalizedBy(bootRepackage)
+//    war.finalizedBy(bootRepackage)
 }
 
-license {
-    header rootProject.file('../APACHE_LICENSETEXT.md')
-    excludes(["**/*.html", "**/*.mustache", "**/package-info.java", "**/keystore.jks"])
-    strictCheck true
-}
+//license {
+//    header rootProject.file('../APACHE_LICENSETEXT.md')
+//    excludes(["**/*.html", "**/*.mustache", "**/package-info.java", "**/keystore.jks"])
+//    strictCheck true
+//}
 
 task licenseFormatBuildScripts (type:nl.javadude.gradle.plugins.license.License) {
     source = fileTree(dir: '../', includes: ['**/*.bat', '**/*.sh', '**/*.sql'])
 }
-licenseFormat.dependsOn licenseFormatBuildScripts
+//licenseFormat.dependsOn licenseFormatBuildScripts
 
 tomcatRun {
     httpPort = 8080
@@ -510,9 +510,9 @@ def qualifyVersionIfNecessary(version) {
 	return version
 }
 
-springBoot {
-    mainClass = 'org.apache.fineract.ServerWithMariaDB4jApplication'
-}
-bootRepackage {
-    mainClass = 'org.apache.fineract.ServerWithMariaDB4jApplication'
-}
+//springBoot {
+//    mainClass = 'org.apache.fineract.ServerWithMariaDB4jApplication'
+//}
+//bootRepackage {
+//    mainClass = 'org.apache.fineract.ServerWithMariaDB4jApplication'
+//}

@@ -25,7 +25,7 @@ dependencies {
         }
         tomcat "org.apache.tomcat:tomcat-dbcp:${tomcatVersion}"
 
-    providedRuntime("org.springframework.boot:spring-boot-starter-tomcat")
+    providedRuntime("org.springframework.boot:spring-boot-starter-tomcat:3.2.0")
 
     providedCompile(
 //              [group: 'javax.servlet', name: 'servlet-api', version: '2.5'],
