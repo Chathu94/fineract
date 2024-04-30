@@ -34,6 +34,8 @@
 	<beans:beans profile="basicauth"> 
 		<http create-session="stateless" use-expressions="true" pattern="/api/**"
 			entry-point-ref="basicAuthenticationEntryPoint">
+			<intercept-url pattern="/api/*/evoke/**" access="permitAll"
+						   method="GET" />
 			<intercept-url pattern="/api/*/authentication" access="permitAll"
 				method="POST" requires-channel="https" />
 			<intercept-url pattern="/api/*/self/authentication" access="permitAll"

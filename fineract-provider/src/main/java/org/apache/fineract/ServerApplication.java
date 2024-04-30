@@ -19,7 +19,6 @@
 package org.apache.fineract;
 
 import org.apache.fineract.infrastructure.core.boot.AbstractApplicationConfiguration;
-import org.apache.fineract.infrastructure.core.boot.ApplicationExitUtil;
 import org.apache.fineract.infrastructure.core.boot.EmbeddedTomcatWithSSLConfiguration;
 import org.apache.fineract.infrastructure.core.boot.db.DataSourceConfiguration;
 import org.apache.fineract.infrastructure.core.boot.db.DataSourceProperties;
@@ -50,7 +49,7 @@ public class ServerApplication {
 
 	public static void main(String[] args) throws Exception {
 		ConfigurableApplicationContext ctx = SpringApplication.run(Configuration.class, args);
-		ApplicationExitUtil.waitForKeyPressToCleanlyExit(ctx);
+//		ApplicationExitUtil.waitForKeyPressToCleanlyExit(ctx);
 	}
 
 }

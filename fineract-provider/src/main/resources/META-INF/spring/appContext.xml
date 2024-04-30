@@ -53,6 +53,7 @@
 										  org.apache.fineract.useradministration.*,
 										  org.apache.fineract.mix.*,
 										  org.apache.fineract.template.*,
+										  org.apache.fineract.evoke.*,
 										  org.apache.fineract.template.service.*,
 										  org.apache.fineract.useradministration.*,
 										  org.apache.fineract.batch">

@@ -274,6 +274,14 @@ war {
 //    war.finalizedBy(bootRepackage)
 }
 
+jar {
+    manifest {
+        attributes(
+                'Main-Class': 'org.apache.fineract.ServerApplication'
+        )
+    }
+}
+
 //license {
 //    header rootProject.file('../APACHE_LICENSETEXT.md')
 //    excludes(["**/*.html", "**/*.mustache", "**/package-info.java", "**/keystore.jks"])
@@ -355,12 +363,16 @@ import groovy.sql.Sql
 
 repositories {
     mavenCentral()
+    flatDir {
+        dirs("C:\\Users\\Hasha\\Documents\\lib")
+    }
 }
 configurations {
     driver
 }
 dependencies {
     driver 'org.drizzle.jdbc:drizzle-jdbc:1.3'
+    driver 'com.mchange:c3p0:0.10.0'
 }
 
 test {

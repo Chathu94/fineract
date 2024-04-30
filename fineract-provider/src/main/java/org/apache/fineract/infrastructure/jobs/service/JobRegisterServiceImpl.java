@@ -50,6 +50,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextClosedEvent;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.PathResource;
 import org.springframework.scheduling.quartz.CronTriggerFactoryBean;
 import org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean;
 import org.springframework.scheduling.quartz.SchedulerFactoryBean;
@@ -112,6 +114,12 @@ public class JobRegisterServiceImpl implements JobRegisterService, ApplicationLi
 
     @PostConstruct
     public void loadAllJobs() {
+        // CHECK ENV IF SCHEDULER DISABLED
+        if (System.getProperty("EvokeDisableScheduler") != null) {
+            // Print a warning message
+            logger.warn("Scheduler is disabled. To enable the scheduler, remove the -DEvokeDisableScheduler option from the command line.");
+            return;
+        }
         final List<FineractPlatformTenant> allTenants = this.tenantDetailsService.findAllTenants();
         for (final FineractPlatformTenant tenant : allTenants) {
             ThreadLocalContextUtil.setTenant(tenant);
@@ -323,6 +331,7 @@ public class JobRegisterServiceImpl implements JobRegisterService, ApplicationLi
     }
 
     private Scheduler createScheduler(final String name, final int noOfThreads, JobListener... jobListeners) throws Exception {
+        final FineractPlatformTenant tenant = ThreadLocalContextUtil.getTenant();
         final SchedulerFactoryBean schedulerFactoryBean = new SchedulerFactoryBean();
         schedulerFactoryBean.setSchedulerName(name);
         schedulerFactoryBean.setGlobalJobListeners(jobListeners);
@@ -330,6 +339,21 @@ public class JobRegisterServiceImpl implements JobRegisterService, ApplicationLi
         schedulerFactoryBean.setGlobalTriggerListeners(globalTriggerListeners);
         final Properties quartzProperties = new Properties();
         quartzProperties.put(SchedulerFactoryBean.PROP_THREAD_COUNT, Integer.toString(noOfThreads));
+//        quartzProperties.put("org.quartz.scheduler.instanceId", "AUTO");
+//        quartzProperties.put("org.quartz.threadPool.threadPriority", "5");
+//        quartzProperties.put("org.quartz.threadPool.class", "org.quartz.simpl.SimpleThreadPool");
+//        quartzProperties.put("org.quartz.jobStore.class", "org.quartz.impl.jdbcjobstore.JobStoreTX");
+//        quartzProperties.put("org.quartz.jobStore.driverDelegateClass", "org.quartz.impl.jdbcjobstore.oracle.OracleDelegate");
+//        quartzProperties.put("org.quartz.jobStore.useProperties", "false");
+//        quartzProperties.put("org.quartz.jobStore.dataSource", "myDS");
+//        quartzProperties.put("org.quartz.jobStore.tablePrefix", "QRTZ_");
+//        quartzProperties.put("org.quartz.jobStore.isClustered", "true");
+//        quartzProperties.put("org.quartz.dataSource.myDS.driver", "org.drizzle.jdbc.DrizzleDriver");
+//        quartzProperties.put("org.quartz.dataSource.myDS.URL", "jdbc:mysql:thin://127.0.0.1:3306/mifosplatform-tenants");
+//        quartzProperties.put("org.quartz.dataSource.myDS.user", "root");
+//        quartzProperties.put("org.quartz.dataSource.myDS.password", "FLi@123456");
+//        quartzProperties.put("org.quartz.dataSource.myDS.maxConnections", "5");
+//        quartzProperties.put("org.quartz.dataSource.myDS.validationQuery", "select 0 from dual");
         schedulerFactoryBean.setQuartzProperties(quartzProperties);
         schedulerFactoryBean.afterPropertiesSet();
         schedulerFactoryBean.start();
