@@ -18,16 +18,9 @@
  */
 package org.apache.fineract.commands.service;
 
-import java.lang.reflect.Type;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
+import com.google.common.reflect.TypeToken;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import org.apache.commons.lang.StringUtils;
 import org.apache.fineract.commands.data.AuditData;
 import org.apache.fineract.commands.data.AuditSearchData;
@@ -68,9 +61,10 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
 
-import com.google.common.reflect.TypeToken;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
+import java.lang.reflect.Type;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.*;
 
 @Service
 public class AuditReadPlatformServiceImpl implements AuditReadPlatformService {
@@ -266,7 +260,7 @@ public class AuditReadPlatformServiceImpl implements AuditReadPlatformService {
         }
 
         if (isLimitedChecker) {
-            sql += " join m_permission p on REPLACE(p.action_name, '_CHECKER', '')  = aud.action_name and p.entity_name = aud.entity_name and p.code like '%\\_CHECKER'"
+            sql += " join m_permission p on p.action_base_name = aud.action_name AND p.entity_name = aud.entity_name AND p.action_type = 'CHECKER'"
                     + " join m_role_permission rp on rp.permission_id = p.id" + " join m_role r on r.id = rp.role_id "
                     + " join m_appuser_role ur on ur.role_id = r.id and ur.appuser_id = " + currentUser.getId();
         }

@@ -4,17 +4,30 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a190383b-b49b-4a77-a897-70bc43241610" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/gradlew" beforeDir="false" afterPath="$PROJECT_DIR$/gradlew" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/gradlew.bat" beforeDir="false" afterPath="$PROJECT_DIR$/gradlew.bat" afterDir="false" />
+    <list default="true" id="a190383b-b49b-4a77-a897-70bc43241610" name="Changes" comment="Changes">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/fineract-provider/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/fineract-provider/build.gradle" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/fineract-provider/src/main/java/org/apache/fineract/commands/service/AuditReadPlatformServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/fineract-provider/src/main/java/org/apache/fineract/commands/service/AuditReadPlatformServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/fineract-provider/src/main/java/org/apache/fineract/evoke/api/EvokeApiResource.java" beforeDir="false" afterPath="$PROJECT_DIR$/fineract-provider/src/main/java/org/apache/fineract/evoke/api/EvokeApiResource.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/fineract-provider/src/main/java/org/apache/fineract/evoke/service/PentahoReportingProcessServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/fineract-provider/src/main/java/org/apache/fineract/evoke/service/PentahoReportingProcessServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/fineract-provider/src/main/java/org/apache/fineract/infrastructure/core/service/TenantDatabaseUpgradeService.java" beforeDir="false" afterPath="$PROJECT_DIR$/fineract-provider/src/main/java/org/apache/fineract/infrastructure/core/service/TenantDatabaseUpgradeService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/fineract-provider/src/main/java/org/apache/fineract/infrastructure/report/provider/ReportingProcessServiceProvider.java" beforeDir="false" afterPath="$PROJECT_DIR$/fineract-provider/src/main/java/org/apache/fineract/infrastructure/report/provider/ReportingProcessServiceProvider.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/fineract-provider/src/main/java/org/apache/fineract/organisation/teller/service/TellerManagementReadPlatformServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/fineract-provider/src/main/java/org/apache/fineract/organisation/teller/service/TellerManagementReadPlatformServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/fineract-provider/src/main/java/org/apache/fineract/portfolio/savings/service/SavingsProductReadPlatformServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/fineract-provider/src/main/java/org/apache/fineract/portfolio/savings/service/SavingsProductReadPlatformServiceImpl.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
+  <component name="CodeInsightWorkspaceSettings">
+    <option name="optimizeImportsOnTheFly" value="true" />
+  </component>
   <component name="ExternalProjectsData">
     <projectState path="$PROJECT_DIR$">
+      <ProjectState />
+    </projectState>
+    <projectState path="$PROJECT_DIR$/fineract-provider">
       <ProjectState />
     </projectState>
   </component>
@@ -24,9 +37,31 @@
         <task path="$PROJECT_DIR$">
           <activation />
         </task>
+        <task path="$PROJECT_DIR$/fineract-provider">
+          <activation />
+        </task>
         <projects_view>
           <tree_state>
-            <expand />
+            <expand>
+              <path>
+                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
+                <item name="fineract" type="f1a62948:ProjectNode" />
+              </path>
+              <path>
+                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
+                <item name="fineract" type="f1a62948:ProjectNode" />
+                <item name="Tasks" type="e4a08cd1:TasksNode" />
+              </path>
+              <path>
+                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
+                <item name="fineract-provider" type="f1a62948:ProjectNode" />
+              </path>
+              <path>
+                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
+                <item name="fineract-provider" type="f1a62948:ProjectNode" />
+                <item name="Tasks" type="e4a08cd1:TasksNode" />
+              </path>
+            </expand>
             <select />
           </tree_state>
         </projects_view>
@@ -36,39 +71,216 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
+  <component name="GradleLocalSettings">
+    <option name="externalProjectsViewState">
+      <projects_view />
+    </option>
+  </component>
+  <component name="HighlightingSettingsPerFile">
+    <setting file="file://$USER_HOME$/Downloads/TellerManagementReadPlatformServiceImpl.java" root0="SKIP_INSPECTION" />
+  </component>
+  <component name="JsBuildToolGruntFileManager" detection-done="true" sorting="DEFINITION_ORDER" />
+  <component name="JsBuildToolPackageJson" detection-done="true" sorting="DEFINITION_ORDER" />
+  <component name="JsGulpfileManager">
+    <detection-done>true</detection-done>
+    <sorting>DEFINITION_ORDER</sorting>
+  </component>
   <component name="MarkdownSettingsMigration">
     <option name="stateVersion" value="1" />
   </component>
   <component name="ProjectColorInfo">{
+  &quot;customColor&quot;: &quot;&quot;,
   &quot;associatedIndex&quot;: 7
 }</component>
+  <component name="ProjectFrameBounds">
+    <option name="x" value="4580" />
+    <option name="y" value="410" />
+    <option name="width" value="933" />
+    <option name="height" value="667" />
+  </component>
   <component name="ProjectId" id="2ZnzR0XEFmFh3RhvVw7Vi1vltHm" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "RunOnceActivity.OpenProjectViewOnStart": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "WebServerToolWindowFactoryState": "false",
-    "git-widget-placeholder": "fli-live",
-    "last_opened_file_path": "C:/Users/Lenovo/WebstormProjects/fineract-mifos/gradle",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Downloaded.Files.Path.Enabled&quot;: &quot;false&quot;,
+    &quot;Gradle.Build fineract-provider.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.fineract-provider [buildDependents].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.fineract-provider [buildEnvironment].executor&quot;: &quot;Debug&quot;,
+    &quot;Gradle.fineract-provider [clean].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.fineract-provider [compileJava].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.fineract-provider [dependencies].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.fineract-provider [jar].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.fineract-provider [war].executor&quot;: &quot;Run&quot;,
+    &quot;Repository.Attach.Annotations&quot;: &quot;false&quot;,
+    &quot;Repository.Attach.JavaDocs&quot;: &quot;false&quot;,
+    &quot;Repository.Attach.Sources&quot;: &quot;false&quot;,
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;Spring Boot.ServerApplication.executor&quot;: &quot;Run&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;fli-live&quot;,
+    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/home/sl/Desktop/Github/fineract&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;SDKs&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.50689656&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;reference.settingsdialog.project.gradle&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="C:\Users\Lenovo\WebstormProjects\fineract-mifos\gradle" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\Hasha\Documents\GitHub\fineract\fineract-provider\src\main\java\org\mifosplatform\infrastructure\report\service" />
+      <recent name="C:\Users\Hasha\Documents\GitHub\fineract\fineract-provider\src\main\resources" />
       <recent name="C:\Users\Lenovo\WebstormProjects\fineract-mifos\gradle\wrapper" />
     </key>
+    <key name="CopyClassDialog.RECENTS_KEY">
+      <recent name="org.apache.fineract.evoke.api" />
+    </key>
+  </component>
+  <component name="RunManager" selected="Spring Boot.ServerApplication">
+    <configuration name="fineract-provider [buildDependents]" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+      <ExternalSystemSettings>
+        <option name="executionName" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$/fineract-provider" />
+        <option name="externalSystemIdString" value="GRADLE" />
+        <option name="scriptParameters" />
+        <option name="taskDescriptions">
+          <list />
+        </option>
+        <option name="taskNames">
+          <list>
+            <option value="buildDependents" />
+          </list>
+        </option>
+        <option name="vmOptions" />
+      </ExternalSystemSettings>
+      <ExternalSystemDebugServerProcess>true</ExternalSystemDebugServerProcess>
+      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+      <DebugAllEnabled>false</DebugAllEnabled>
+      <RunAsTest>false</RunAsTest>
+      <method v="2" />
+    </configuration>
+    <configuration name="fineract-provider [compileJava]" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+      <ExternalSystemSettings>
+        <option name="executionName" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$/fineract-provider" />
+        <option name="externalSystemIdString" value="GRADLE" />
+        <option name="scriptParameters" />
+        <option name="taskDescriptions">
+          <list />
+        </option>
+        <option name="taskNames">
+          <list>
+            <option value="compileJava" />
+          </list>
+        </option>
+        <option name="vmOptions" />
+      </ExternalSystemSettings>
+      <ExternalSystemDebugServerProcess>true</ExternalSystemDebugServerProcess>
+      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+      <DebugAllEnabled>false</DebugAllEnabled>
+      <RunAsTest>false</RunAsTest>
+      <method v="2" />
+    </configuration>
+    <configuration name="fineract-provider [dependencies]" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+      <ExternalSystemSettings>
+        <option name="executionName" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$/fineract-provider" />
+        <option name="externalSystemIdString" value="GRADLE" />
+        <option name="scriptParameters" />
+        <option name="taskDescriptions">
+          <list />
+        </option>
+        <option name="taskNames">
+          <list>
+            <option value="dependencies" />
+          </list>
+        </option>
+        <option name="vmOptions" />
+      </ExternalSystemSettings>
+      <ExternalSystemDebugServerProcess>true</ExternalSystemDebugServerProcess>
+      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+      <DebugAllEnabled>false</DebugAllEnabled>
+      <RunAsTest>false</RunAsTest>
+      <method v="2" />
+    </configuration>
+    <configuration name="fineract-provider [jar]" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+      <ExternalSystemSettings>
+        <option name="executionName" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$/fineract-provider" />
+        <option name="externalSystemIdString" value="GRADLE" />
+        <option name="scriptParameters" />
+        <option name="taskDescriptions">
+          <list />
+        </option>
+        <option name="taskNames">
+          <list>
+            <option value="jar" />
+          </list>
+        </option>
+        <option name="vmOptions" />
+      </ExternalSystemSettings>
+      <ExternalSystemDebugServerProcess>true</ExternalSystemDebugServerProcess>
+      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+      <DebugAllEnabled>false</DebugAllEnabled>
+      <RunAsTest>false</RunAsTest>
+      <method v="2" />
+    </configuration>
+    <configuration name="ServerApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" temporary="true" nameIsGenerated="true">
+      <option name="ALTERNATIVE_JRE_PATH" value="corretto-1.8" />
+      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />
+      <envs>
+        <env name="DRIVERCLASS_NAME" value="com.mysql.cj.jdbc.Driver" />
+        <env name="SUB_PROTOCOL" value="mysql" />
+      </envs>
+      <module name="fineract-provider.main" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="org.apache.fineract.ServerApplication" />
+      <option name="VM_PARAMETERS" value="-Dfineract.datasource.port=3306 -DEvokeDisableScheduler -Dfineract.datasource.host=mysql.fqa.evokelabs.io -Dfineract.datasource.username=admin -Dfineract.datasource.password=udIF7un9FFlBLOk0 -Dfineract.tenantdb.fixup=false -Dfineract.datasource.subprotocol=mysql -Dlog4j.logger.org.hibernate.type=trace -Xms4g -Xmx8g" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="org.apache.fineract.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <list>
+      <item itemvalue="Gradle.fineract-provider [jar]" />
+      <item itemvalue="Gradle.fineract-provider [compileJava]" />
+      <item itemvalue="Gradle.fineract-provider [buildDependents]" />
+      <item itemvalue="Gradle.fineract-provider [dependencies]" />
+      <item itemvalue="Spring Boot.ServerApplication" />
+    </list>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Spring Boot.ServerApplication" />
+        <item itemvalue="Gradle.fineract-provider [jar]" />
+        <item itemvalue="Gradle.fineract-provider [compileJava]" />
+        <item itemvalue="Gradle.fineract-provider [dependencies]" />
+        <item itemvalue="Gradle.fineract-provider [buildDependents]" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="jdk-1.8.0_402-corretto-1.8.0_402-4caba194b151-ae57be32" />
+      </set>
+    </attachedChunks>
   </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
@@ -80,10 +292,218 @@
       <updated>1703072618561</updated>
       <workItem from="1703072619620" duration="20000" />
       <workItem from="1703073443099" duration="565000" />
+      <workItem from="1709794629182" duration="12723000" />
+      <workItem from="1710086172660" duration="1207000" />
+      <workItem from="1710138770062" duration="165000" />
+      <workItem from="1710138952839" duration="1528000" />
+      <workItem from="1710153077180" duration="14038000" />
+      <workItem from="1710230680338" duration="3468000" />
+      <workItem from="1710307651763" duration="4052000" />
+      <workItem from="1710322040297" duration="1669000" />
+      <workItem from="1710547190338" duration="3194000" />
+      <workItem from="1711540552951" duration="713000" />
+      <workItem from="1711684162282" duration="1389000" />
+      <workItem from="1711991569008" duration="5638000" />
+      <workItem from="1712307917193" duration="544000" />
+      <workItem from="1712485125908" duration="6508000" />
+      <workItem from="1712493516154" duration="1294000" />
+      <workItem from="1712654048992" duration="6828000" />
+      <workItem from="1713778915312" duration="1329000" />
+      <workItem from="1713963990790" duration="908000" />
+      <workItem from="1713989610365" duration="2930000" />
+      <workItem from="1714052089498" duration="6588000" />
+      <workItem from="1714125856445" duration="7167000" />
+      <workItem from="1714196271533" duration="1809000" />
+      <workItem from="1714198598636" duration="590000" />
+      <workItem from="1714203463832" duration="3689000" />
+      <workItem from="1714207179765" duration="1819000" />
+      <workItem from="1714233182019" duration="3439000" />
+      <workItem from="1714238904157" duration="6560000" />
+      <workItem from="1714294558538" duration="4288000" />
+      <workItem from="1714298979795" duration="2758000" />
+      <workItem from="1714379969634" duration="1460000" />
+      <workItem from="1714393132096" duration="6148000" />
+      <workItem from="1714411634887" duration="1781000" />
+      <workItem from="1714458632933" duration="3205000" />
+      <workItem from="1714476470181" duration="1125000" />
+      <workItem from="1714493013192" duration="1355000" />
+      <workItem from="1714550778829" duration="2565000" />
+      <workItem from="1714646588692" duration="4541000" />
+      <workItem from="1714717890023" duration="1198000" />
+      <workItem from="1714729386156" duration="4192000" />
+      <workItem from="1714905299612" duration="1920000" />
+      <workItem from="1714944871658" duration="576000" />
+      <workItem from="1715093126840" duration="583000" />
+      <workItem from="1715151685993" duration="6951000" />
+      <workItem from="1715455464048" duration="4073000" />
+      <workItem from="1715510347561" duration="1395000" />
+      <workItem from="1715536946113" duration="1903000" />
+      <workItem from="1715600896311" duration="421000" />
+      <workItem from="1715605550883" duration="8454000" />
+      <workItem from="1715688870921" duration="2618000" />
+      <workItem from="1715808577448" duration="5717000" />
+      <workItem from="1716073237085" duration="6908000" />
+      <workItem from="1716234038297" duration="8004000" />
+      <workItem from="1716368116796" duration="2657000" />
+      <workItem from="1716413676728" duration="1202000" />
+      <workItem from="1716746012953" duration="657000" />
+      <workItem from="1716803827318" duration="7772000" />
+      <workItem from="1716886457075" duration="4940000" />
+      <workItem from="1716973118244" duration="2240000" />
+      <workItem from="1717064618845" duration="721000" />
+      <workItem from="1717065443094" duration="3117000" />
+      <workItem from="1717117900504" duration="186000" />
+      <workItem from="1717153857088" duration="1411000" />
+      <workItem from="1717277702571" duration="1837000" />
+      <workItem from="1717356285440" duration="5349000" />
+      <workItem from="1717432833381" duration="2281000" />
+      <workItem from="1717673599693" duration="771000" />
+      <workItem from="1718017239449" duration="858000" />
+      <workItem from="1718075754837" duration="666000" />
+      <workItem from="1716823367280" duration="960000" />
+      <workItem from="1718165954769" duration="1463000" />
+      <workItem from="1718413296824" duration="3892000" />
+      <workItem from="1718598903219" duration="758000" />
+      <workItem from="1718792649372" duration="1224000" />
+      <workItem from="1718872793004" duration="618000" />
     </task>
+    <task id="LOCAL-00001" summary="Changes">
+      <option name="closed" value="true" />
+      <created>1709800073005</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1709800073005</updated>
+    </task>
+    <task id="LOCAL-00002" summary="Changes">
+      <option name="closed" value="true" />
+      <created>1714465199837</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1714465199837</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
+  </component>
+  <component name="TimeTrackingManager">
+    <option name="totallyTimeSpent" value="165000" />
+  </component>
+  <component name="ToolWindowManager">
+    <frame x="4580" y="410" width="933" height="667" extended-state="0" />
+    <layout>
+      <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
+      <window_info id="Palette&#9;" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="-1" side_tool="false" content_ui="tabs" />
+      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="-1" side_tool="true" content_ui="tabs" />
+      <window_info id="Maven Projects" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="-1" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="-1" side_tool="false" content_ui="tabs" />
+      <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="-1" side_tool="false" content_ui="tabs" />
+      <window_info id="Designer" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="-1" side_tool="false" content_ui="tabs" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Gradle" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="-1" side_tool="false" content_ui="tabs" />
+      <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="-1" side_tool="true" content_ui="tabs" />
+      <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
+      <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
+      <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
+      <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
+    </layout>
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="Changes" />
+    <option name="LAST_COMMIT_MESSAGE" value="Changes" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/fineract-provider/src/main/java/org/apache/fineract/portfolio/address/service/AddressWritePlatformServiceImpl.java</url>
+          <line>102</line>
+          <option name="timeStamp" value="11" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/fineract-provider/src/main/java/org/apache/fineract/portfolio/savings/data/SavingsAccountTransactionDataValidator.java</url>
+          <line>79</line>
+          <option name="timeStamp" value="14" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/fineract-provider/src/main/java/org/apache/fineract/portfolio/savings/service/SavingsAccountWritePlatformServiceJpaRepositoryImpl.java</url>
+          <line>238</line>
+          <option name="timeStamp" value="18" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/fineract-provider/src/main/java/org/apache/fineract/portfolio/calendar/service/CalendarWritePlatformServiceJpaRepositoryImpl.java</url>
+          <line>212</line>
+          <option name="timeStamp" value="19" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/fineract-provider/src/main/java/org/apache/fineract/portfolio/calendar/service/CalendarWritePlatformServiceJpaRepositoryImpl.java</url>
+          <line>310</line>
+          <option name="timeStamp" value="20" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/fineract-provider/src/main/java/org/apache/fineract/portfolio/loanaccount/service/LoanWritePlatformServiceJpaRepositoryImpl.java</url>
+          <line>2042</line>
+          <option name="timeStamp" value="22" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/fineract-provider/src/main/java/org/apache/fineract/portfolio/loanaccount/service/LoanWritePlatformServiceJpaRepositoryImpl.java</url>
+          <line>2070</line>
+          <option name="timeStamp" value="24" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/fineract-provider/src/main/java/org/apache/fineract/portfolio/loanaccount/service/LoanWritePlatformServiceJpaRepositoryImpl.java</url>
+          <line>2066</line>
+          <option name="timeStamp" value="25" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/fineract-provider/src/main/java/org/apache/fineract/portfolio/loanaccount/service/LoanWritePlatformServiceJpaRepositoryImpl.java</url>
+          <line>2060</line>
+          <option name="timeStamp" value="26" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/fineract-provider/src/main/java/org/apache/fineract/portfolio/loanaccount/service/LoanWritePlatformServiceJpaRepositoryImpl.java</url>
+          <line>2050</line>
+          <option name="timeStamp" value="27" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/fineract-provider/src/main/java/org/apache/fineract/accounting/journalentry/service/AccountingProcessorHelper.java</url>
+          <line>428</line>
+          <option name="timeStamp" value="28" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-method">
+          <url>file://$PROJECT_DIR$/fineract-provider/src/main/java/org/apache/fineract/infrastructure/configuration/domain/ConfigurationDomainService.java</url>
+          <line>58</line>
+          <properties class="org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService" method="retrieveMinAllowedClientsInGroup">
+            <option name="EMULATED" value="true" />
+            <option name="WATCH_EXIT" value="false" />
+          </properties>
+          <option name="timeStamp" value="29" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
+  </component>
+  <component name="XSLT-Support.FileAssociations.UIState">
+    <expand />
+    <select />
   </component>
 </project>

@@ -364,7 +364,7 @@ import groovy.sql.Sql
 repositories {
     mavenCentral()
     flatDir {
-        dirs("C:\\Users\\Hasha\\Documents\\lib")
+        dirs("/home/sl/Desktop/Windows-Drive/Users/Hasha/Documents/lib")
     }
 }
 configurations {

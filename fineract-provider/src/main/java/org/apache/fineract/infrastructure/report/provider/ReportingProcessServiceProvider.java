@@ -18,10 +18,6 @@
  */
 package org.apache.fineract.infrastructure.report.provider;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.fineract.infrastructure.report.annotation.ReportService;
 import org.apache.fineract.infrastructure.report.service.ReportingProcessService;
@@ -32,6 +28,10 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
+
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 @Component
 @Scope("singleton")
@@ -65,10 +65,13 @@ public class ReportingProcessServiceProvider implements ApplicationContextAware 
     }
 
     private void initializeRegistry() {
+        LOGGER.info("Register reports initializeRegistry");
         if (this.reportingProcessServices == null) {
+            LOGGER.info("reportingProcessServices isn't null");
             this.reportingProcessServices = new HashMap<>();
 
             final String[] reportServiceBeans = this.applicationContext.getBeanNamesForAnnotation(ReportService.class);
+            LOGGER.info("reportServiceBeans size: " + reportServiceBeans.length);
             if (ArrayUtils.isNotEmpty(reportServiceBeans)) {
                 for (final String reportName : reportServiceBeans) {
                     LOGGER.info("Register report service '" + reportName + "' ...");

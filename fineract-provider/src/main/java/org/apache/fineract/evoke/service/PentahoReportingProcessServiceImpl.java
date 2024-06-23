@@ -108,12 +108,15 @@ public class PentahoReportingProcessServiceImpl implements ReportingProcessServi
                HtmlReportUtil.createStreamHTML(masterReport, baos);
                return Response.ok().entity(baos.toByteArray()).type("text/html").build();
             }
-         } catch (ResourceException var13) {
-            throw new PlatformDataIntegrityException("error.msg.reporting.error", var13.getMessage(), new Object[0]);
-         } catch (ReportProcessingException var14) {
-            throw new PlatformDataIntegrityException("error.msg.reporting.error", var14.getMessage(), new Object[0]);
-         } catch (IOException var15) {
-            throw new PlatformDataIntegrityException("error.msg.reporting.error", var15.getMessage(), new Object[0]);
+         } catch (ResourceException e) {
+            e.printStackTrace();
+            throw new PlatformDataIntegrityException("error.msg.reporting.error", e.getMessage(), new Object[0]);
+         } catch (ReportProcessingException e) {
+            e.printStackTrace();
+            throw new PlatformDataIntegrityException("error.msg.reporting.error", e.getMessage(), new Object[0]);
+         } catch (IOException e) {
+            e.printStackTrace();
+            throw new PlatformDataIntegrityException("error.msg.reporting.error", e.getMessage(), new Object[0]);
          }
 
          throw new PlatformDataIntegrityException("error.msg.invalid.outputType", "No matching Output Type: " + outputType, new Object[0]);
