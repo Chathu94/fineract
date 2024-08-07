@@ -18,18 +18,6 @@
  */
 package org.apache.fineract.portfolio.savings.service;
 
-import java.math.BigDecimal;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.accounting.common.AccountingRuleType;
 import org.apache.fineract.accounting.glaccount.data.GLAccountData;
@@ -90,6 +78,19 @@ import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
+
+import java.math.BigDecimal;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 @Service
 public class SavingsAccountReadPlatformServiceImpl implements SavingsAccountReadPlatformService {
@@ -271,7 +272,7 @@ public class SavingsAccountReadPlatformServiceImpl implements SavingsAccountRead
                     + "where if (sa.interest_posted_till_date is not null, tr.transaction_date >= sa.interest_posted_till_date, tr.transaction_date >= sa.activatedon_date) ";
         }
 
-        sql = sql + "and apm.product_type=2 and sa.interest_posted_till_date<" + java.sql.Date.valueOf(currentDate);
+        sql = sql + "and apm.product_type=2 and (ISNULL(sa.interest_posted_till_date) OR sa.interest_posted_till_date<" + java.sql.Date.valueOf(currentDate) + ")";
         sql = sql + " order by sa.id, tr.transaction_date, tr.created_date, tr.id";
 
         List<SavingsAccountData> savingsAccountDataList = this.jdbcTemplate.query(sql, this.savingAccountMapperForInterestPosting,
@@ -571,9 +572,10 @@ public class SavingsAccountReadPlatformServiceImpl implements SavingsAccountRead
 
                     final boolean allowOverdraft = rs.getBoolean("allowOverdraft");
                     final BigDecimal overdraftLimit = JdbcSupport.getBigDecimalDefaultToNullIfZero(rs, "overdraftLimit");
-                    final BigDecimal nominalAnnualInterestRateOverdraft = JdbcSupport.getBigDecimalDefaultToNullIfZero(rs,
+                    final BigDecimal test = rs.getBigDecimal("nominalAnnualInterestRateOverdraft");
+                    final BigDecimal nominalAnnualInterestRateOverdraft = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs,
                             "nominalAnnualInterestRateOverdraft");
-                    final BigDecimal minOverdraftForInterestCalculation = JdbcSupport.getBigDecimalDefaultToNullIfZero(rs,
+                    final BigDecimal minOverdraftForInterestCalculation = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs,
                             "minOverdraftForInterestCalculation");
 
                     final BigDecimal minRequiredBalance = JdbcSupport.getBigDecimalDefaultToNullIfZero(rs, "minRequiredBalance");

@@ -18,8 +18,6 @@
  */
 package org.apache.fineract.portfolio.savings.domain;
 
-import java.util.List;
-import javax.persistence.LockModeType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -27,6 +25,9 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+
+import javax.persistence.LockModeType;
+import java.util.List;
 
 //Use SavingsAccountRepositoryWrapper.
 public interface SavingsAccountRepository extends JpaRepository<SavingsAccount, Long>, JpaSpecificationExecutor<SavingsAccount> {
@@ -43,6 +44,9 @@ public interface SavingsAccountRepository extends JpaRepository<SavingsAccount, 
 
     @Query("select s_acc from SavingsAccount s_acc where s_acc.status = :status")
     List<SavingsAccount> findSavingAccountByStatus(@Param("status") Integer status);
+
+    @Query("select s_acc.id from SavingsAccount s_acc where s_acc.status = :status")
+    List<Long> findSavingAccountIdsByStatus(@Param("status") Integer status);
 
     @Query("select sa from SavingsAccount sa where sa.client.id = :clientId and sa.group.id = :groupId")
     List<SavingsAccount> findByClientIdAndGroupId(@Param("clientId") Long clientId, @Param("groupId") Long groupId);

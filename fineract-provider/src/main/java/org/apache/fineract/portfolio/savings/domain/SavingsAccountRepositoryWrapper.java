@@ -18,8 +18,6 @@
  */
 package org.apache.fineract.portfolio.savings.domain;
 
-import java.util.Date;
-import java.util.List;
 import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
 import org.apache.fineract.portfolio.savings.DepositAccountType;
 import org.apache.fineract.portfolio.savings.exception.SavingsAccountNotFoundException;
@@ -30,6 +28,9 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Date;
+import java.util.List;
 
 /**
  * <p>
@@ -102,6 +103,11 @@ public class SavingsAccountRepositoryWrapper {
         List<SavingsAccount> accounts = this.repository.findSavingAccountByStatus(status);
         loadLazyCollections(accounts);
         return accounts;
+    }
+
+    @Transactional(readOnly = true)
+    public List<Long> findAccountIdsByStatus(@Param("status") Integer status) {
+        return this.repository.findSavingAccountIdsByStatus(status);
     }
 
     @Transactional(readOnly = true)
