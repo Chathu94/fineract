@@ -18,12 +18,6 @@
  */
 package org.apache.fineract.portfolio.loanproduct.productmix.service;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-
 import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
@@ -36,6 +30,12 @@ import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.stereotype.Service;
+
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 @Service
 public class ProductMixReadPlatformServiceImpl implements ProductMixReadPlatformService {
@@ -80,7 +80,7 @@ public class ProductMixReadPlatformServiceImpl implements ProductMixReadPlatform
 
         final String sql = "Select " + extractor.schema() + " group by pm.product_id";
 
-        final Map<Long, ProductMixData> productMixData = this.jdbcTemplate.query(sql, extractor, new Object[] {});
+        final Map<Long, ProductMixData> productMixData = this.jdbcTemplate.query(con -> con.prepareStatement(sql, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE), extractor);
 
         return productMixData.values();
     }
