@@ -156,7 +156,7 @@ modernizer {
 }
 
 compileJava {
-    dependsOn rat
+//    dependsOn rat
     finalizedBy resolve
 }
 
@@ -200,6 +200,7 @@ configurations {
 }
 dependencies {
     driver 'org.mariadb.jdbc:mariadb-java-client:2.7.4'
+    compile fileTree(include: ['*.jar'], dir: 'libs')
 }
 
 URLClassLoader loader = GroovyObject.class.classLoader

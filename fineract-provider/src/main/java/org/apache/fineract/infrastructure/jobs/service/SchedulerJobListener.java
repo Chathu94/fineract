@@ -94,14 +94,14 @@ public class SchedulerJobListener implements JobListener {
             final Throwable throwable = getCauseFromException(jobException);
             this.stackTraceLevel = 0;
             StackTraceElement[] stackTraceElements = null;
-            errorMessage = throwable.getMessage();
+            errorMessage = throwable.getMessage().length() > 65534 ? throwable.getMessage().substring(0, 65534) : throwable.getMessage();
             stackTraceElements = throwable.getStackTrace();
             final StringBuilder sb = new StringBuilder(throwable.toString());
             for (final StackTraceElement element : stackTraceElements) {
                 sb.append("\n \t at ").append(element.getClassName()).append(".").append(element.getMethodName()).append("(")
                         .append(element.getLineNumber()).append(")");
             }
-            errorLog = sb.toString();
+            errorLog = sb.toString().length() > 65534 ? sb.substring(0, 65534) : sb.toString();
 
         }
         String triggerType = SchedulerServiceConstants.TRIGGER_TYPE_CRON;
