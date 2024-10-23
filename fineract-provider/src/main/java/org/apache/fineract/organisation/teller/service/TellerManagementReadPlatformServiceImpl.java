@@ -534,14 +534,14 @@ public class TellerManagementReadPlatformServiceImpl implements TellerManagement
                 + " sav_txn.transaction_date between c.start_date and date_add(c.end_date, interval 1 day) "
                 + " and renum.enum_value in ('deposit','withdrawal fee', 'Pay Charge', 'withdrawal', 'Annual Fee', 'Waive Charge', 'Interest Posting', 'Overdraft Interest') "
                 + " and (sav_txn.payment_detail_id IS NULL OR payType.is_cash_payment = 1) "
-                + " AND acnttrans.id IS NULL ) "
+                + " AND acnttrans1.id IS NULL AND acnttrans2.id IS NULL ) "
                 + " union (select "
                 + ctm.loansTxnSchema()
                 + " where loan_txn.is_reversed = 0 and c.id = ? and loan.currency_code = ? and o.hierarchy like ? and "
                 + " loan_txn.transaction_date between c.start_date and date_add(c.end_date, interval 1 day) "
                 + " and renum.enum_value in ('REPAYMENT_AT_DISBURSEMENT','REPAYMENT', 'RECOVERY_REPAYMENT','DISBURSEMENT', 'CHARGE_PAYMENT', 'WAIVE_CHARGES', 'WAIVE_INTEREST', 'WRITEOFF') "
                 + " and (loan_txn.payment_detail_id IS NULL OR payType.is_cash_payment = 1) "
-                + " AND acnttrans.id IS NULL ) "
+                + " AND acnttrans1.id IS NULL AND acnttrans2.id IS NULL ) "
                 + " union (select "
                 + ctm.clientTxnSchema()
                 + " where cli_txn.is_reversed = 0 and c.id = ? and cli_txn.currency_code = ? and o.hierarchy like ? and cli_txn.transaction_date "
@@ -657,9 +657,10 @@ public class TellerManagementReadPlatformServiceImpl implements TellerManagement
             sqlBuilder.append(" left join m_cashiers c on c.staff_id = staff.id ");
             sqlBuilder.append(" left join m_payment_detail payDetails on payDetails.id = sav_txn.payment_detail_id ");
             sqlBuilder.append(" left join m_payment_type payType on payType.id = payDetails.payment_type_id ");
-            sqlBuilder.append(" left join m_account_transfer_transaction acnttrans ");
-            sqlBuilder.append(" on (acnttrans.from_savings_transaction_id = sav_txn.id ");
-            sqlBuilder.append(" or acnttrans.to_savings_transaction_id = sav_txn.id) ");
+            sqlBuilder.append(" left join m_account_transfer_transaction acnttrans1 ");
+            sqlBuilder.append(" on acnttrans1.from_savings_transaction_id = sav_txn.id ");
+            sqlBuilder.append(" left join m_account_transfer_transaction acnttrans2 ");
+            sqlBuilder.append(" on acnttrans2.to_savings_transaction_id = sav_txn.id ");
 
             return sqlBuilder.toString();
         }
@@ -694,9 +695,10 @@ public class TellerManagementReadPlatformServiceImpl implements TellerManagement
             sqlBuilder.append(" left join m_cashiers c on c.staff_id = staff.id ");
             sqlBuilder.append(" left join m_payment_detail payDetails on payDetails.id = loan_txn.payment_detail_id ");
             sqlBuilder.append(" left join m_payment_type payType on payType.id = payDetails.payment_type_id ");
-            sqlBuilder.append(" left join m_account_transfer_transaction acnttrans ");
-            sqlBuilder.append(" on (acnttrans.from_loan_transaction_id = loan_txn.id ");
-            sqlBuilder.append(" or acnttrans.to_loan_transaction_id = loan_txn.id) ");
+            sqlBuilder.append(" left join m_account_transfer_transaction acnttrans1 ");
+            sqlBuilder.append(" on acnttrans1.from_loan_transaction_id = loan_txn.id ");
+            sqlBuilder.append(" left join m_account_transfer_transaction acnttrans2 ");
+            sqlBuilder.append(" on acnttrans2.to_loan_transaction_id = loan_txn.id) ");
 
             return sqlBuilder.toString();
         }
@@ -821,15 +823,16 @@ public class TellerManagementReadPlatformServiceImpl implements TellerManagement
             sqlBuilder.append("	left join m_cashiers c on c.staff_id = staff.id ");
             sqlBuilder.append(" left join m_payment_detail payDetails on payDetails.id = sav_txn.payment_detail_id ");
             sqlBuilder.append(" left join m_payment_type payType on payType.id = payDetails.payment_type_id ");
-            sqlBuilder.append(" left join m_account_transfer_transaction acnttrans ");
-            sqlBuilder.append(" on (acnttrans.from_savings_transaction_id = sav_txn.id ");
-            sqlBuilder.append(" or acnttrans.to_savings_transaction_id = sav_txn.id) ");
+            sqlBuilder.append(" left join m_account_transfer_transaction acnttrans1 ");
+            sqlBuilder.append(" on acnttrans1.from_savings_transaction_id = sav_txn.id ");
+            sqlBuilder.append(" left join m_account_transfer_transaction acnttrans2 ");
+            sqlBuilder.append(" or acnttrans2.to_savings_transaction_id = sav_txn.id ");
             sqlBuilder.append("	where sav_txn.is_reversed = 0 and c.id = ? ");
             sqlBuilder.append(" and sav.currency_code = ? ");
             sqlBuilder.append("	and o.hierarchy like ? ");
             sqlBuilder.append("	and sav_txn.transaction_date between c.start_date and date_add(c.end_date, interval 1 day) ");
             sqlBuilder.append("	and (sav_txn.payment_detail_id IS NULL OR payType.is_cash_payment = 1) ");
-            sqlBuilder.append("	AND acnttrans.id IS NULL  ");
+            sqlBuilder.append("	AND acnttrans1.id IS NULL AND acnttrans2.id IS NULL ");
             sqlBuilder.append("	) ");
             sqlBuilder.append("	UNION ");
             sqlBuilder.append("	( ");
@@ -859,15 +862,16 @@ public class TellerManagementReadPlatformServiceImpl implements TellerManagement
             sqlBuilder.append("	left join m_cashiers c on c.staff_id = staff.id ");
             sqlBuilder.append(" left join m_payment_detail payDetails on payDetails.id = loan_txn.payment_detail_id ");
             sqlBuilder.append(" left join m_payment_type payType on payType.id = payDetails.payment_type_id ");
-            sqlBuilder.append(" left join m_account_transfer_transaction acnttrans ");
-            sqlBuilder.append(" on (acnttrans.from_loan_transaction_id = loan_txn.id ");
-            sqlBuilder.append(" or acnttrans.to_loan_transaction_id = loan_txn.id) ");
+            sqlBuilder.append(" left join m_account_transfer_transaction acnttrans1 ");
+            sqlBuilder.append(" on acnttrans1.from_loan_transaction_id = loan_txn.id ");
+            sqlBuilder.append(" left join m_account_transfer_transaction acnttrans2 ");
+            sqlBuilder.append(" or acnttrans2.to_loan_transaction_id = loan_txn.id ");
             sqlBuilder.append("	where loan_txn.is_reversed = 0 and c.id = ? ");
             sqlBuilder.append(" and loan.currency_code = ? ");
             sqlBuilder.append("	and o.hierarchy like ? ");
             sqlBuilder.append("	and loan_txn.transaction_date between c.start_date and date_add(c.end_date, interval 1 day) ");
             sqlBuilder.append("	and (loan_txn.payment_detail_id IS NULL OR payType.is_cash_payment = 1) ");
-            sqlBuilder.append("	AND acnttrans.id IS NULL  ");
+            sqlBuilder.append("	AND acnttrans1.id IS NULL AND acnttrans2.id IS NULL ");
             sqlBuilder.append("	) ");
             sqlBuilder.append("	UNION ");
             sqlBuilder.append("	( ");

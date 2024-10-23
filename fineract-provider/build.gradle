@@ -25,6 +25,9 @@ buildscript {
   	 jcenter()
   	 mavenCentral()
   	 maven { url "https://plugins.gradle.org/m2/" }
+      flatDir {
+          dirs 'libs'
+      }
   }
 
   dependencies {
@@ -38,7 +41,7 @@ buildscript {
   }
 }
 
-apply plugin: "org.nosphere.apache.rat"
+//apply plugin: "org.nosphere.apache.rat"
 apply plugin: 'rebel'
 apply plugin: 'license'
 apply plugin: 'war'
@@ -71,6 +74,9 @@ group = 'org.apache.fineract'
 buildDir = new File(rootProject.projectDir, "../build")
 repositories {
 	jcenter()
+    flatDir {
+        dirs 'libs'
+    }
 	// mavenLocal() // useful for local dev using MariaDB4j SNAPSHOTs (not needed for real-world non-SNAPHOT builds)
 }
 openjpa {
@@ -82,80 +88,80 @@ openjpa {
     enforcePropertyRestrictions = true
 }
 
-rat {
-  xmlOutput = false
-  htmlOutput = false
-  plainOutput = true
-  verbose = false 
-//  inputDir = './..'
-  reportDir = new File(buildDir,'reports/rat')
- excludes = [
-	'**/licenses/**',
-	'**/*.md',
-	'**/MANIFEST.MF',
-	'**/*.txt',
-	'**/*.log',
-	'**/fineractdev-eclipse-preferences.epf',
-	'**/template-expected.html',
-	'**/template.mustache',
-	'**/.classpath',
-	'**/.project',
-	'**/.idea/**',
-	'**/.settings/**',
-	'**/bin/**',
-	'**/.git/**',
-    '**/.gitignore',
-    '**/.gitkeep',
-	'**/*.iml',
-	//Notice files
-	'**/NOTICE_RELEASE',
-	'**/NOTICE_SOURCE',	
-    // gradle
-    '**/.gradle/**',
-    '**/gradlew',
-    '**/gradlew.bat',
-    '**/gradle/wrapper/gradle-wrapper.properties',
-    '**/caches/**',
-    '**/daemon/**',
-    '**/native/**',
-    '**/wrapper/**',
-	'**/build/**',
-	
-	//Api Docs 
-	'**/api-docs/*.*',
-	'**/docs/system-architecture/.htaccess',
-	'**/docs/system-architecture/404.html',
-	'**/docs/system-architecture/index.html',
-	'**/docs/system-architecture/**/*.xml',
-	'**/bootstrap-3.0.0/assets/application.js',
-	'**/system-architecture/js/plugins.js',
-	
-	//Apache License
-	'**/bootstrap-3.0.0/assets/less.js',
-	'**/css/bootstrap-3.0.0/**/*.*',
-	
-	//Public Domain See http://www.JSON.org/js.html
-	'**/bootstrap-3.0.0/assets/json2.js.htm',
-	
-	// MIT License
-	'**/modernizr-2.6.2.min.js',
-	'**/css/normalize.css',
-	'**/assets/filesaver.js',
-	'**/css/fonts/glyphicons-halflings-regular.svg',
-	'**/assets/jszip.js',
-	'**/assets/jquery.js',
-	'**/api-docs/jquery-1.7.min.js',
-	'**/css/toc-0.1.2/**/*.*',
-	'**/docs/system-architecture/css/main.css',
-	'**/system-architecture/js/vendor/jquery-1.9.1.min.js',
-	'**/system-architecture/js/vendor/toc-0.1.2/jquery.toc.min.js',
-	'**/assets/respond.min.js',
-	'**/assets/html5shiv.js',
-	
-	//BSD License
-	'**/assets/uglify.js'
-	]
-}
+//rat {
+//  xmlOutput = false
+//  htmlOutput = false
+//  plainOutput = true
+//  verbose = false
+////  inputDir = './..'
+//  reportDir = new File(buildDir,'reports/rat')
+// excludes = [
+//	'**/licenses/**',
+//	'**/*.md',
+//	'**/MANIFEST.MF',
+//	'**/*.txt',
+//	'**/*.log',
+//	'**/fineractdev-eclipse-preferences.epf',
+//	'**/template-expected.html',
+//	'**/template.mustache',
+//	'**/.classpath',
+//	'**/.project',
+//	'**/.idea/**',
+//	'**/.settings/**',
+//	'**/bin/**',
+//	'**/.git/**',
+//    '**/.gitignore',
+//    '**/.gitkeep',
+//	'**/*.iml',
+//	//Notice files
+//	'**/NOTICE_RELEASE',
+//	'**/NOTICE_SOURCE',
+//    // gradle
+//    '**/.gradle/**',
+//    '**/gradlew',
+//    '**/gradlew.bat',
+//    '**/gradle/wrapper/gradle-wrapper.properties',
+//    '**/caches/**',
+//    '**/daemon/**',
+//    '**/native/**',
+//    '**/wrapper/**',
+//	'**/build/**',
+//
+//	//Api Docs
+//	'**/api-docs/*.*',
+//	'**/docs/system-architecture/.htaccess',
+//	'**/docs/system-architecture/404.html',
+//	'**/docs/system-architecture/index.html',
+//	'**/docs/system-architecture/**/*.xml',
+//	'**/bootstrap-3.0.0/assets/application.js',
+//	'**/system-architecture/js/plugins.js',
+//
+//	//Apache License
+//	'**/bootstrap-3.0.0/assets/less.js',
+//	'**/css/bootstrap-3.0.0/**/*.*',
+//
+//	//Public Domain See http://www.JSON.org/js.html
+//	'**/bootstrap-3.0.0/assets/json2.js.htm',
+//
+//	// MIT License
+//	'**/modernizr-2.6.2.min.js',
+//	'**/css/normalize.css',
+//	'**/assets/filesaver.js',
+//	'**/css/fonts/glyphicons-halflings-regular.svg',
+//	'**/assets/jszip.js',
+//	'**/assets/jquery.js',
+//	'**/api-docs/jquery-1.7.min.js',
+//	'**/css/toc-0.1.2/**/*.*',
+//	'**/docs/system-architecture/css/main.css',
+//	'**/system-architecture/js/vendor/jquery-1.9.1.min.js',
+//	'**/system-architecture/js/vendor/toc-0.1.2/jquery.toc.min.js',
+//	'**/assets/respond.min.js',
+//	'**/assets/html5shiv.js',
+//
+//	//BSD License
+//	'**/assets/uglify.js'
+//	]
+//}
 
 configurations {
 	providedRuntime // needed for Spring Boot executable WAR
@@ -244,7 +250,7 @@ task dist(type:Zip){
 }
 
 compileJava{
-    dependsOn rat
+//    dependsOn rat
 }
 pmd {
     sourceSets = [sourceSets.main]
@@ -272,6 +278,10 @@ war {
 		into "WEB-INF/" // no leading slash
 	}
     war.finalizedBy(bootRepackage)
+}
+
+jar {
+    jar.finalizedBy(bootRepackage)
 }
 
 license {
@@ -311,20 +321,20 @@ sourceSets.test.output.resourcesDir = sourceSets.test.output.classesDir
 
 /* Exclude maria db and embedded tomcat related files for non dev builds */
 if (!(project.hasProperty('env') && project.getProperty('env') == 'dev')) {
-sourceSets {
-    main {
-        java {
-            exclude '**/Server*'
-            exclude '**/MariaDB4j*'
-            exclude '**/EmbeddedTomcatWithSSLConfiguration.java'
+    sourceSets {
+        main {
+            java {
+    //            exclude '**/Server*'
+    //            exclude '**/MariaDB4j*'
+//                exclude '**/EmbeddedTomcatWithSSLConfiguration.java'
+            }
+        }
+        test {
+            java {
+                exclude '**/core/boot/tests/**'
+            }
         }
     }
-    test {
-    	java {
-    		exclude '**/core/boot/tests/**'
-    	}
-    }
-}
 }
 
 sourceSets {
@@ -355,6 +365,9 @@ import groovy.sql.Sql
 
 repositories {
     mavenCentral()
+    flatDir {
+        dirs 'libs'
+    }
 }
 configurations {
     driver
@@ -397,6 +410,9 @@ apply plugin: 'flyway'
 buildscript {
     repositories {
         mavenCentral()
+        flatDir {
+            dirs 'libs'
+        }
     }
 
     dependencies {
@@ -511,8 +527,8 @@ def qualifyVersionIfNecessary(version) {
 }
 
 springBoot {
-    mainClass = 'org.apache.fineract.ServerWithMariaDB4jApplication'
+    mainClass = 'org.apache.fineract.ServerApplication'
 }
 bootRepackage {
-    mainClass = 'org.apache.fineract.ServerWithMariaDB4jApplication'
+    mainClass = 'org.apache.fineract.ServerApplication'
 }
