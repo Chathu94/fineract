@@ -40,6 +40,12 @@ buildscript {
         }
     }
     repositories {
+        google()
+        mavenCentral()
+        flatDir {
+            dirs 'libs'
+        }
+        maven { url "https://archiva-repository.apache.org/archiva/repository/public/" }
         maven { url "https://plugins.gradle.org/m2/" }
     }
 
@@ -94,6 +100,9 @@ allprojects  {
 
     repositories {
         mavenCentral()
+        flatDir {
+            dirs 'libs'
+        }
     }
 
     apply plugin: 'io.spring.dependency-management'
