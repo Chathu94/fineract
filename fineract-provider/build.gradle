@@ -25,6 +25,8 @@ buildscript {
   	 jcenter()
   	 mavenCentral()
   	 maven { url "https://plugins.gradle.org/m2/" }
+      google()
+      gradlePluginPortal()
   }
 
   dependencies {
@@ -359,13 +361,14 @@ task integrationTest(type:Test){
 }
 
 
-import groovy.sql.Sql
+//import groovy.sql.Sql
 
 repositories {
     mavenCentral()
     flatDir {
         dirs("lib")
     }
+    maven { url "https://repo.gradle.org/ui/native/libs-releases/" }
 }
 configurations {
     driver
@@ -408,7 +411,12 @@ task setBlankPassword<<{
 apply plugin: 'flyway'
 buildscript {
     repositories {
+        flatDir {
+            dirs("lib")
+        }
         mavenCentral()
+        google()
+        gradlePluginPortal()
     }
 
     dependencies {
