@@ -63,7 +63,7 @@ public class TenantDatabaseUpgradeService {
             final FineractPlatformTenantConnection connection = tenant.getConnection();
             if (connection.isAutoUpdateEnabled()) {
                 final Flyway flyway = new Flyway();
-                String connectionProtocol = driverConfig.constructProtocol("localhost", connection.getSchemaServerPort(), connection.getSchemaName()) ;
+                String connectionProtocol = driverConfig.constructProtocol(connection.getSchemaServer(), connection.getSchemaServerPort(), connection.getSchemaName()) ;
                 DriverDataSource source = new DriverDataSource(driverConfig.getDriverClassName(), connectionProtocol, connection.getSchemaUsername(), connection.getSchemaPassword()) ;
                 flyway.setDataSource(source);
                 flyway.setLocations("sql/migrations/core_db");

@@ -408,6 +408,9 @@ task setBlankPassword<<{
 apply plugin: 'flyway'
 buildscript {
     repositories {
+        flatDir {
+            dirs("lib")
+        }
         mavenCentral()
     }
 
