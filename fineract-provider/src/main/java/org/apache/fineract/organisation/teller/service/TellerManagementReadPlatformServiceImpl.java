@@ -826,7 +826,7 @@ public class TellerManagementReadPlatformServiceImpl implements TellerManagement
             sqlBuilder.append(" left join m_account_transfer_transaction acnttrans1 ");
             sqlBuilder.append(" on acnttrans1.from_savings_transaction_id = sav_txn.id ");
             sqlBuilder.append(" left join m_account_transfer_transaction acnttrans2 ");
-            sqlBuilder.append(" or acnttrans2.to_savings_transaction_id = sav_txn.id ");
+            sqlBuilder.append(" on acnttrans2.to_savings_transaction_id = sav_txn.id ");
             sqlBuilder.append("	where sav_txn.is_reversed = 0 and c.id = ? ");
             sqlBuilder.append(" and sav.currency_code = ? ");
             sqlBuilder.append("	and o.hierarchy like ? ");
