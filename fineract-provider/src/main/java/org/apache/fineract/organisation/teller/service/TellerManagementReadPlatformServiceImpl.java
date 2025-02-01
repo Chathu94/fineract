@@ -698,7 +698,7 @@ public class TellerManagementReadPlatformServiceImpl implements TellerManagement
             sqlBuilder.append(" left join m_account_transfer_transaction acnttrans1 ");
             sqlBuilder.append(" on acnttrans1.from_loan_transaction_id = loan_txn.id ");
             sqlBuilder.append(" left join m_account_transfer_transaction acnttrans2 ");
-            sqlBuilder.append(" on acnttrans2.to_loan_transaction_id = loan_txn.id) ");
+            sqlBuilder.append(" on acnttrans2.to_loan_transaction_id = loan_txn.id ");
 
             return sqlBuilder.toString();
         }
