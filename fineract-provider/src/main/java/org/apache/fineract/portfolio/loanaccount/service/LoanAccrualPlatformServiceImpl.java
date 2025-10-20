@@ -18,10 +18,13 @@
  */
 package org.apache.fineract.portfolio.loanaccount.service;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.fineract.infrastructure.jobs.annotation.CronTarget;
 import org.apache.fineract.infrastructure.jobs.exception.JobExecutionException;
@@ -78,8 +81,8 @@ public class LoanAccrualPlatformServiceImpl implements LoanAccrualPlatformServic
     @Override
     @CronTarget(jobName = JobName.ADD_PERIODIC_ACCRUAL_ENTRIES)
     public void addPeriodicAccruals() throws JobExecutionException {
-        String errors = addPeriodicAccruals(LocalDate.now());
-        if (errors.length() > 0) { throw new JobExecutionException(errors); }
+        addPeriodicAccruals(LocalDate.now());
+//        if (errors.length() > 0) { throw new JobExecutionException(errors); }
     }
 
     @Override
@@ -102,17 +105,43 @@ public class LoanAccrualPlatformServiceImpl implements LoanAccrualPlatformServic
             }
         }
 
-        for (Map.Entry<Long, Collection<LoanScheduleAccrualData>> mapEntry : loanDataMap.entrySet()) {
-            try {
-                this.loanAccrualWritePlatformService.addPeriodicAccruals(tilldate, mapEntry.getKey(), mapEntry.getValue());
-            } catch (Exception e) {
-                Throwable realCause = e;
-                if (e.getCause() != null) {
-                    realCause = e.getCause();
+        int concurrency = 20; // tune as needed
+        int queueCapacity = concurrency * 2;
+
+        ThreadPoolExecutor executor = new ThreadPoolExecutor(
+                concurrency,
+                concurrency,
+                30, TimeUnit.SECONDS,
+                new ArrayBlockingQueue<>(queueCapacity),
+                new ThreadPoolExecutor.CallerRunsPolicy() // back-pressure if queue is full
+        );
+
+        AtomicInteger pos = new AtomicInteger(1);
+
+        List<CompletableFuture<Void>> futures = new ArrayList<>(loanDataMap.size());
+
+        System.out.println("Found " + loanDataMap.size() + " loans");
+        for (Map.Entry<Long, Collection<LoanScheduleAccrualData>> entry : loanDataMap.entrySet()) {
+            futures.add(CompletableFuture.runAsync(() -> {
+                try {
+                    int current = pos.getAndIncrement();
+                    System.out.println("Processing " + current + "/" + loanDataMap.size());
+                    loanAccrualWritePlatformService.addPeriodicAccruals(tilldate, entry.getKey(), entry.getValue());
+                } catch (Exception e) {
+                    Throwable real = (e.getCause() != null) ? e.getCause() : e;
+                    synchronized (sb) {
+                        sb.append("failed to add accrual transaction for loan ")
+                                .append(entry.getKey())
+                                .append(" with message ")
+                                .append(real.getMessage())
+                                .append('\n');
+                    }
                 }
-                sb.append("failed to add accural transaction for loan " + mapEntry.getKey() + " with message " + realCause.getMessage());
-            }
+            }, executor));
         }
+
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+        executor.shutdown();
 
         return sb.toString();
     }

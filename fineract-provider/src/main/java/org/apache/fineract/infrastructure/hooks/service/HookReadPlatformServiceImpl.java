@@ -110,9 +110,9 @@ public class HookReadPlatformServiceImpl implements HookReadPlatformService {
     }
 
     private List<Grouping> getTemplateForEvents() {
-        final String sql = "select p.grouping, p.entity_name, p.action_name from m_permission p "
+        final String sql = "select p.`grouping`, p.entity_name, p.action_name from m_permission p "
                 + " where p.action_name NOT LIKE '%CHECKER%' AND p.action_name NOT LIKE '%READ%' "
-                + " order by p.grouping, p.entity_name ";
+                + " order by p.`grouping`, p.entity_name ";
         final EventResultSetExtractor extractor = new EventResultSetExtractor();
         return this.jdbcTemplate.query(sql, extractor);
     }

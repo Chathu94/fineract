@@ -1627,6 +1627,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                 .append(" or (ls.interest_amount <> if(ls.accrual_interest_derived is null,0,ls.accrual_interest_derived)))")
                 .append(" and loan.loan_status_id=:active and mpl.accounting_type=:type and (loan.closedon_date <= :tilldate or loan.closedon_date is null)")
                 .append(" and loan.is_npa=0 and (ls.duedate <= :tilldate or (ls.duedate > :tilldate and ls.fromdate < :tilldate))) ");
+//                .append(" and loan.id IN (SELECT loan_id FROM m_loan_repayment_schedule WHERE duedate = :tilldate) ");
         if(organisationStartDate != null){
             sqlBuilder.append(" and ls.duedate > :organisationstartdate ");
         }

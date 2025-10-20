@@ -107,8 +107,10 @@ public class DataSourceProperties extends PoolProperties {
 		if (StringUtils.hasText(url)) {
 			throw new IllegalStateException();
 		}
-		return jdbcProtocol + ":" + jdbcSubprotocol + "://" + getHost() + ":" + getPort() + "/" + getDBName();
-	}
+        // @sl-change
+//		return jdbcProtocol + ":" + jdbcSubprotocol + "://localhost:" + getPort() + "/" + getDBName();
+        return jdbcProtocol + ":" + jdbcSubprotocol + "://" + getHost() + ":" + getPort() + "/" + getDBName();
+        }
 
 	public String getHost() {
 		return hostname;

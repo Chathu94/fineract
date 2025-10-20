@@ -274,6 +274,8 @@ public class LoanChargeReadPlatformServiceImpl implements LoanChargeReadPlatform
         final String sql = "select " + rm.schema() + " where lc.loan_id=? AND lc.is_active = 1 group by  lc.id "
                 + " order by lc.charge_time_enum ASC, lc.due_for_collection_as_of_date ASC, lc.is_penalty ASC";
 
+        this.jdbcTemplate.execute("USE `mifostenant-default`");
+
         Collection<LoanChargeData> charges = this.jdbcTemplate.query(sql, rm,
                 new Object[] { LoanTransactionType.ACCRUAL.getValue(), loanId, loanId });
         charges = updateLoanChargesWithUnrecognizedIncome(loanId, charges);

@@ -142,7 +142,7 @@ public final class LoanProductDataValidator {
         baseDataValidator.reset().parameter(LoanProductConstants.shortName).value(shortName).notBlank().notExceedingLengthOf(4);
 
         final String description = this.fromApiJsonHelper.extractStringNamed("description", element);
-        baseDataValidator.reset().parameter("description").value(description).notExceedingLengthOf(500);
+        baseDataValidator.reset().parameter("description").value(description).notExceedingLengthOf(1000);
 
         if (this.fromApiJsonHelper.parameterExists("fundId", element)) {
             final Long fundId = this.fromApiJsonHelper.extractLongNamed("fundId", element);
@@ -946,7 +946,7 @@ public final class LoanProductDataValidator {
 
         if (this.fromApiJsonHelper.parameterExists("description", element)) {
             final String description = this.fromApiJsonHelper.extractStringNamed("description", element);
-            baseDataValidator.reset().parameter("description").value(description).notExceedingLengthOf(500);
+            baseDataValidator.reset().parameter("description").value(description).notExceedingLengthOf(1000);
         }
 
         if (this.fromApiJsonHelper.parameterExists("fundId", element)) {

@@ -27,10 +27,11 @@ buildscript {
   	 maven { url "https://plugins.gradle.org/m2/" }
       google()
       gradlePluginPortal()
+      flatDir { dirs("lib") }
   }
 
   dependencies {
-     classpath 'org.gradle.api.plugins:gradle-tomcat-plugin:1.0',
+     classpath 'com.bmuschko:gradle-tomcat-plugin:2.0',
                'nl.javadude.gradle.plugins:license-gradle-plugin:0.11.0',
                'org.zeroturnaround:gradle-jrebel-plugin:1.1.2',
                'org.springframework.boot:spring-boot-gradle-plugin:1.1.6.RELEASE' // also change springDataJpaVersion below
@@ -47,7 +48,7 @@ buildscript {
 //apply plugin: 'spring-boot'
 //apply plugin: 'eclipse'
 apply plugin: 'idea'
-apply plugin: 'tomcat'
+//apply plugin: 'tomcat'
 //apply plugin: 'project-report'
 apply plugin: 'java'
 apply plugin: 'openjpa'
@@ -73,7 +74,8 @@ group = 'org.apache.fineract'
 buildDir = new File(rootProject.projectDir, "../build")
 repositories {
 	jcenter()
-	// mavenLocal() // useful for local dev using MariaDB4j SNAPSHOTs (not needed for real-world non-SNAPHOT builds)
+    flatDir { dirs("lib") }
+    // mavenLocal() // useful for local dev using MariaDB4j SNAPSHOTs (not needed for real-world non-SNAPHOT builds)
 }
 openjpa {
     files = fileTree(sourceSets.main.output.classesDir).matching {
@@ -82,6 +84,29 @@ openjpa {
 		
     }
     enforcePropertyRestrictions = true
+}
+
+task fatJar(type: Jar, dependsOn: classes) {
+    // name like myapp-all.jar
+    baseName = project.name
+    classifier = 'all'
+
+    // keep your existing MANIFEST (Main-Class already set in `jar {}`)
+    manifest {
+        from jar.manifest
+    }
+
+    // include project classes/resources
+    from sourceSets.main.output
+
+    // include all runtime dependencies
+    from {
+        configurations.runtime.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+
+    // avoid signature & duplicate META-INF conflicts
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    exclude 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA'
 }
 
 //rat {
@@ -241,7 +266,7 @@ task dist(type:Zip){
         into('database/migrations')
     }
     
-    from war.outputs.files
+//    from war.outputs.files
     into(baseName + '-' + version)
 }
 
@@ -257,24 +282,24 @@ task dist(type:Zip){
 //    sourceSets = [sourceSets.main]
 //}
 
-war {
-	from('../licenses/binary/') { // notice the parens
-		into "WEB-INF/licenses/binary/" // no leading slash
-	}
-	from('../LICENSE_RELEASE') { // notice the parens
-		into "WEB-INF/" // no leading slash
-	}
-	from('../NOTICE_RELEASE') { // notice the parens
-		into "WEB-INF/" // no leading slash
-	}
-	rename ('LICENSE_RELEASE', 'LICENSE')
-	rename ('NOTICE_RELEASE', 'NOTICE')
-	
-	from('../DISCLAIMER') { // notice the parens
-		into "WEB-INF/" // no leading slash
-	}
-//    war.finalizedBy(bootRepackage)
-}
+//war {
+//	from('../licenses/binary/') { // notice the parens
+//		into "WEB-INF/licenses/binary/" // no leading slash
+//	}
+//	from('../LICENSE_RELEASE') { // notice the parens
+//		into "WEB-INF/" // no leading slash
+//	}
+//	from('../NOTICE_RELEASE') { // notice the parens
+//		into "WEB-INF/" // no leading slash
+//	}
+//	rename ('LICENSE_RELEASE', 'LICENSE')
+//	rename ('NOTICE_RELEASE', 'NOTICE')
+//
+//	from('../DISCLAIMER') { // notice the parens
+//		into "WEB-INF/" // no leading slash
+//	}
+////    war.finalizedBy(bootRepackage)
+//}
 
 jar {
     manifest {
@@ -295,25 +320,25 @@ task licenseFormatBuildScripts (type:nl.javadude.gradle.plugins.license.License)
 }
 //licenseFormat.dependsOn licenseFormatBuildScripts
 
-tomcatRun {
-    httpPort = 8080
-    httpsPort = 8443
-    stopPort = 8081
-    stopKey=   'stopKey'
-    enableSSL = true
-    configFile = file('src/test/resources/META-INF/context.xml')
-}
+//tomcatRun {
+//    httpPort = 8080
+//    httpsPort = 8443
+//    stopPort = 8081
+//    stopKey=   'stopKey'
+//    enableSSL = true
+//    configFile = file('src/test/resources/META-INF/context.xml')
+//}
 
-tomcatRunWar {
-    httpPort = 8080
-    httpsPort = 8443
-    stopPort = 8081
-    stopKey=   'stopKey'
-    enableSSL = true
-    keystoreFile = file('src/main/resources/keystore.jks')
-    keystorePass = 'openmf'
-    configFile = file('src/test/resources/META-INF/context.xml')
-}
+//tomcatRunWar {
+//    httpPort = 8080
+//    httpsPort = 8443
+//    stopPort = 8081
+//    stopKey=   'stopKey'
+//    enableSSL = true
+//    keystoreFile = file('src/main/resources/keystore.jks')
+//    keystorePass = 'openmf'
+//    configFile = file('src/test/resources/META-INF/context.xml')
+//}
 
 /* http://stackoverflow.com/questions/19653311/jpa-repository-works-in-idea-and-production-but-not-in-gradle */
 sourceSets.main.output.resourcesDir = sourceSets.main.output.classesDir
@@ -351,11 +376,11 @@ configurations {
 
 task integrationTest(type:Test){
     description = "Run integration tests (located in src/integrationTest/java). Starts tomcat in daemon mode before executing the tests."
-    it.dependsOn war
-    doFirst {
-        tomcatRunWar.daemon = true
-        tomcatRunWar.execute()
-    }
+//    it.dependsOn war
+//    doFirst {
+//        tomcatRunWar.daemon = true
+//        tomcatRunWar.execute()
+//    }
     testClassesDir = project.sourceSets.integrationTest.output.classesDir
     classpath = project.sourceSets.integrationTest.runtimeClasspath
 }
@@ -368,7 +393,6 @@ repositories {
     flatDir {
         dirs("lib")
     }
-    maven { url "https://repo.gradle.org/ui/native/libs-releases/" }
 }
 configurations {
     driver
@@ -422,9 +446,20 @@ buildscript {
     dependencies {
         classpath "org.flywaydb:flyway-gradle-plugin:3.0" // version upgraded during Spring Boot & MariaDB4j work, as prev. used v0.2 didn't work well after *.sql moved from fineract-db to fineract-provider/src/main/resources (new version also has clearer errors, e.g. in case of missing DB)
         classpath 'org.drizzle.jdbc:drizzle-jdbc:1.3'
+        classpath 'com.github.jengelman.gradle.plugins:shadow:2.0.4' // or 1.2.4 if your Gradle is very old
     }
 }
 
+apply plugin: 'com.github.johnrengelman.shadow'
+
+shadowJar {
+    // keep your manifest Main-Class, or set it here
+    mergeServiceFiles() // merges META-INF/services/*
+    mergeServiceFiles('META-INF/spring.handlers')
+    mergeServiceFiles('META-INF/spring.schemas')
+    exclude 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA'
+    classifier = '' // optional: make it the default artifact (no "-all")
+}
 
 flyway {
     url = "jdbc:mysql:thin://localhost:3306/mifostenant-default"

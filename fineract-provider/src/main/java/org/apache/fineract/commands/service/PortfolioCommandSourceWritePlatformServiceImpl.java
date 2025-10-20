@@ -69,18 +69,19 @@ public class PortfolioCommandSourceWritePlatformServiceImpl implements Portfolio
     public CommandProcessingResult logCommandSource(final CommandWrapper wrapper) {
 
         boolean isApprovedByChecker = false;
-        // check if is update of own account details
-        if (wrapper.isUpdateOfOwnUserDetails(this.context.authenticatedUser(wrapper).getId())) {
-            // then allow this operation to proceed.
-            // maker checker doesnt mean anything here.
-            isApprovedByChecker = true; // set to true in case permissions have
-                                        // been maker-checker enabled by
-                                        // accident.
-        } else {
-            // if not user changing their own details - check user has
-            // permission to perform specific task.
-            this.context.authenticatedUser(wrapper).validateHasPermissionTo(wrapper.getTaskPermissionName());
-        }
+        // Removed due to issue that same user can self update his own roles
+//        // check if is update of own account details
+//        if (wrapper.isUpdateOfOwnUserDetails(this.context.authenticatedUser(wrapper).getId())) {
+//            // then allow this operation to proceed.
+//            // maker checker doesnt mean anything here.
+//            isApprovedByChecker = true; // set to true in case permissions have
+//                                        // been maker-checker enabled by
+//                                        // accident.
+//        } else {
+//            // if not user changing their own details - check user has
+//            // permission to perform specific task.
+        this.context.authenticatedUser(wrapper).validateHasPermissionTo(wrapper.getTaskPermissionName());
+//        }
         validateIsUpdateAllowed();
 
         final String json = wrapper.getJson();
