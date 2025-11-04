@@ -58,6 +58,7 @@ public class LoanProductData {
     private final String name;
     private final String shortName;
     private final String description;
+
     private final Long fundId;
     private final String fundName;
     private final boolean includeInBorrowerCycle;

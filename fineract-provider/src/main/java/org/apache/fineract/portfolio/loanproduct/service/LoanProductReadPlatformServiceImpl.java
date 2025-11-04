@@ -523,9 +523,8 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
             final BigDecimal maxValue = rs.getBigDecimal("maxVal");
             final BigDecimal minValue = rs.getBigDecimal("minVal");
 
-            final LoanProductBorrowerCycleVariationData borrowerCycleVariationData = new LoanProductBorrowerCycleVariationData(id,
+            return new LoanProductBorrowerCycleVariationData(id,
                     cycleNumber, paramTypeData, conditionTypeData, defaultValue, minValue, maxValue);
-            return borrowerCycleVariationData;
         }
 
     }
