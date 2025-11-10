@@ -62,7 +62,7 @@ public class LoanAccountData {
     private final String accountNo;
     private final String externalId;
 
-    private Long loanCycleNumber = null;
+    private final Long loanCycleNumber;
 
     // status
     private final LoanStatusEnumData status;
@@ -335,7 +335,7 @@ public class LoanAccountData {
         final String closureLoanAccountNo = null;
         final BigDecimal topupAmount = null;
 
-        return new LoanAccountData(id, accountNo, status, externalId, loanCycleNumber, clientId, clientAccountNo, clientName, clientOfficeId, group,
+        return new LoanAccountData(id, accountNo, status, externalId, 0L, clientId, clientAccountNo, clientName, clientOfficeId, group,
                 loanType, loanProductId, loanProductName, loanProductDescription, isLoanProductLinkedToFloatingRate, fundId, fundName,
                 loanPurposeId, loanPurposeName, loanOfficerId, loanOfficerName, currencyData, proposedPrincipal, principal, principal,
                 totalOverpaid, inArrearsTolerance, termFrequency, termPeriodFrequencyType, numberOfRepayments, repaymentEvery,
@@ -476,7 +476,8 @@ public class LoanAccountData {
         final String closureLoanAccountNo = null;
         final BigDecimal topupAmount = null;
 
-        return new LoanAccountData(id, accountNo, status, externalId, loanCycleNumber, clientId, clientAccountNo, clientName, clientOfficeId, group,
+
+        return new LoanAccountData(id, accountNo, status, externalId, 0L, clientId, clientAccountNo, clientName, clientOfficeId, group,
                 loanType, loanProductId, loanProductName, loanProductDescription, isLoanProductLinkedToFloatingRate, fundId, fundName,
                 loanPurposeId, loanPurposeName, loanOfficerId, loanOfficerName, currencyData, proposedPrincipal, principal, principal,
                 totalOverpaid, inArrearsTolerance, termFrequency, termPeriodFrequencyType, numberOfRepayments, repaymentEvery,
@@ -648,7 +649,7 @@ public class LoanAccountData {
         final String closureLoanAccountNo = null;
         final BigDecimal topupAmount = null;
 
-        return new LoanAccountData(id, accountNo, status, externalId,loanCycleNumber, clientId, clientAccountNo, clientName, clientOfficeId, group,
+        return new LoanAccountData(id, accountNo, status, externalId,0L, clientId, clientAccountNo, clientName, clientOfficeId, group,
                 loanType, loanProductId, loanProductName, loanProductDescription, isLoanProductLinkedToFloatingRate, fundId, fundName,
                 loanPurposeId, loanPurposeName, loanOfficerId, loanOfficerName, currencyData, proposedPrincipal, principal, principal,
                 totalOverpaid, inArrearsTolerance, termFrequency, termPeriodFrequencyType, numberOfRepayments, repaymentEvery,
@@ -827,7 +828,9 @@ public class LoanAccountData {
         final String closureLoanAccountNo = null;
         final BigDecimal topupAmount = null;
 
-        return new LoanAccountData(id, accountNo, status, externalId, loanCycleNumber.longValue(), clientId, clientAccountNo, clientName, clientOfficeId, group,
+        final Long safeLoanCycleNumber = (loanCycleNumber != null) ? loanCycleNumber.longValue() : 0L;
+
+        return new LoanAccountData(id, accountNo, status, externalId, safeLoanCycleNumber, clientId, clientAccountNo, clientName, clientOfficeId, group,
                 loanType, product.getId(), product.getName(), product.getDescription(), product.isLinkedToFloatingInterestRates(),
                 product.getFundId(), product.getFundName(), loanPurposeId, loanPurposeName, loanOfficerId, loanOfficerName,
                 product.getCurrency(), proposedPrincipal, principal, principal, totalOverpaid, product.getInArrearsTolerance(),
@@ -981,7 +984,10 @@ public class LoanAccountData {
         final Collection<InterestRatePeriodData> interestRatesPeriods = null;
         final Collection<LoanAccountSummaryData> clientActiveLoanOptions = null;
 
-        return new LoanAccountData(id, accountNo, status, externalId, loanCycleNumber, clientId, clientAccountNo, clientName, clientOfficeId, group,
+        final Long safeLoanCycleNumber = (loanCycleNumber != null) ? loanCycleNumber : 0L;
+
+
+        return new LoanAccountData(id, accountNo, status, externalId, safeLoanCycleNumber, clientId, clientAccountNo, clientName, clientOfficeId, group,
                 loanType, loanProductId, loanProductName, loanProductDescription, isLoanProductLinkedToFloatingRate, fundId, fundName,
                 loanPurposeId, loanPurposeName, loanOfficerId, loanOfficerName, currencyData, proposedPrincipal, principal,
                 approvedPrincipal, totalOverpaid, inArrearsTolerance, termFrequency, termPeriodFrequencyType, numberOfRepayments,
