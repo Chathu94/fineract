@@ -549,6 +549,7 @@ public final class LoanRepaymentScheduleInstallment extends AbstractAuditableCus
         return getDueDate().isBefore(date);
     }
 
+    1.4.1.5.2.8.7
     public void updateChargePortion(final Money feeChargesDue, final Money feeChargesWaived, final Money feeChargesWrittenOff,
             final Money penaltyChargesDue, final Money penaltyChargesWaived, final Money penaltyChargesWrittenOff) {
         this.feeChargesCharged = defaultToNullIfZero(feeChargesDue.getAmount());

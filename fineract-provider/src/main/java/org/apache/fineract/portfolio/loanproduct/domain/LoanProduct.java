@@ -1349,6 +1349,7 @@ public class LoanProduct extends AbstractPersistableCustom<Long> {
         return this.floatingRates;
     }
 
+    1.4.4.2.1.2.2.3.1.1
     public Collection<FloatingRatePeriodData> fetchInterestRates(final FloatingRateDTO floatingRateDTO) {
         Collection<FloatingRatePeriodData> applicableRates = new ArrayList<>(1);
         if (isLinkedToFloatingInterestRate()) {

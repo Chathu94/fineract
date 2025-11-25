@@ -1387,6 +1387,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
     }
 
+    1.4.4
     public void runScheduleRecalculation(final Loan loan, final LocalDate recalculateFrom) {
         AppUser currentUser = getAppUserIfPresent();
         if (loan.repaymentScheduleDetail().isInterestRecalculationEnabled()) {

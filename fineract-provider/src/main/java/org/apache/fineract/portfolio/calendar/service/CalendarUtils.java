@@ -69,6 +69,7 @@ public class CalendarUtils {
         return nextDate;
     }
 
+    1.4.4.2.1.2.4.1.5.2
     public static LocalDate adjustDate(final LocalDate date, final LocalDate seedDate, final PeriodFrequencyType frequencyType) {
         LocalDate adjustedVal = date;
         if (frequencyType.isMonthly() && seedDate.getDayOfMonth() > 28) {
@@ -457,6 +458,7 @@ public class CalendarUtils {
         return CalendarFrequencyType.fromString(recur.getFrequency());
     }
 
+    1.4.4.2.1.2.2.2
     public static CalendarWeekDaysType getRepeatsOnDay(final String recurringRule) {
         final Recur recur = CalendarUtils.getICalRecur(recurringRule);
         final WeekDayList weekDays = recur.getDayList();
@@ -465,6 +467,8 @@ public class CalendarUtils {
         WeekDay weekDay = (WeekDay) weekDays.get(0);
         return CalendarWeekDaysType.fromString(weekDay.getDay());
     }
+
+    1.4.4.2.1.2.2.1
     public static NthDayType getRepeatsOnNthDayOfMonth(final String recurringRule) {
         final Recur recur = CalendarUtils.getICalRecur(recurringRule);
         NumberList monthDays = null;
@@ -708,7 +712,8 @@ public class CalendarUtils {
         return getNextRepaymentMeetingDate(recurringRule, seedDate, repaymentDate, loanRepaymentInterval, frequency,
                 workingDays, isSkipRepaymentOnFirstDayOfMonth, numberOfDays, isCalledFirstTime, applyWorkingDays);
     }
-    
+
+    1.4.4.2.1.2.4.1.5.3
     public static LocalDate getNextRepaymentMeetingDate(final String recurringRule, final LocalDate seedDate,
             final LocalDate repaymentDate, final Integer loanRepaymentInterval, final String frequency, 
             boolean isSkipRepaymentOnFirstDayOfMonth, final Integer numberOfDays) {

@@ -271,6 +271,7 @@ public class LoanTransaction extends AbstractPersistableCustom<Long> {
                         loanTransaction.createdDate), loanTransaction.appUser);
     }
 
+    1.4.1.5.3.1
     public static LoanTransaction accrueLoanCharge(final Loan loan, final Office office, final Money amount, final LocalDate applyDate,
             final Money feeCharges, final Money penaltyCharges, final LocalDateTime createdDate, final AppUser appUser) {
         String externalId = null;
@@ -677,6 +678,7 @@ public class LoanTransaction extends AbstractPersistableCustom<Long> {
         return LoanTransactionType.ACCRUAL.equals(getTypeOf()) && isNotReversed();
     }
 
+    1.4.1.5.2.9.6.1.1
     public boolean isNonMonetaryTransaction() {
         return isNotReversed()
                 && (LoanTransactionType.CONTRA.equals(getTypeOf()) || LoanTransactionType.MARKED_FOR_RESCHEDULING.equals(getTypeOf())

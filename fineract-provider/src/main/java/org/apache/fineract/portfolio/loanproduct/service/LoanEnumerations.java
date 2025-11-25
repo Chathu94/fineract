@@ -524,6 +524,7 @@ public class LoanEnumerations {
         return loanvariationType(LoanTermVariationType.fromInt(id));
     }
 
+    1.4.4.2.1.2.2.3.1.2
     public static EnumOptionData loanvariationType(final LoanTermVariationType type) {
         EnumOptionData optionData = null;
         switch (type) {

@@ -45,6 +45,7 @@ public class ApplicationCurrencyRepositoryWrapper {
         this.repository = repository;
     }
 
+    1.4.4.1.2
     public ApplicationCurrency findOneWithNotFoundDetection(final MonetaryCurrency currency) {
 
         final ApplicationCurrency defaultApplicationCurrency = this.repository.findOneByCode(currency.getCode());

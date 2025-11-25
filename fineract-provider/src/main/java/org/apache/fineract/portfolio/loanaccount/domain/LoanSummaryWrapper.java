@@ -33,6 +33,7 @@ import org.springframework.stereotype.Component;
 @Component
 public final class LoanSummaryWrapper {
 
+    1.4.1.5.2.9.5.1
     public Money calculateTotalPrincipalRepaid(final List<LoanRepaymentScheduleInstallment> repaymentScheduleInstallments,
             final MonetaryCurrency currency) {
         Money total = Money.zero(currency);
@@ -42,6 +43,7 @@ public final class LoanSummaryWrapper {
         return total;
     }
 
+    1.4.1.5.2.9.5.2
     public Money calculateTotalPrincipalWrittenOff(final List<LoanRepaymentScheduleInstallment> repaymentScheduleInstallments,
             final MonetaryCurrency currency) {
         Money total = Money.zero(currency);
@@ -62,6 +64,7 @@ public final class LoanSummaryWrapper {
         return total;
     }
 
+    1.4.1.5.2.9.5.3
     public Money calculateTotalInterestCharged(final List<LoanRepaymentScheduleInstallment> repaymentScheduleInstallments,
             final MonetaryCurrency currency) {
         Money total = Money.zero(currency);
@@ -71,6 +74,7 @@ public final class LoanSummaryWrapper {
         return total;
     }
 
+    1.4.1.5.2.9.5.4
     public Money calculateTotalInterestRepaid(final List<LoanRepaymentScheduleInstallment> repaymentScheduleInstallments,
             final MonetaryCurrency currency) {
         Money total = Money.zero(currency);
@@ -80,6 +84,7 @@ public final class LoanSummaryWrapper {
         return total;
     }
 
+    1.4.1.5.2.9.5.5
     public Money calculateTotalInterestWaived(final List<LoanRepaymentScheduleInstallment> repaymentScheduleInstallments,
             final MonetaryCurrency currency) {
         Money total = Money.zero(currency);
@@ -89,6 +94,7 @@ public final class LoanSummaryWrapper {
         return total;
     }
 
+    1.4.1.5.2.9.5.6
     public Money calculateTotalInterestWrittenOff(final List<LoanRepaymentScheduleInstallment> repaymentScheduleInstallments,
             final MonetaryCurrency currency) {
         Money total = Money.zero(currency);
@@ -109,6 +115,7 @@ public final class LoanSummaryWrapper {
         return total;
     }
 
+    1.4.1.5.2.9.5.7
     public Money calculateTotalFeeChargesCharged(final List<LoanRepaymentScheduleInstallment> repaymentScheduleInstallments,
             final MonetaryCurrency currency) {
         Money total = Money.zero(currency);
@@ -127,6 +134,7 @@ public final class LoanSummaryWrapper {
         return total;
     }
 
+    1.4.1.5.2.9.5.9
     public Money calculateTotalFeeChargesWaived(Set<LoanCharge> charges,
             final MonetaryCurrency currency) {
         Money total = Money.zero(currency);
@@ -138,6 +146,7 @@ public final class LoanSummaryWrapper {
         return total;
     }
 
+    1.4.1.5.2.9.5.10
     public Money calculateTotalFeeChargesWrittenOff(final List<LoanRepaymentScheduleInstallment> repaymentScheduleInstallments,
             final MonetaryCurrency currency) {
         Money total = Money.zero(currency);
@@ -158,6 +167,7 @@ public final class LoanSummaryWrapper {
         return total;
     }
 
+    1.4.1.5.2.9.5.11
     public Money calculateTotalPenaltyChargesCharged(final List<LoanRepaymentScheduleInstallment> repaymentScheduleInstallments,
             final MonetaryCurrency currency) {
         Money total = Money.zero(currency);
@@ -167,6 +177,7 @@ public final class LoanSummaryWrapper {
         return total;
     }
 
+    1.4.1.5.2.9.5.12
     public Money calculateTotalPenaltyChargesRepaid(final List<LoanRepaymentScheduleInstallment> repaymentScheduleInstallments,
             final MonetaryCurrency currency) {
         Money total = Money.zero(currency);
@@ -176,6 +187,7 @@ public final class LoanSummaryWrapper {
         return total;
     }
 
+    1.4.1.5.2.9.5.13
     public Money calculateTotalPenaltyChargesWaived(final List<LoanRepaymentScheduleInstallment> repaymentScheduleInstallments,
             final MonetaryCurrency currency) {
         Money total = Money.zero(currency);
@@ -185,6 +197,7 @@ public final class LoanSummaryWrapper {
         return total;
     }
 
+    1.4.1.5.2.9.5.14
     public Money calculateTotalPenaltyChargesWrittenOff(final List<LoanRepaymentScheduleInstallment> repaymentScheduleInstallments,
             final MonetaryCurrency currency) {
         Money total = Money.zero(currency);
@@ -234,6 +247,7 @@ public final class LoanSummaryWrapper {
         return overdueSince;
     }
 
+    1.4.1.5.2.9.5.8
     public Money calculateTotalChargesRepaidAtDisbursement(Set<LoanCharge> charges, MonetaryCurrency currency) {
         Money total = Money.zero(currency);
         if(charges == null) return total ;

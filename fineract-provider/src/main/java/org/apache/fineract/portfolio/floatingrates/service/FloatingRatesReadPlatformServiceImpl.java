@@ -97,6 +97,7 @@ public class FloatingRatesReadPlatformServiceImpl implements
 		}
 	}
 
+	1.4.4.1.3.1
 	@Override
 	public FloatingRateData retrieveBaseLendingRate() {
 		try {

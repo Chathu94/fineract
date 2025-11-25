@@ -94,6 +94,7 @@ public class LoanUtilService {
         this.calendarReadPlatformService = calendarReadPlatformService;
     }
 
+    1.4.4.1
     public ScheduleGeneratorDTO buildScheduleGeneratorDTO(final Loan loan, final LocalDate recalculateFrom) {
         final HolidayDetailDTO holidayDetailDTO = null;
         return buildScheduleGeneratorDTO(loan, recalculateFrom, holidayDetailDTO);
@@ -147,6 +148,7 @@ public class LoanUtilService {
                return scheduleGeneratorDTO;
     }
 
+    1.4.4.1.4
 	public Boolean isLoanRepaymentsSyncWithMeeting(final Group group, final Calendar calendar) {
 		Boolean isSkipRepaymentOnFirstMonth = false;
 		Long entityId = null;
@@ -178,6 +180,7 @@ public class LoanUtilService {
         return this.getCalculatedRepaymentsStartingFromDate(loan.getDisbursementDate(), loan, calendarInstance, calendarHistoryDataWrapper);
     }
 
+    1.4.4.1.1
     private HolidayDetailDTO constructHolidayDTO(final Loan loan) {
         final boolean isHolidayEnabled = this.configurationDomainService.isRescheduleRepaymentsOnHolidaysEnabled();
         final List<Holiday> holidays = this.holidayRepository.findByOfficeIdAndGreaterThanDate(loan.getOfficeId(), loan
@@ -191,6 +194,7 @@ public class LoanUtilService {
         return holidayDetailDTO;
     }
 
+    1.4.4.1.3
     private FloatingRateDTO constructFloatingRateDTO(final Loan loan) {
         FloatingRateDTO floatingRateDTO = null;
         if (loan.loanProduct().isLinkedToFloatingInterestRate()) {

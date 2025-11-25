@@ -57,7 +57,8 @@ public class HolidayUtil {
 
         return false;
     }
-    
+
+    1.4.4.2.1.2.4.1.6.1.1.2.1
     public static Holiday getApplicableHoliday(final LocalDate repaymentDate, final List<Holiday> holidays) {
         Holiday referedHoliday = null;
         for (final Holiday holiday : holidays) {
@@ -67,6 +68,7 @@ public class HolidayUtil {
         }
         return referedHoliday;
     }
+    1.4.4.2.1.2.4.1.6.1.1.2.2
     public static void updateRepaymentRescheduleDateToWorkingDayIfItIsHoliday(final AdjustedDateDetailsDTO adjustedDateDetailsDTO,
             final Holiday holiday) {
         if (holiday.getReScheduleType().isRescheduleToSpecificDate()) {

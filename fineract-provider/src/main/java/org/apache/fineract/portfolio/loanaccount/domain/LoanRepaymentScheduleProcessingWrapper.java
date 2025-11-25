@@ -33,6 +33,7 @@ import org.joda.time.LocalDate;
  */
 public class LoanRepaymentScheduleProcessingWrapper {
 
+    1.4.1.5.2.8
     public void reprocess(final MonetaryCurrency currency, final LocalDate disbursementDate,
             final List<LoanRepaymentScheduleInstallment> repaymentPeriods, final Set<LoanCharge> loanCharges) {
 
@@ -67,6 +68,7 @@ public class LoanRepaymentScheduleProcessingWrapper {
         }
     }
 
+    1.4.1.5.2.8.1
     private Money cumulativeFeeChargesDueWithin(final LocalDate periodStart, final LocalDate periodEnd, final Set<LoanCharge> loanCharges,
             final MonetaryCurrency monetaryCurrency, LoanRepaymentScheduleInstallment period, final Money totalPrincipal,
             final Money totalInterest, boolean isInstallmentChargeApplicable) {
@@ -127,6 +129,7 @@ public class LoanRepaymentScheduleProcessingWrapper {
         return cumulative;
     }
 
+    1.4.1.5.2.8.2
     private Money cumulativeFeeChargesWaivedWithin(final LocalDate periodStart, final LocalDate periodEnd,
             final Set<LoanCharge> loanCharges, final MonetaryCurrency currency, boolean isInstallmentChargeApplicable) {
 
@@ -148,6 +151,7 @@ public class LoanRepaymentScheduleProcessingWrapper {
         return cumulative;
     }
 
+    1.4.1.5.2.8.3
     private Money cumulativeFeeChargesWrittenOffWithin(final LocalDate periodStart, final LocalDate periodEnd,
             final Set<LoanCharge> loanCharges, final MonetaryCurrency currency, boolean isInstallmentChargeApplicable) {
 
@@ -169,6 +173,7 @@ public class LoanRepaymentScheduleProcessingWrapper {
         return cumulative;
     }
 
+    1.4.1.5.2.8.4
     private Money cumulativePenaltyChargesDueWithin(final LocalDate periodStart, final LocalDate periodEnd,
             final Set<LoanCharge> loanCharges, final MonetaryCurrency currency, LoanRepaymentScheduleInstallment period,
             final Money totalPrincipal, final Money totalInterest, boolean isInstallmentChargeApplicable) {
@@ -218,6 +223,7 @@ public class LoanRepaymentScheduleProcessingWrapper {
         return cumulative;
     }
 
+    1.4.1.5.2.8.5
     private Money cumulativePenaltyChargesWaivedWithin(final LocalDate periodStart, final LocalDate periodEnd,
             final Set<LoanCharge> loanCharges, final MonetaryCurrency currency, boolean isInstallmentChargeApplicable) {
 
@@ -239,6 +245,7 @@ public class LoanRepaymentScheduleProcessingWrapper {
         return cumulative;
     }
 
+    1.4.1.5.2.8.6
     private Money cumulativePenaltyChargesWrittenOffWithin(final LocalDate periodStart, final LocalDate periodEnd,
             final Set<LoanCharge> loanCharges, final MonetaryCurrency currency, boolean isInstallmentChargeApplicable) {
 

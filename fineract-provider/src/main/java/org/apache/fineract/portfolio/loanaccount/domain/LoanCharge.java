@@ -376,6 +376,7 @@ public class LoanCharge extends AbstractPersistableCustom<Long> {
         this.loan = loan;
     }
 
+    1.4.1.5.2.5
     public void update(final BigDecimal amount, final LocalDate dueDate, final BigDecimal loanPrincipal, Integer numberOfRepayments,
             BigDecimal loanCharge) {
         if (dueDate != null) {
@@ -513,6 +514,7 @@ public class LoanCharge extends AbstractPersistableCustom<Long> {
         return actualChanges;
     }
 
+    1.4.1.5.2.5.4
     private void updateInstallmentCharges() {
         final Collection<LoanInstallmentCharge> remove = new HashSet<>();
         final List<LoanInstallmentCharge> newChargeInstallments = this.loan.generateInstallmentLoanCharges(this);
@@ -588,6 +590,7 @@ public class LoanCharge extends AbstractPersistableCustom<Long> {
         return BigDecimal.ZERO.compareTo(calculateOutstanding()) == 0;
     }
 
+    1.4.1.5.2.5.3
     private BigDecimal calculateOutstanding() {
         if (this.amount == null) { return null; }
         BigDecimal amountPaidLocal = BigDecimal.ZERO;
@@ -632,6 +635,7 @@ public class LoanCharge extends AbstractPersistableCustom<Long> {
      *          else it returns the percentageOf if the amount is within min and
      *          max cap
      */
+    1.4.1.5.2.5.2
     private BigDecimal minimumAndMaximumCap(final BigDecimal percentageOf) {
         BigDecimal minMaxCap = BigDecimal.ZERO;
         if (this.minCap != null) {
@@ -676,11 +680,13 @@ public class LoanCharge extends AbstractPersistableCustom<Long> {
         return this.loan.hasIdentifyOf(loanId);
     }
 
+    1.4.1.5.2.2.1
     public boolean isDueForCollectionFromAndUpToAndIncluding(final LocalDate fromNotInclusive, final LocalDate upToAndInclusive) {
         final LocalDate dueDate = getDueLocalDate();
         return occursOnDayFromAndUpToAndIncluding(fromNotInclusive, upToAndInclusive, dueDate);
     }
 
+    1.4.1.5.2.2.1.1
     private boolean occursOnDayFromAndUpToAndIncluding(final LocalDate fromNotInclusive, final LocalDate upToAndInclusive,
             final LocalDate target) {
         return target != null && target.isAfter(fromNotInclusive) && !target.isAfter(upToAndInclusive);

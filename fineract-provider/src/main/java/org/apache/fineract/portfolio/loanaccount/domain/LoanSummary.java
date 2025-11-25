@@ -175,6 +175,7 @@ public final class LoanSummary {
      * All fields but <code>totalFeeChargesDueAtDisbursement</code> should be
      * reset.
      */
+    1.4.1.5.2.9.2
     public void zeroFields() {
         this.totalPrincipalDisbursed = BigDecimal.ZERO;
         this.totalPrincipalRepaid = BigDecimal.ZERO;
@@ -204,6 +205,7 @@ public final class LoanSummary {
         this.totalOutstanding = BigDecimal.ZERO;
     }
 
+    1.4.1.5.2.9.5
     public void updateSummary(final MonetaryCurrency currency, final Money principal,
             final List<LoanRepaymentScheduleInstallment> repaymentScheduleInstallments, final LoanSummaryWrapper summaryWrapper,
             final Boolean disbursed, Set<LoanCharge> charges) {

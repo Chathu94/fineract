@@ -39,6 +39,7 @@ public class FinanicalFunctions {
      * @param futureValue
      * @param type
      */
+    1.4.4.2.1.2.4.1.7.1.2.1.3.1
     public static double pmt(final double interestRateFraction, final double numberOfPayments, final double principal,
             final double futureValue, final boolean type) {
         double payment = 0;

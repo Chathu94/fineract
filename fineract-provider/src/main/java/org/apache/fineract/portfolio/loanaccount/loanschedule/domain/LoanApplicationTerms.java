@@ -623,6 +623,7 @@ public final class LoanApplicationTerms {
         return principalForInstallment;
     }
 
+    1.4.4.2.1.2.4.1.7.1.2.1
     public Money pmtForInstallment(final PaymentPeriodsInOneYearCalculator calculator, final Money outstandingBalance,
             final int periodNumber, final MathContext mc) {
         // Calculate exact period from disbursement date
@@ -639,6 +640,7 @@ public final class LoanApplicationTerms {
         return totalPmtForThisInstallment;
     }
 
+    1.4.4.2.1.2.4.1.7.1.2.1.1
     private LocalDate getPeriodEndDate(final LocalDate startDate) {
         LocalDate dueRepaymentPeriodDate = startDate;
         switch (this.repaymentPeriodFrequencyType) {
@@ -978,6 +980,7 @@ public final class LoanApplicationTerms {
         return periodicInterestRate(calculator, mc, daysInMonthType, daysInYearType, periodStartDate, periodEndDate, false);
     }
 
+    1.4.4.2.1.2.4.1.7.1.2.1.2
     private BigDecimal periodicInterestRate(final PaymentPeriodsInOneYearCalculator calculator, final MathContext mc, final DaysInMonthType daysInMonthType,
             final DaysInYearType daysInYearType, LocalDate periodStartDate, LocalDate periodEndDate, boolean isForPMT) {
 
@@ -1272,6 +1275,7 @@ public final class LoanApplicationTerms {
         return principal;
     }
 
+    1.4.4.2.1.2.4.1.7.1.1
     public void updateFixedPrincipalAmount(final MathContext mc, final int periodNumber, final Money outstandingAmount) {
         final Integer numberOfPrincipalPaymentPeriods = calculateNumberOfRemainingPrincipalPaymentPeriods(this.actualNumberOfRepayments,
                 periodNumber - 1);
@@ -1279,6 +1283,7 @@ public final class LoanApplicationTerms {
         this.fixedPrincipalAmount = principal.getAmount();
     }
 
+    1.4.4.2.1.2.4.1.7.1.1.1
     private Integer calculateNumberOfRemainingPrincipalPaymentPeriods(final Integer totalNumberOfRepaymentPeriods, int periodsElapsed) {
         int principalFeePeriods = 0;
         for (Integer intNumber : this.periodNumbersApplicableForPrincipalGrace) {
@@ -1303,6 +1308,7 @@ public final class LoanApplicationTerms {
         return principal;
     }
 
+    1.4.4.2.1.2.4.1.7.1.2.1.3
     private Money calculateTotalDueForEqualInstallmentRepaymentPeriod(final BigDecimal periodicInterestRate, final Money balance,
             final int periodsElapsed) {
 
@@ -1666,7 +1672,8 @@ public final class LoanApplicationTerms {
         }
         return disbursedAmount;
     }
-    
+
+    1.4.4.2.1.2.4.1.7.2
     public void updatePeriodNumberApplicableForPrincipalOrInterestGrace(final Integer periodsApplicationForGrace) {
         int applicablePeriodNumber = periodsApplicationForGrace;
         int graceOnPrincipal = defaultToZeroIfNull(this.principalGrace);

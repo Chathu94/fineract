@@ -26,6 +26,7 @@ import org.joda.time.LocalDate;
 
 public class WorkingDaysUtil {
 
+    1.4.4.2.1.2.4.1.6.1.1.1.1.1
     public static LocalDate getOffSetDateIfNonWorkingDay(final LocalDate date, final LocalDate nextMeetingDate,
             final WorkingDays workingDays) {
 
@@ -57,7 +58,8 @@ public class WorkingDaysUtil {
     public static boolean isNonWorkingDay(final WorkingDays workingDays, final LocalDate date) {
         return !isWorkingDay(workingDays, date);
     }
-    
+
+    1.4.4.2.1.2.4.1.6.1.1.1.1
     public static void updateWorkingDayIfRepaymentDateIsNonWorkingDay(final AdjustedDateDetailsDTO adjustedDateDetailsDTO, final WorkingDays workingDays) {
         final LocalDate changedScheduleDate = getOffSetDateIfNonWorkingDay(adjustedDateDetailsDTO.getChangedScheduleDate(),
                 adjustedDateDetailsDTO.getNextRepaymentPeriodDueDate(), workingDays);

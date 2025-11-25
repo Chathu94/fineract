@@ -34,7 +34,7 @@ public class ClientAttendanceData {
     @SuppressWarnings("unused")
     private final EnumOptionData attendanceType;
 
-    public static ClientAttendanceData instance(final Long id, final Long clientId, final String clientName,
+        public static ClientAttendanceData instance(final Long id, final Long clientId, final String clientName,
             final EnumOptionData attendanceType) {
         return new ClientAttendanceData(id, clientId, clientName, attendanceType);
     }

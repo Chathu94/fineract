@@ -256,6 +256,7 @@ public class CalendarReadPlatformServiceImpl implements CalendarReadPlatformServ
 		return recurringDates;
 	}
 
+    1.4.4.1.4.1
 	@Override
 	public Boolean isCalendarAssociatedWithEntity(final Long entityId, final Long calendarId, final Long entityTypeId) {
 		String query = "Select COUNT(*) from m_calendar_instance ci where ci.entity_id = ? and ci.calendar_id = ? and "

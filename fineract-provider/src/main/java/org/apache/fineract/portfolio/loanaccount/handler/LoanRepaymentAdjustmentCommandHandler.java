@@ -32,7 +32,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class LoanRepaymentAdjustmentCommandHandler implements NewCommandSourceHandler {
 
     private final LoanWritePlatformService writePlatformService;
-
     @Autowired
     public LoanRepaymentAdjustmentCommandHandler(final LoanWritePlatformService writePlatformService) {
         this.writePlatformService = writePlatformService;

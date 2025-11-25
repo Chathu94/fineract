@@ -38,6 +38,7 @@ import java.util.List;
 
 public class DefaultScheduledDateGenerator implements ScheduledDateGenerator {
 
+    1.4.4.2.1.2.4.1.7.3
     @Override
     public LocalDate getLastRepaymentDate(final LoanApplicationTerms loanApplicationTerms, final HolidayDetailDTO holidayDetailDTO) {
 
@@ -53,6 +54,7 @@ public class DefaultScheduledDateGenerator implements ScheduledDateGenerator {
         return lastRepaymentDate;
     }
 
+    1.4.4.2.1.2.4.1.5
     @Override
     public LocalDate generateNextRepaymentDate(final LocalDate lastRepaymentDate, final LoanApplicationTerms loanApplicationTerms,
             boolean isFirstRepayment) {
@@ -100,6 +102,7 @@ public class DefaultScheduledDateGenerator implements ScheduledDateGenerator {
         return dueRepaymentPeriodDate;
     }
 
+    1.4.4.2.1.2.4.1.6
     @Override
     public AdjustedDateDetailsDTO adjustRepaymentDate(final LocalDate dueRepaymentPeriodDate,
             final LoanApplicationTerms loanApplicationTerms, final HolidayDetailDTO holidayDetailDTO) {
@@ -107,6 +110,7 @@ public class DefaultScheduledDateGenerator implements ScheduledDateGenerator {
         return getAdjustedDateDetailsDTO(dueRepaymentPeriodDate, loanApplicationTerms, holidayDetailDTO, adjustedDate);
     }
 
+    1.4.4.2.1.2.4.1.6.1
     private AdjustedDateDetailsDTO getAdjustedDateDetailsDTO(final LocalDate dueRepaymentPeriodDate,
             final LoanApplicationTerms loanApplicationTerms, final HolidayDetailDTO holidayDetailDTO, final LocalDate adjustedDate) {
         final boolean isFirstRepayment = false;
@@ -130,6 +134,7 @@ public class DefaultScheduledDateGenerator implements ScheduledDateGenerator {
      * @param isFirstRepayment
      * @return
      */
+    1.4.4.2.1.2.4.1.6.1.1
     private AdjustedDateDetailsDTO recursivelyCheckNonWorkingDaysAndHolidaysAndWorkingDaysExemptionToGenerateNextRepaymentPeriodDate(
             final AdjustedDateDetailsDTO adjustedDateDetailsDTO, final LoanApplicationTerms loanApplicationTerms,
             final HolidayDetailDTO holidayDetailDTO, final boolean isFirstRepayment) {
@@ -162,6 +167,7 @@ public class DefaultScheduledDateGenerator implements ScheduledDateGenerator {
      * @param loanApplicationTerms
      * @param isFirstRepayment
      */
+    1.4.4.2.1.2.4.1.6.1.1.2
     private void checkAndUpdateWorkingDayIfRepaymentDateIsHolidayDay(final AdjustedDateDetailsDTO adjustedDateDetailsDTO,
             final HolidayDetailDTO holidayDetailDTO, final LoanApplicationTerms loanApplicationTerms, final boolean isFirstRepayment) {
         if (holidayDetailDTO.isHolidayEnabled()) {
@@ -194,6 +200,7 @@ public class DefaultScheduledDateGenerator implements ScheduledDateGenerator {
      * @param isFirstRepayment 
      * @param loanApplicationTerms 
      */
+    1.4.4.2.1.2.4.1.6.1.1.1
     private void checkAndUpdateWorkingDayIfRepaymentDateIsNonWorkingDay(final AdjustedDateDetailsDTO adjustedDateDetailsDTO,
             final HolidayDetailDTO holidayDetailDTO, final LoanApplicationTerms loanApplicationTerms, final boolean isFirstRepayment) {
         while (WorkingDaysUtil.isNonWorkingDay(holidayDetailDTO.getWorkingDays(), adjustedDateDetailsDTO.getChangedScheduleDate())) {
@@ -211,6 +218,7 @@ public class DefaultScheduledDateGenerator implements ScheduledDateGenerator {
         }
     }
 
+    1.4.4.2.1.2.4.1.5.1
     @Override
     public LocalDate getRepaymentPeriodDate(final PeriodFrequencyType frequency, final int repaidEvery, final LocalDate startDate) {
         LocalDate dueRepaymentPeriodDate = startDate;

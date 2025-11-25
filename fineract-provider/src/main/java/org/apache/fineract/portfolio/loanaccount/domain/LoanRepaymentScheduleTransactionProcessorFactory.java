@@ -32,6 +32,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class LoanRepaymentScheduleTransactionProcessorFactory {
 
+    1.4.4.2.1.2.3
     public LoanRepaymentScheduleTransactionProcessor determineProcessor(
             final LoanTransactionProcessingStrategy transactionProcessingStrategy) {
 

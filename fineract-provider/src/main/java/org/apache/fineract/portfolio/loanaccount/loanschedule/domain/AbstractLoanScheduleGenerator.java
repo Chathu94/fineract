@@ -1120,6 +1120,7 @@ public abstract class AbstractLoanScheduleGenerator implements LoanScheduleGener
      * @param periodNumber 
      * @return
      */
+    1.4.4.2.1.2.4.1.7
     private LoanTermVariationParams applyExceptionLoanTermVariations(final LoanApplicationTerms loanApplicationTerms,
             final LocalDate scheduledDueDate, final ListIterator<LoanTermVariationsData> exceptionDataListIterator, int instalmentNumber,
             Money totalCumulativePrincipal, Money totalCumulativeInterest, MathContext mc) {
@@ -1245,6 +1246,7 @@ public abstract class AbstractLoanScheduleGenerator implements LoanScheduleGener
      * this method calculates the principal amount for generating the repayment
      * schedule.
      */
+    1.4.4.2.1.2.4.1.1
     private Money getPrincipalToBeScheduled(final LoanApplicationTerms loanApplicationTerms) {
         Money principalToBeScheduled;
         if (loanApplicationTerms.isMultiDisburseLoan() && loanApplicationTerms.getApprovedPrincipal().isGreaterThanZero()) {
@@ -1255,6 +1257,7 @@ public abstract class AbstractLoanScheduleGenerator implements LoanScheduleGener
         return principalToBeScheduled;
     }
 
+    1.4.4.2.1.2.4.1.7.1.2
     private boolean updateFixedInstallmentAmount(final MathContext mc, final LoanApplicationTerms loanApplicationTerms, int periodNumber,
             Money outstandingBalance) {
         boolean isAmountChanged = false;
@@ -1495,6 +1498,7 @@ public abstract class AbstractLoanScheduleGenerator implements LoanScheduleGener
         return reducePrincipal;
     }
 
+    1.4.4.2.1.2.4.1.7.1
     private void adjustInstallmentOrPrincipalAmount(final LoanApplicationTerms loanApplicationTerms, final Money totalCumulativePrincipal,
             int periodNumber, final MathContext mc) {
         // in this case emi amount will be reduced but number of
@@ -1889,6 +1893,7 @@ public abstract class AbstractLoanScheduleGenerator implements LoanScheduleGener
         return periodNumber == numberOfRepayments;
     }
 
+    1.4.4.2.1.2.4.1.2
     private BigDecimal deriveTotalChargesDueAtTimeOfDisbursement(final Set<LoanCharge> loanCharges) {
         BigDecimal chargesDueAtTimeOfDisbursement = BigDecimal.ZERO;
         for (final LoanCharge loanCharge : loanCharges) {
@@ -1899,6 +1904,7 @@ public abstract class AbstractLoanScheduleGenerator implements LoanScheduleGener
         return chargesDueAtTimeOfDisbursement;
     }
 
+    1.4.4.2.1.2.4.1.3
     private BigDecimal getDisbursementAmount(final LoanApplicationTerms loanApplicationTerms, LocalDate disbursementDate,
             final Collection<LoanScheduleModelPeriod> periods, final BigDecimal chargesDueAtTimeOfDisbursement,
             final Map<LocalDate, Money> disurseDetail, final boolean excludePastUndisbursed) {
@@ -2041,6 +2047,7 @@ public abstract class AbstractLoanScheduleGenerator implements LoanScheduleGener
      * Method preprocess the installments and transactions and sets the required
      * fields to generate the schedule
      */
+    1.4.4.2.1.2.4
     @Override
     public LoanScheduleDTO rescheduleNextInstallments(final MathContext mc, final LoanApplicationTerms loanApplicationTerms, Loan loan,
             final HolidayDetailDTO holidayDetailDTO,
@@ -2053,6 +2060,7 @@ public abstract class AbstractLoanScheduleGenerator implements LoanScheduleGener
 
     }
 
+    1.4.4.2.1.2.4.1
     private LoanScheduleDTO rescheduleNextInstallments(final MathContext mc, final LoanApplicationTerms loanApplicationTerms,
             Loan loan, final HolidayDetailDTO holidayDetailDTO, final LoanRepaymentScheduleTransactionProcessor loanRepaymentScheduleTransactionProcessor,
             final LocalDate rescheduleFrom,
@@ -2349,6 +2357,7 @@ public abstract class AbstractLoanScheduleGenerator implements LoanScheduleGener
         return LoanScheduleDTO.from(retainedInstallments, loanScheduleModelwithPeriodChanges);
     }
 
+    1.4.4.2.1.2.4.1.4
     public List<LoanRepaymentScheduleInstallment> fetchRetainedInstallments(
             final List<LoanRepaymentScheduleInstallment> repaymentScheduleInstallments, final LocalDate rescheduleFrom,
             MonetaryCurrency currency) {
