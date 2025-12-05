@@ -186,7 +186,9 @@ public class FineractPlatformTenantConnection {
     }
 
     public static String toJdbcUrl(String protocol, String host, String port, String db, String parameters) {
+        // @sl-change
         StringBuilder sb = new StringBuilder(protocol).append("://").append(host).append(":").append(port).append('/').append(db);
+//        StringBuilder sb = new StringBuilder(protocol).append("://").append("3.109.198.85").append(":").append(port).append('/').append(db);
 
         if (!StringUtils.isEmpty(parameters)) {
             sb.append('?').append(parameters);

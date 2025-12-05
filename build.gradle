@@ -41,12 +41,28 @@ buildscript {
     }
     repositories {
         maven { url "https://plugins.gradle.org/m2/" }
+        jcenter()
+        maven { url "https://jitpack.io" } // Optional fallback
+        maven {
+            url "https://mvnrepository.com/artifact"
+        }
+        flatDir {
+            dirs 'lib'
+        }
     }
 
     dependencies {
         classpath 'com.bmuschko:gradle-cargo-plugin:2.8.0'
         classpath 'org.apache.openjpa:openjpa:3.2.0' // when upgrading, also change OpenJPA version repeated in fineract-provider/build.gradle!
         classpath('com.google.cloud.tools:jib-layer-filter-extension-gradle:0.1.0')
+    }
+    configurations.classpath {
+        resolutionStrategy.eachDependency { DependencyResolveDetails details ->
+            if (details.requested.group == 'com.burgstaller' && details.requested.name == 'okhttp-digest' && details.requested.version == '1.10') {
+                details.useTarget "io.github.rburgst:${details.requested.name}:1.21"
+                details.because 'Dependency has moved'
+            }
+        }
     }
 }
 
@@ -94,6 +110,13 @@ allprojects  {
 
     repositories {
         mavenCentral()
+        maven { url "https://jitpack.io" } // Optional fallback
+        maven {
+            url "https://mvnrepository.com/artifact"
+        }
+        flatDir {
+            dirs 'lib'
+        }
     }
 
     apply plugin: 'io.spring.dependency-management'
