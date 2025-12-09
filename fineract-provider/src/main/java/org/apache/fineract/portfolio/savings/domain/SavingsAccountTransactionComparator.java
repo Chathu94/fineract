@@ -29,12 +29,25 @@ public class SavingsAccountTransactionComparator implements Comparator<SavingsAc
     public int compare(final SavingsAccountTransaction o1, final SavingsAccountTransaction o2) {
         int compareResult = 0;
         final int comparsion = o1.transactionLocalDate().compareTo(o2.transactionLocalDate());
+
         if (comparsion == 0) {
-            compareResult = o1.createdDate().compareTo(o2.createdDate());
-            if (compareResult == 0 && o1.getId() != null && o2.getId() != null) {
-                compareResult = o1.getId().compareTo(o2.getId());
+            // Same date - process credits before debits
+            boolean o1IsCredit = o1.isCredit();
+            boolean o2IsCredit = o2.isCredit();
+
+            if (o1IsCredit && !o2IsCredit) {
+                // o1 is credit, o2 is debit - o1 should come first
+                compareResult = -1;
+            } else if (!o1IsCredit && o2IsCredit) {
+                // o1 is debit, o2 is credit - o2 should come first
+                compareResult = 1;
             } else {
-                compareResult = comparsion;
+                // Both are same type (both credits or both debits)
+                // Use created date as tiebreaker
+                compareResult = o1.createdDate().compareTo(o2.createdDate());
+                if (compareResult == 0 && o1.getId() != null && o2.getId() != null) {
+                    compareResult = o1.getId().compareTo(o2.getId());
+                }
             }
         } else {
             compareResult = comparsion;
