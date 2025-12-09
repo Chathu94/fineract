@@ -209,7 +209,7 @@ public final class ClientDataValidator {
 
         if(this.fromApiJsonHelper.parameterExists(ClientApiConstants.datatables, element)){
             final JsonArray datatables = this.fromApiJsonHelper.extractJsonArrayNamed(ClientApiConstants.datatables, element);
-            baseDataValidator.reset().parameter(ClientApiConstants.datatables).value(datatables).notNull().jsonArrayNotEmpty();
+            baseDataValidator.reset().parameter(ClientApiConstants.datatables).value(datatables).ignoreIfNull();
         }
 
 		if (this.fromApiJsonHelper.parameterExists("isStaff", element)) {
