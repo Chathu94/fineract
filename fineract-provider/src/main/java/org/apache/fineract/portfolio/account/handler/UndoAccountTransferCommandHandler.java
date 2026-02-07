@@ -16,32 +16,32 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.portfolio.savings.handler;
+package org.apache.fineract.portfolio.account.handler;
 
 import org.apache.fineract.commands.annotation.CommandType;
 import org.apache.fineract.commands.handler.NewCommandSourceHandler;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
-import org.apache.fineract.portfolio.savings.service.SavingsAccountWritePlatformService;
+import org.apache.fineract.portfolio.account.service.AccountTransfersWritePlatformService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@CommandType(entity = "SAVINGSACCOUNT", action = "UNDOTRANSACTION")
-public class UndoTransactionSavingsAccountCommandHandler implements NewCommandSourceHandler {
+@CommandType(entity = "ACCOUNTTRANSFER", action = "UNDO")
+public class UndoAccountTransferCommandHandler implements NewCommandSourceHandler {
 
-    private final SavingsAccountWritePlatformService writePlatformService;
+    private final AccountTransfersWritePlatformService writePlatformService;
 
     @Autowired
-    public UndoTransactionSavingsAccountCommandHandler(final SavingsAccountWritePlatformService writePlatformService) {
+    public UndoAccountTransferCommandHandler(final AccountTransfersWritePlatformService writePlatformService) {
         this.writePlatformService = writePlatformService;
     }
 
     @Transactional
     @Override
     public CommandProcessingResult processCommand(final JsonCommand command) {
-        final Long transactionId = Long.valueOf(command.getTransactionId());
-        return this.writePlatformService.undoTransaction(command.getSavingsId(), transactionId, true);
+        final Long transactionId = Long.valueOf(command.subentityId());
+        return this.writePlatformService.undoTransferTransaction(command.getSavingsId(), transactionId);
     }
 }

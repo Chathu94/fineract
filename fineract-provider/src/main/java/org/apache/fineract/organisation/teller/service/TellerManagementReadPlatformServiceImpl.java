@@ -19,6 +19,7 @@
 package org.apache.fineract.organisation.teller.service;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.fineract.evoke.service.CountHelper;
 import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
 import org.apache.fineract.infrastructure.core.exception.UnrecognizedQueryParamException;
 import org.apache.fineract.infrastructure.core.service.Page;
@@ -550,7 +551,7 @@ public class TellerManagementReadPlatformServiceImpl implements TellerManagement
                 sql = sql + " offset " + searchParameters.getOffset();
             }
         }
-        final String sqlCountRows = "SELECT FOUND_ROWS()";
+        final String sqlCountRows = CountHelper.countQueryResult(sql);
 //        return this.jdbcTemplate.query(sql, ctm, new Object[] { cashierId, currencyCode, hierarchySearchString, cashierId, currencyCode,
 //                hierarchySearchString, cashierId, currencyCode, hierarchySearchString, cashierId, currencyCode, hierarchySearchString });
         Object[] params = new Object[] {cashierId, currencyCode, hierarchySearchString, cashierId, currencyCode,

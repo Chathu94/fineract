@@ -108,8 +108,8 @@ public class DataSourceProperties extends PoolProperties {
 			throw new IllegalStateException();
 		}
         // @sl-change
-		return jdbcProtocol + ":" + jdbcSubprotocol + "://18.117.208.133:" + getPort() + "/" + getDBName();
-//        return jdbcProtocol + ":" + jdbcSubprotocol + "://" + getHost() + ":" + getPort() + "/" + getDBName();
+//		return jdbcProtocol + ":" + jdbcSubprotocol + "://millennium.fineract.evokelabs.io:" + getPort() + "/" + getDBName();
+        return jdbcProtocol + ":" + jdbcSubprotocol + "://" + getHost() + ":" + getPort() + "/" + getDBName();
         }
 
 	public String getHost() {

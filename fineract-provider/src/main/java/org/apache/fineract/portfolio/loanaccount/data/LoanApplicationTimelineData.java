@@ -56,6 +56,7 @@ public class LoanApplicationTimelineData {
     private final String closedByFirstname;
     private final String closedByLastname;
     private final LocalDate expectedMaturityDate;
+    private final LocalDate actualMaturityDate;
     private final LocalDate writeOffOnDate;
     private final String writeOffByUsername;
     private final String writeOffByFirstname;
@@ -88,6 +89,7 @@ public class LoanApplicationTimelineData {
         final String closedByFirstname = null;
         final String closedByLastname = null;
         final LocalDate expectedMaturityDate = null;
+        final LocalDate actualMaturityDate = null;
         final LocalDate writeOffOnDate = null;
         final String writeOffByUsername = null;
         final String writeOffByFirstname = null;
@@ -98,7 +100,7 @@ public class LoanApplicationTimelineData {
                 withdrawnByFirstname, withdrawnByLastname, approvedOnDate, approvedByUsername, approvedByFirstname, approvedByLastname,
                 expectedDisbursementDate, actualDisbursementDate, disbursedByUsername, disbursedByFirstname, disbursedByLastname,
                 closedOnDate, closedByUsername, closedByFirstname, closedByLastname, expectedMaturityDate, writeOffOnDate,
-                writeOffByUsername, writeOffByFirstname, writeOffByLastname);
+                writeOffByUsername, writeOffByFirstname, writeOffByLastname, actualMaturityDate);
     }
 
     public LoanApplicationTimelineData(final LocalDate submittedOnDate, final String submittedByUsername,
@@ -110,7 +112,8 @@ public class LoanApplicationTimelineData {
             final LocalDate actualDisbursementDate, final String disbursedByUsername, final String disbursedByFirstname,
             final String disbursedByLastname, final LocalDate closedOnDate, final String closedByUsername, final String closedByFirstname,
             final String closedByLastname, final LocalDate expectedMaturityDate, final LocalDate writeOffOnDate,
-            final String writeOffByUsername, final String writeOffByFirstname, final String writeOffByLastname) {
+            final String writeOffByUsername, final String writeOffByFirstname, final String writeOffByLastname,
+                                       final LocalDate actualMaturityDate) {
         this.submittedOnDate = submittedOnDate;
         this.submittedByUsername = submittedByUsername;
         this.submittedByFirstname = submittedByFirstname;
@@ -141,6 +144,7 @@ public class LoanApplicationTimelineData {
         this.writeOffByUsername = writeOffByUsername;
         this.writeOffByFirstname = writeOffByFirstname;
         this.writeOffByLastname = writeOffByLastname;
+        this.actualMaturityDate = actualMaturityDate;
     }
 
     public RepaymentScheduleRelatedLoanData repaymentScheduleRelatedData(final CurrencyData currency, final BigDecimal principal,

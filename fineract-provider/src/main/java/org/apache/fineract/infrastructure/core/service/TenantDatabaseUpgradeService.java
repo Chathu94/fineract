@@ -64,8 +64,8 @@ public class TenantDatabaseUpgradeService {
             if (connection.isAutoUpdateEnabled()) {
                 final Flyway flyway = new Flyway();
                 // @sl-change
-                String connectionProtocol = driverConfig.constructProtocol("18.117.208.133", connection.getSchemaServerPort(), connection.getSchemaName()) ;
-//                String connectionProtocol = driverConfig.constructProtocol(connection.getSchemaServer(), connection.getSchemaServerPort(), connection.getSchemaName()) ;
+//                String connectionProtocol = driverConfig.constructProtocol("millennium.fineract.evokelabs.io", connection.getSchemaServerPort(), connection.getSchemaName()) ;
+                String connectionProtocol = driverConfig.constructProtocol(connection.getSchemaServer(), connection.getSchemaServerPort(), connection.getSchemaName()) ;
                 DriverDataSource source = new DriverDataSource(driverConfig.getDriverClassName(), connectionProtocol, connection.getSchemaUsername(), connection.getSchemaPassword()) ;
                 flyway.setDataSource(source);
                 flyway.setLocations("sql/migrations/core_db");

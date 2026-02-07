@@ -19,10 +19,13 @@
 package org.apache.fineract.portfolio.savings.domain;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 import org.apache.fineract.portfolio.savings.DepositAccountType;
 import org.apache.fineract.portfolio.savings.exception.SavingsAccountNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -78,6 +81,10 @@ public class SavingsAccountRepositoryWrapper {
         List<SavingsAccount> accounts = this.repository.findSavingAccountByStatus(status) ;
         loadLazyCollections(accounts); 
         return accounts ;
+    }
+
+    public Slice<Long> findIdsByStatus(@Param("status") Integer status, Pageable pageable) {
+        return this.repository.findIdsByStatus(status, pageable);
     }
 
     //Root Entities are enough

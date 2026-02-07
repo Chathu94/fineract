@@ -18,18 +18,29 @@
  */
 package org.apache.fineract.portfolio.savings.service;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.List;
+import java.util.concurrent.*;
 
+import org.apache.fineract.infrastructure.core.domain.FineractPlatformTenant;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
+import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.jobs.annotation.CronTarget;
 import org.apache.fineract.infrastructure.jobs.exception.JobExecutionException;
 import org.apache.fineract.infrastructure.jobs.service.JobName;
+import org.apache.fineract.organisation.monetary.domain.Money;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccount;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountAssembler;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountRepositoryWrapper;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountStatusType;
+import org.apache.fineract.useradministration.api.AppUserApiConstant;
 import org.joda.time.LocalDate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -51,28 +62,100 @@ public class SavingsSchedularServiceImpl implements SavingsSchedularService {
         this.savingAccountReadPlatformService = savingAccountReadPlatformService;
     }
 
+
+    final int PARALLELISM = 20;
+    final int PAGE_SIZE = 1000;
+
     @CronTarget(jobName = JobName.POST_INTEREST_FOR_SAVINGS)
     @Override
     public void postInterestForAccounts() throws JobExecutionException {
-        final List<SavingsAccount> savingsAccounts = this.savingAccountRepositoryWrapper.findSavingAccountByStatus(SavingsAccountStatusType.ACTIVE
-                .getValue());
+//        final List<SavingsAccount> savingsAccounts = this.savingAccountRepositoryWrapper.findSavingAccountByStatus(SavingsAccountStatusType.ACTIVE
+//                .getValue());
         StringBuffer sb = new StringBuffer();
-        for (final SavingsAccount savingsAccount : savingsAccounts) {
-            try {
-                this.savingAccountAssembler.assignSavingAccountHelpers(savingsAccount);
-                boolean postInterestAsOn = false;
-                LocalDate transactionDate = null;
-                this.savingsAccountWritePlatformService.postInterest(savingsAccount, postInterestAsOn, transactionDate);
-            } catch (Exception e) {
-                Throwable realCause = e;
-                if (e.getCause() != null) {
-                    realCause = e.getCause();
+        final FineractPlatformTenant tenant = ThreadLocalContextUtil.getTenant();
+
+        ExecutorService executor = Executors.newFixedThreadPool(PARALLELISM);
+        CompletionService<Void> completion = new ExecutorCompletionService<>(executor);
+
+        List<String> errors = new CopyOnWriteArrayList<>();
+
+        int inFlight = 0;
+
+        // local buffer of IDs we’ve fetched but not yet submitted
+        Deque<Long> buffer = new ArrayDeque<>(PAGE_SIZE);
+
+        try {
+            int page = 0;
+            boolean hasMore = true;
+
+            // Helper: fetch next page into buffer
+            while (hasMore || !buffer.isEmpty() || inFlight > 0) {
+
+                // Fill buffer if empty and DB has more
+                while (buffer.isEmpty() && hasMore) {
+                    Money PageRequest;
+                    PageRequest pageable = new PageRequest(page, PAGE_SIZE);
+                    Slice<Long> slice = savingAccountRepositoryWrapper.findIdsByStatus(
+                            SavingsAccountStatusType.ACTIVE.getValue(), pageable);
+
+                    buffer.addAll(slice.getContent());
+                    hasMore = slice.hasNext();
+                    page++;
                 }
-                sb.append("failed to post interest for Savings with id " + savingsAccount.getId() + " with message "
-                        + realCause.getMessage());
+
+                // Submit tasks until we hit PARALLELISM or buffer empty
+                while (inFlight < PARALLELISM && !buffer.isEmpty()) {
+                    Long id = buffer.pollFirst();
+                    completion.submit(() -> {
+                        final FineractPlatformTenant previous = ThreadLocalContextUtil.getTenant();
+                        // set tenant context for this worker thread
+                        ThreadLocalContextUtil.setTenant(tenant);
+                        try {
+                            System.out.println("RUNNING - " + id);
+                            SavingsAccount savingsAccount = savingAccountRepositoryWrapper.findOneWithNotFoundDetection(id);
+
+                            savingsAccount.loadLazyCollections();
+
+                            savingAccountAssembler.assignSavingAccountHelpers(savingsAccount);
+
+                            boolean postInterestAsOn = false;
+                            LocalDate transactionDate = null;
+
+                            savingsAccountWritePlatformService.postInterest(savingsAccount, postInterestAsOn, transactionDate);
+                        } catch (Exception e) {
+                            Throwable real = e;
+                            errors.add("failed to post interest for Savings with id " + id
+                                    + " with message " + e);
+                        } finally {
+                            if (previous != null) {
+                                ThreadLocalContextUtil.setTenant(previous);
+                            } else {
+                                ThreadLocalContextUtil.clearTenant();
+                            }
+                        }
+                        return null;
+                    });
+                    inFlight++;
+                }
+
+                // If nothing in-flight, loop will fetch more or end
+                if (inFlight == 0) {
+                    continue;
+                }
+
+                // Wait for one to finish, then immediately submit the next
+                Future<Void> done = completion.take();
+                try { done.get(); } catch (Exception ignore) {}
+                inFlight--;
             }
+
+        } catch (Exception e) {
+            errors.add("Job failed: " + e);
+        } finally {
+            executor.shutdown();
         }
-        
+
+
         if (sb.length() > 0) { throw new JobExecutionException(sb.toString()); }
     }
 

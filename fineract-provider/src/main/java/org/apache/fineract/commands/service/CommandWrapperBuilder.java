@@ -1178,6 +1178,15 @@ public class CommandWrapperBuilder {
         return this;
     }
 
+    public CommandWrapperBuilder undoAccountTransfer(final Long accountId, final Long transactionId) {
+        this.actionName = "UNDO";
+        this.entityName = "ACCOUNTTRANSFER";
+        this.entityId = accountId;
+        this.subentityId = transactionId;
+        this.href = "/accounttransfers/" + accountId + "/transferTransactions/" + transactionId + "?command=undoTransfer";
+        return this;
+    }
+
     public CommandWrapperBuilder createStandingInstruction() {
         this.actionName = "CREATE";
         this.entityName = "STANDINGINSTRUCTION";
