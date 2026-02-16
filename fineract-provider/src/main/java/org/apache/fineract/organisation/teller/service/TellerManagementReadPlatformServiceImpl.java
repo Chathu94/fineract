@@ -556,7 +556,7 @@ public class TellerManagementReadPlatformServiceImpl implements TellerManagement
 //                hierarchySearchString, cashierId, currencyCode, hierarchySearchString, cashierId, currencyCode, hierarchySearchString });
         Object[] params = new Object[] {cashierId, currencyCode, hierarchySearchString, cashierId, currencyCode,
                 hierarchySearchString, cashierId, currencyCode, hierarchySearchString, cashierId, currencyCode, hierarchySearchString };
-        return this.paginationHelper.fetchPage(this.jdbcTemplate, sqlCountRows, sql, params, ctm);
+        return this.paginationHelper.fetchPageVitess(this.jdbcTemplate, sqlCountRows, sql, params, ctm);
     }
 
     private static final class CashierMapper implements RowMapper<CashierData> {

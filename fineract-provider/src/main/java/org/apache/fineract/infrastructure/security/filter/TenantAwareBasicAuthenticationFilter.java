@@ -124,6 +124,7 @@ public class TenantAwareBasicAuthenticationFilter extends BasicAuthenticationFil
                 if (pathInfo != null && pathInfo.contains("report")) {
                     isReportRequest = true;
                 }
+
                 final FineractPlatformTenant tenant = this.basicAuthTenantDetailsService.loadTenantById(tenantIdentifier, isReportRequest);
 
                 ThreadLocalContextUtil.setTenant(tenant);
