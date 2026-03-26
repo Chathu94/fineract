@@ -19,7 +19,10 @@
 package org.apache.fineract.portfolio.savings.domain;
 
 import java.util.List;
+import java.util.stream.Stream;
 
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -33,6 +36,9 @@ public interface SavingsAccountRepository extends JpaRepository<SavingsAccount, 
 
     @Query("select s_acc from SavingsAccount s_acc where s_acc.status = :status")
     List<SavingsAccount> findSavingAccountByStatus(@Param("status") Integer status);
+
+    @Query("select sa.id from SavingsAccount sa where sa.status = :status")
+    Slice<Long> findIdsByStatus(@Param("status") Integer status, Pageable pageable);
 
     @Query("select sa from SavingsAccount sa where sa.client.id = :clientId and sa.group.id = :groupId")
     List<SavingsAccount> findByClientIdAndGroupId(@Param("clientId") Long clientId, @Param("groupId") Long groupId);

@@ -67,8 +67,8 @@ public class JDBCDriverConfig {
     
     public String constructProtocol(String schemaServer, String schemaServerPort, String schemaName) {
 		// @sl-change
-    	final String url = new StringBuilder(protocol).append(":").append(subProtocol).append("://").append("18.117.208.133").append(':').append(schemaServerPort).append('/').append(schemaName).toString();
-//		final String url = new StringBuilder(protocol).append(":").append(subProtocol).append("://").append(schemaServer).append(':').append(schemaServerPort).append('/').append(schemaName).toString();
+//    	final String url = new StringBuilder(protocol).append(":").append(subProtocol).append("://").append("millennium.fineract.evokelabs.io").append(':').append(schemaServerPort).append('/').append(schemaName).toString();
+		final String url = new StringBuilder(protocol).append(":").append(subProtocol).append("://").append(schemaServer).append(':').append(schemaServerPort).append('/').append(schemaName).toString();
         return url;
     }
 

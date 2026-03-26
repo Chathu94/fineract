@@ -222,6 +222,7 @@ public class CollectionSheetReadPlatformServiceImpl implements CollectionSheetRe
                     .append("ln.principal_repaid_derived As principalPaid, ")
                     .append("sum(ifnull(if(ln.loan_status_id = 300, ls.interest_amount, 0.0), 0.0) - ifnull(if(ln.loan_status_id = 300, ls.interest_completed_derived, 0.0), 0.0) - IFNULL(IF(ln.loan_status_id = 300, ls.interest_waived_derived, 0.0), 0.0)) As interestDue, ")
                     .append("ln.interest_repaid_derived As interestPaid, ")
+                    .append("(SELECT lt.amount FROM m_loan_transaction lt WHERE lt.loan_id = ln.id AND lt.transaction_type_enum = 2 AND lt.is_reversed = 0 ORDER BY lt.id DESC LIMIT 1) As lastPaymentAmount, ")
                     .append("sum(ifnull(if(ln.loan_status_id = 300, ls.fee_charges_amount, 0.0), 0.0) - ifnull(if(ln.loan_status_id = 300, ls.fee_charges_completed_derived, 0.0), 0.0)) As feeDue, ")
                     .append("ln.fee_charges_repaid_derived As feePaid, ")
                     .append("ca.attendance_type_enum as attendanceTypeId ")
@@ -292,6 +293,7 @@ public class CollectionSheetReadPlatformServiceImpl implements CollectionSheetRe
             final BigDecimal principalPaid = rs.getBigDecimal("principalPaid");
             final BigDecimal interestDue = rs.getBigDecimal("interestDue");
             final BigDecimal interestPaid = rs.getBigDecimal("interestPaid");
+            final BigDecimal lastPaymentAmount = rs.getBigDecimal("lastPaymentAmount");
             final BigDecimal chargesDue = rs.getBigDecimal("chargesDue");
             final BigDecimal feeDue = rs.getBigDecimal("feeDue");
             final BigDecimal feePaid = rs.getBigDecimal("feePaid");
@@ -301,7 +303,7 @@ public class CollectionSheetReadPlatformServiceImpl implements CollectionSheetRe
 
             return new JLGCollectionSheetFlatData(groupName, groupId, staffId, staffName, levelId, levelName, clientName, clientId, loanId,
                     accountId, accountStatusId, productShortName, productId, currencyData, disbursementAmount, principalDue, principalPaid,
-                    interestDue, interestPaid, chargesDue, attendanceType, feeDue, feePaid);
+                    interestDue, interestPaid, lastPaymentAmount, chargesDue, attendanceType, feeDue, feePaid);
         }
 
     }
@@ -730,6 +732,7 @@ public class CollectionSheetReadPlatformServiceImpl implements CollectionSheetRe
             sb.append("ln.principal_repaid_derived As principalPaid, ");
             sb.append("sum(ifnull(if(ln.loan_status_id = 300, ls.interest_amount, 0.0), 0.0) - ifnull(if(ln.loan_status_id = 300, ls.interest_completed_derived, 0.0), 0.0)) As interestDue, ");
             sb.append("ln.interest_repaid_derived As interestPaid, ");
+            sb.append("(SELECT lt.amount FROM m_loan_transaction lt WHERE lt.loan_id = ln.id AND lt.transaction_type_enum = 2 AND lt.is_reversed = 0 ORDER BY lt.id DESC LIMIT 1) As lastPaymentAmount, ");
             sb.append("sum(ifnull(if(ln.loan_status_id = 300, ls.fee_charges_amount, 0.0), 0.0) - ifnull(if(ln.loan_status_id = 300, ls.fee_charges_completed_derived, 0.0), 0.0)) As feeDue, ");
             sb.append("ln.fee_charges_repaid_derived As feePaid ");
             sb.append("FROM m_loan ln ");
@@ -784,12 +787,13 @@ public class CollectionSheetReadPlatformServiceImpl implements CollectionSheetRe
             final BigDecimal principalPaid = rs.getBigDecimal("principalPaid");
             final BigDecimal interestDue = rs.getBigDecimal("interestDue");
             final BigDecimal interestPaid = rs.getBigDecimal("interestPaid");
+            final BigDecimal lastPaymentAmount = rs.getBigDecimal("lastPaymentAmount");
             final BigDecimal chargesDue = rs.getBigDecimal("chargesDue");
             final BigDecimal feeDue = rs.getBigDecimal("feeDue");
             final BigDecimal feePaid = rs.getBigDecimal("feePaid");
 
             return new IndividualCollectionSheetLoanFlatData(clientName, clientId, loanId, accountId, accountStatusId, productShortName,
-                    productId, currencyData, disbursementAmount, principalDue, principalPaid, interestDue, interestPaid, chargesDue,
+                    productId, currencyData, disbursementAmount, principalDue, principalPaid, interestDue, interestPaid, lastPaymentAmount, chargesDue,
                     feeDue, feePaid);
         }
 

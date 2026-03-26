@@ -37,6 +37,18 @@ public class PaginationHelper<E> {
         return new Page<>(items, totalFilteredRecords);
     }
 
+    public Page<E> fetchPageVitess(final JdbcTemplate jt, final String sqlCountRows, final String sqlFetchRows, final Object args[],
+            final RowMapper<E> rowMapper) {
+
+        final List<E> items = jt.query(sqlFetchRows, args, rowMapper);
+
+        // determine how many rows are available
+        @SuppressWarnings("deprecation")
+        final int totalFilteredRecords = jt.queryForObject(sqlCountRows, Integer.class, args);
+
+        return new Page<>(items, totalFilteredRecords);
+    }
+
     public Page<Long> fetchPage(JdbcTemplate jdbcTemplate, String sql, String sqlCountRows, Class<Long> type) {
         final List<Long> items = jdbcTemplate.queryForList(sql, type);
 

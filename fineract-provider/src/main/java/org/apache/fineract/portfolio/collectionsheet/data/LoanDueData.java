@@ -43,11 +43,12 @@ public class LoanDueData {
     private BigDecimal totalDue = BigDecimal.ZERO;
     private BigDecimal feeDue = BigDecimal.ZERO;
     private BigDecimal feePaid = BigDecimal.ZERO;
+    private BigDecimal lastPaymentAmount;
 
     public LoanDueData(final Long loanId, final String accountId, final Integer accountStatusId, final String productShortName,
             final Long productId, final CurrencyData currency, final BigDecimal disbursementAmount, final BigDecimal principalDue,
             final BigDecimal principalPaid, final BigDecimal interestDue, final BigDecimal interestPaid, final BigDecimal chargesDue,
-            final BigDecimal feeDue, final BigDecimal feePaid) {
+            final BigDecimal feeDue, final BigDecimal feePaid, final BigDecimal lastPaymentAmount) {
         this.loanId = loanId;
         this.accountId = accountId;
         this.accountStatusId = accountStatusId;
@@ -62,6 +63,7 @@ public class LoanDueData {
         this.chargesDue = chargesDue;
         this.feeDue = feeDue;
         this.feePaid = feePaid;
+        this.lastPaymentAmount = lastPaymentAmount;
         this.totalDue = this.totalDue.add(principalDue).add(interestDue).add(feeDue);
     }
 
@@ -121,4 +123,11 @@ public class LoanDueData {
         return this.feePaid;
     }
 
+    public BigDecimal getTotalDue() {
+        return this.totalDue;
+    }
+
+    public BigDecimal getLastPaymentAmount() {
+        return this.lastPaymentAmount;
+    }
 }

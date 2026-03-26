@@ -77,9 +77,7 @@ public class PentahoReportingProcessServiceImpl implements ReportingProcessServi
          try {
             System.out.println("CREATE DIR");
             Resource res = manager.createDirectly(reportPath, MasterReport.class);
-            System.out.println("REG GET RESOURCE");
             MasterReport masterReport = (MasterReport)res.getResource();
-            System.out.println("GET REP ENV");
             DefaultReportEnvironment reportEnvironment = (DefaultReportEnvironment)masterReport.getReportEnvironment();
             if (locale != null) {
                reportEnvironment.setLocale(locale);
@@ -108,9 +106,7 @@ public class PentahoReportingProcessServiceImpl implements ReportingProcessServi
             }
 
             if ("HTML".equalsIgnoreCase(outputType)) {
-               System.out.println("CREATE STREAM HTML");
                HtmlReportUtil.createStreamHTML(masterReport, baos);
-               System.out.println("RETURN RESP");
                return Response.ok().entity(baos.toByteArray()).type("text/html").build();
             }
          } catch (ResourceException e) {

@@ -37,6 +37,10 @@ public interface AccountTransfersWritePlatformService {
 
     void reverseAllTransactions(Long accountId, PortfolioAccountType accountTypeId);
 
+    CommandProcessingResult undoTransferTransaction(final Long savingsId, final Long transferId);
+
+    void reverseTransaction(final Long accountId, final Long transactionId);
+
     void updateLoanTransaction(Long loanTransactionId, LoanTransaction newLoanTransaction);
     
     CommandProcessingResult refundByTransfer(JsonCommand command);

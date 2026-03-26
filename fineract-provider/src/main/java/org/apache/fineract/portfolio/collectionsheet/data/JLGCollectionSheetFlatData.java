@@ -48,6 +48,7 @@ public class JLGCollectionSheetFlatData {
     private BigDecimal principalPaid = BigDecimal.ZERO;
     private BigDecimal interestDue = BigDecimal.ZERO;
     private BigDecimal interestPaid = BigDecimal.ZERO;
+    private BigDecimal lastPaymentAmount;
     private BigDecimal chargesDue = BigDecimal.ZERO;
     private final EnumOptionData attendanceType;
     private BigDecimal feeDue = BigDecimal.ZERO;
@@ -57,7 +58,7 @@ public class JLGCollectionSheetFlatData {
             final Long levelId, final String levelName, final String clientName, final Long clientId, final Long loanId,
             final String accountId, final Integer accountStatusId, final String productShortName, final Long productId,
             final CurrencyData currency, final BigDecimal disbursementAmount, final BigDecimal principalDue,
-            final BigDecimal principalPaid, final BigDecimal interestDue, final BigDecimal interestPaid, final BigDecimal chargesDue,
+            final BigDecimal principalPaid, final BigDecimal interestDue, final BigDecimal interestPaid, final BigDecimal lastPaymentAmount, final BigDecimal chargesDue,
             final EnumOptionData attendanceType, final BigDecimal feeDue, final BigDecimal feePaid) {
         this.groupName = groupName;
         this.groupId = groupId;
@@ -78,6 +79,7 @@ public class JLGCollectionSheetFlatData {
         this.principalPaid = principalPaid;
         this.interestDue = interestDue;
         this.interestPaid = interestPaid;
+        this.lastPaymentAmount = lastPaymentAmount;
         this.chargesDue = chargesDue;
         this.attendanceType = attendanceType;
         this.feeDue = feeDue;
@@ -167,7 +169,7 @@ public class JLGCollectionSheetFlatData {
     public LoanDueData getLoanDueData() {
         return new LoanDueData(this.loanId, this.accountId, this.accountStatusId, this.productShortName, this.productId, this.currency,
                 this.disbursementAmount, this.principalDue, this.principalPaid, this.interestDue, this.interestPaid, this.chargesDue,
-                this.feeDue, this.feePaid);
+                this.feeDue, this.feePaid, this.lastPaymentAmount);
     }
 
     public JLGClientData getClientData() {

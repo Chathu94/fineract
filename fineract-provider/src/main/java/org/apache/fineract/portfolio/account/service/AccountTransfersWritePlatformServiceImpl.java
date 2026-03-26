@@ -26,9 +26,7 @@ import static org.apache.fineract.portfolio.account.api.AccountTransfersApiConst
 import static org.apache.fineract.portfolio.account.api.AccountTransfersApiConstants.transferDateParamName;
 
 import java.math.BigDecimal;
-import java.util.Collection;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
 
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
@@ -43,6 +41,7 @@ import org.apache.fineract.portfolio.account.domain.AccountTransferDetails;
 import org.apache.fineract.portfolio.account.domain.AccountTransferRepository;
 import org.apache.fineract.portfolio.account.domain.AccountTransferTransaction;
 import org.apache.fineract.portfolio.account.domain.AccountTransferType;
+import org.apache.fineract.portfolio.account.exception.AccountTransferNotFoundException;
 import org.apache.fineract.portfolio.loanaccount.data.HolidayDetailDTO;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanAccountDomainService;
@@ -245,6 +244,34 @@ public class AccountTransfersWritePlatformServiceImpl implements AccountTransfer
         if (acccountTransfers != null && acccountTransfers.size() > 0) {
             undoTransactions(acccountTransfers);
         }
+    }
+
+    @Override
+    @Transactional
+    public void reverseTransaction(final Long accountId, final Long transactionId) {
+        Optional<AccountTransferTransaction> accountTransfer = this.accountTransferRepository.findById(transactionId);
+        if (accountTransfer != null && accountTransfer.isPresent()) {
+            List<AccountTransferTransaction> acccountTransfers = new ArrayList<>();
+            acccountTransfers.add(accountTransfer.get());
+            undoTransactions(acccountTransfers);
+        } else {
+            throw new AccountTransferNotFoundException(transactionId);
+        }
+    }
+    @Transactional
+    @Override
+    public CommandProcessingResult undoTransferTransaction(final Long savingsId, final Long transferId) {
+        this.reverseTransaction(savingsId, transferId);
+        return new CommandProcessingResultBuilder() //
+                .withEntityId(savingsId) //
+                .withSavingsId(savingsId) //
+                .withSubEntityId(transferId) //
+                .withSavingsId(savingsId) //
+                .build();
+    }
+
+    private void undoTransaction(final AccountTransferTransaction acccountTransfer) {
+
     }
 
     /**

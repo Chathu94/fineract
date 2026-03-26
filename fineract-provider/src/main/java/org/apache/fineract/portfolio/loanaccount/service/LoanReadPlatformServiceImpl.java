@@ -558,6 +558,11 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                     + " l.expected_disbursedon_date as expectedDisbursementDate, l.disbursedon_date as actualDisbursementDate, dbu.username as disbursedByUsername, dbu.firstname as disbursedByFirstname, dbu.lastname as disbursedByLastname,"
                     + " l.closedon_date as closedOnDate, cbu.username as closedByUsername, cbu.firstname as closedByFirstname, cbu.lastname as closedByLastname, l.writtenoffon_date as writtenOffOnDate, "
                     + " l.expected_firstrepaymenton_date as expectedFirstRepaymentOnDate, l.interest_calculated_from_date as interestChargedFromDate, l.expected_maturedon_date as expectedMaturityDate, "
+                    + " (" +
+                            "           SELECT MAX(lrs.duedate)" +
+                            "           FROM m_loan_repayment_schedule lrs" +
+                            "           WHERE lrs.loan_id = l.id" +
+                            "       ) AS actualMaturityDate, "
                     + " l.principal_amount_proposed as proposedPrincipal, l.principal_amount as principal, l.approved_principal as approvedPrincipal, l.arrearstolerance_amount as inArrearsTolerance, l.number_of_repayments as numberOfRepayments, l.repay_every as repaymentEvery,"
                     + " l.grace_on_principal_periods as graceOnPrincipalPayment, l.recurring_moratorium_principal_periods as recurringMoratoriumOnPrincipalPeriods, l.grace_on_interest_periods as graceOnInterestPayment, l.grace_interest_free_periods as graceOnInterestCharged,l.grace_on_arrears_ageing as graceOnArrearsAgeing,"
                     + " l.nominal_interest_rate_per_period as interestRatePerPeriod, l.annual_nominal_interest_rate as annualInterestRate, "
@@ -730,6 +735,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
 
             final LocalDate expectedDisbursementDate = JdbcSupport.getLocalDate(rs, "expectedDisbursementDate");
             final LocalDate actualDisbursementDate = JdbcSupport.getLocalDate(rs, "actualDisbursementDate");
+            final LocalDate actualMaturityDate = JdbcSupport.getLocalDate(rs, "actualMaturityDate");
             final String disbursedByUsername = rs.getString("disbursedByUsername");
             final String disbursedByFirstname = rs.getString("disbursedByFirstname");
             final String disbursedByLastname = rs.getString("disbursedByLastname");
@@ -753,7 +759,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                     withdrawnOnDate, withdrawnByUsername, withdrawnByFirstname, withdrawnByLastname, approvedOnDate, approvedByUsername,
                     approvedByFirstname, approvedByLastname, expectedDisbursementDate, actualDisbursementDate, disbursedByUsername,
                     disbursedByFirstname, disbursedByLastname, closedOnDate, closedByUsername, closedByFirstname, closedByLastname,
-                    expectedMaturityDate, writtenOffOnDate, closedByUsername, closedByFirstname, closedByLastname);
+                    expectedMaturityDate, writtenOffOnDate, closedByUsername, closedByFirstname, closedByLastname, actualMaturityDate);
 
             final BigDecimal principal = rs.getBigDecimal("principal");
             final BigDecimal approvedPrincipal = rs.getBigDecimal("approvedPrincipal");

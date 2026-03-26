@@ -409,7 +409,12 @@ public class AccountDetailsReadPlatformServiceJpaRepositoryImpl implements Accou
                     .append(" l.closedon_date as closedOnDate,")
                     .append(" cbu.username as closedByUsername, cbu.firstname as closedByFirstname, cbu.lastname as closedByLastname,")
                     .append(" la.overdue_since_date_derived as overdueSinceDate,")
-                    .append(" l.writtenoffon_date as writtenOffOnDate, l.expected_maturedon_date as expectedMaturityDate")
+                    .append(" l.writtenoffon_date as writtenOffOnDate, l.expected_maturedon_date as expectedMaturityDate,")
+                    .append(" (" +
+                            "           SELECT MAX(lrs.duedate)" +
+                            "           FROM m_loan_repayment_schedule lrs" +
+                            "           WHERE lrs.loan_id = l.id" +
+                            "       ) AS actualMaturityDate")
 
                     .append(" from m_loan l ").append("LEFT JOIN m_product_loan AS lp ON lp.id = l.product_id")
                     .append(" left join m_appuser sbu on sbu.id = l.submittedon_userid")
@@ -468,7 +473,7 @@ public class AccountDetailsReadPlatformServiceJpaRepositoryImpl implements Accou
             final String closedByUsername = rs.getString("closedByUsername");
             final String closedByFirstname = rs.getString("closedByFirstname");
             final String closedByLastname = rs.getString("closedByLastname");
-            
+
             final BigDecimal originalLoan = JdbcSupport.getBigDecimalDefaultToNullIfZero(rs,"originalLoan");
             final BigDecimal loanBalance = JdbcSupport.getBigDecimalDefaultToNullIfZero(rs,"loanBalance");
             final BigDecimal amountPaid = JdbcSupport.getBigDecimalDefaultToNullIfZero(rs,"amountPaid");
@@ -476,6 +481,12 @@ public class AccountDetailsReadPlatformServiceJpaRepositoryImpl implements Accou
             final LocalDate writtenOffOnDate = JdbcSupport.getLocalDate(rs, "writtenOffOnDate");
 
             final LocalDate expectedMaturityDate = JdbcSupport.getLocalDate(rs, "expectedMaturityDate");
+            LocalDate actualMaturityDate = null;
+            try {
+                actualMaturityDate = JdbcSupport.getLocalDate(rs, "actualMaturityDate");
+            } catch (Exception e) {
+                System.out.println(e);
+            }
 
             final LocalDate overdueSinceDate = JdbcSupport.getLocalDate(rs, "overdueSinceDate");
             Boolean inArrears = true;
@@ -488,7 +499,7 @@ public class AccountDetailsReadPlatformServiceJpaRepositoryImpl implements Accou
                     withdrawnOnDate, withdrawnByUsername, withdrawnByFirstname, withdrawnByLastname, approvedOnDate, approvedByUsername,
                     approvedByFirstname, approvedByLastname, expectedDisbursementDate, actualDisbursementDate, disbursedByUsername,
                     disbursedByFirstname, disbursedByLastname, closedOnDate, closedByUsername, closedByFirstname, closedByLastname,
-                    expectedMaturityDate, writtenOffOnDate, closedByUsername, closedByFirstname, closedByLastname);
+                    expectedMaturityDate, writtenOffOnDate, closedByUsername, closedByFirstname, closedByLastname, actualMaturityDate);
 
             return new LoanAccountSummaryData(id, accountNo, externalId, productId, loanProductName, shortLoanProductName, loanStatus, loanType, loanCycle,
                     timeline, inArrears,originalLoan,loanBalance,amountPaid);

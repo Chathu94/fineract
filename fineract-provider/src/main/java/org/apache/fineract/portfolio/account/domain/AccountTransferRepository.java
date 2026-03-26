@@ -20,6 +20,7 @@ package org.apache.fineract.portfolio.account.domain;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
@@ -40,4 +41,7 @@ public interface AccountTransferRepository extends JpaRepository<AccountTransfer
 
     @Query("select att from AccountTransferTransaction att where att.fromLoanTransaction.id IN :loanTransactions and att.reversed=false")
     List<AccountTransferTransaction> findByFromLoanTransactions(@Param("loanTransactions") Collection<Long> loanTransactions);
+
+    @Query("select att from AccountTransferTransaction att where att.id= :transactionId and att.reversed=false")
+    Optional<AccountTransferTransaction> findById(@Param("transactionId") Long id);
 }
