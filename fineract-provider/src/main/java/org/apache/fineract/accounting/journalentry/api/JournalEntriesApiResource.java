@@ -48,6 +48,7 @@ import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.exception.UnrecognizedQueryParamException;
 import org.apache.fineract.infrastructure.core.serialization.ApiRequestJsonSerializationSettings;
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
+import org.apache.fineract.infrastructure.core.serialization.JsonParserHelper;
 import org.apache.fineract.infrastructure.core.service.Page;
 import org.apache.fineract.infrastructure.core.service.SearchParameters;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
@@ -140,19 +141,26 @@ public class JournalEntriesApiResource {
     @POST
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
-    public String createGLJournalEntry(final String jsonRequestBody, @QueryParam("command") final String commandParam) {
+    public String createGLJournalEntry(final String jsonRequestBody, @QueryParam("command") final String commandParam,
+                                       @QueryParam("manual") final Integer manualParam) {
 
         CommandProcessingResult result = null;
+        String updatedJson = jsonRequestBody;
+
+        if (manualParam != null) {
+            updatedJson = JsonParserHelper.addOrReplace(updatedJson, "manual", manualParam);
+        }
+
         if (is(commandParam, "updateRunningBalance")) {
             final CommandWrapper commandRequest = new CommandWrapperBuilder().updateRunningBalanceForJournalEntry()
-                    .withJson(jsonRequestBody).build();
+                    .withJson(updatedJson).build();
             result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
         } else if (is(commandParam, "defineOpeningBalance")) {
             final CommandWrapper commandRequest = new CommandWrapperBuilder().defineOpeningBalanceForJournalEntry()
-                    .withJson(jsonRequestBody).build();
+                    .withJson(updatedJson).build();
             result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
         } else {
-            final CommandWrapper commandRequest = new CommandWrapperBuilder().createJournalEntry().withJson(jsonRequestBody).build();
+            final CommandWrapper commandRequest = new CommandWrapperBuilder().createJournalEntry().withJson(updatedJson).build();
             result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
         }
         return this.apiJsonSerializerService.serialize(result);
