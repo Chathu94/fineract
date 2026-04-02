@@ -328,6 +328,39 @@ public class BatchHelper {
 
     /**
      * Creates and returns a
+     * {@link org.apache.fineract.batch.command.internal.WriteOffLoanCommandStrategy}
+     * Request with given requestId and reference.
+     *
+     * @param requestId
+     * @param reference
+     * @return BatchRequest
+     */
+    public static BatchRequest writeOffLoanRequest(final Long requestId, final Long reference) {
+
+        final BatchRequest br = new BatchRequest();
+
+        br.setRequestId(requestId);
+
+        // IMPORTANT: must match your strategy + stateTransitions
+        br.setRelativeUrl("loans/$.loanId?command=writeoff");
+
+        br.setReference(reference);
+        br.setMethod("POST");
+
+        br.setBody(
+                "{"
+                        + "\"locale\": \"en\","
+                        + "\"dateFormat\": \"dd MMMM yyyy\","
+                        + "\"transactionDate\": \"02 April 2026\","
+                        + "\"note\": \"Batch write-off\""
+                        + "}"
+        );
+
+        return br;
+    }
+
+    /**
+     * Creates and returns a
      * {@link org.apache.fineract.batch.command.internal.DisburseLoanCommandStrategy}
      * Request with given requestId and reference.
      * 

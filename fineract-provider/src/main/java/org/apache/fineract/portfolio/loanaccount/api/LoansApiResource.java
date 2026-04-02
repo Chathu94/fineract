@@ -724,6 +724,10 @@ public class LoansApiResource {
             final CommandWrapper commandRequest = builder.disburseLoanToSavingsApplication(loanId).build();
             result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
         }
+        else if (is(commandParam, "writeoff")) {
+            final CommandWrapper commandRequest = builder.writeOffLoanTransaction(loanId).build();
+            result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
+        }
 
         if (is(commandParam, "undoapproval")) {
             final CommandWrapper commandRequest = builder.undoLoanApplicationApproval(loanId).build();
@@ -755,4 +759,5 @@ public class LoansApiResource {
     private boolean is(final String commandParam, final String commandValue) {
         return StringUtils.isNotBlank(commandParam) && commandParam.trim().equalsIgnoreCase(commandValue);
     }
+
 }

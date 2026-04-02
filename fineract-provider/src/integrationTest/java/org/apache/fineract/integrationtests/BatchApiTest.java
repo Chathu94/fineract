@@ -290,7 +290,7 @@ public class BatchApiTest {
      * Tests that a new charge was added to a newly created loan and charges are
      * Collected properly 200(OK) status was returned for successful responses.
      * It first creates a new client and apply a loan, then creates a new charge
-     * for the create loan and then fetches all the applied charges
+     * for the creation loan and then fetches all the applied charges
      * 
      * @see org.apache.fineract.batch.command.internal.CollectChargesCommandStrategy
      * @see org.apache.fineract.batch.command.internal.CreateChargeCommandStrategy
@@ -421,5 +421,77 @@ public class BatchApiTest {
 
         Assert.assertEquals("Verify Status Code 200 for Approve Loan", 200L, (long) response.get(3).getStatusCode());
         Assert.assertEquals("Verify Status Code 200 for Disburse Loan", 200L, (long) response.get(4).getStatusCode());
+    }
+
+    @Test
+    public void shouldReturnOkStatusOnSuccessfulLoanWriteOff() {
+
+        final String loanProductJSON = new LoanProductTestBuilder() //
+                .withPrincipal("10000000.00") //
+                .withNumberOfRepayments("24") //
+                .withRepaymentAfterEvery("1") //
+                .withRepaymentTypeAsMonth() //
+                .withinterestRatePerPeriod("2") //
+                .withInterestRateFrequencyTypeAsMonths() //
+                .withAmortizationTypeAsEqualPrincipalPayment() //
+                .withInterestTypeAsDecliningBalance() //
+                .currencyDetails("0", "100").build(null);
+
+        final Integer productId =
+                new LoanTransactionHelper(this.requestSpec, this.responseSpec)
+                        .getLoanProductId(loanProductJSON);
+
+        // Create client
+        final BatchRequest br1 = BatchHelper.createClientRequest(4800L, "");
+
+        // Activate client
+        final BatchRequest br2 = BatchHelper.activateClientRequest(4801L, 4800L);
+
+        // Apply loan
+        final BatchRequest br3 = BatchHelper.applyLoanRequest(4802L, 4801L, productId);
+
+        // Approve loan
+        final BatchRequest br4 = BatchHelper.approveLoanRequest(4803L, 4802L);
+
+        // Disburse loan
+        final BatchRequest br5 = BatchHelper.disburseLoanRequest(4804L, 4803L);
+
+        // Write-off loan
+        final BatchRequest br6 = BatchHelper.writeOffLoanRequest(4805L, 4802L);
+
+        final List<BatchRequest> batchRequests = new ArrayList<>();
+        batchRequests.add(br1);
+        batchRequests.add(br2);
+        batchRequests.add(br3);
+        batchRequests.add(br4);
+        batchRequests.add(br5);
+        batchRequests.add(br6);
+
+        final String jsonifiedRequest = BatchHelper.toJsonString(batchRequests);
+
+        final List<BatchResponse> response =
+                BatchHelper.postBatchRequestsWithoutEnclosingTransaction(
+                        this.requestSpec,
+                        this.responseSpec,
+                        jsonifiedRequest
+                );
+
+        // Assertions
+
+        // Approve
+        Assert.assertEquals("Verify Status Code 200 for Approve Loan",
+                200L, (long) response.get(3).getStatusCode());
+
+        // Disburse
+        Assert.assertEquals("Verify Status Code 200 for Disburse Loan",
+                200L, (long) response.get(4).getStatusCode());
+
+        Assert.assertEquals("Verify Status Code 200 for Write-Off Loan",
+                200L, (long) response.get(5).getStatusCode());
+
+        Assert.assertNotNull("Write-off response body should not be null",
+                response.get(5).getBody());
+
+        System.out.println("Write-off response: " + response.get(5).getBody());
     }
 }
