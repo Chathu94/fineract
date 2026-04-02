@@ -43,6 +43,10 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
+import com.google.gson.JsonParser;
+import com.google.gson.Gson;
+
+import static com.google.gson.JsonParser.*;
 
 /**
  * Helper class to extract values of json named attributes.
@@ -708,5 +712,27 @@ public class JsonParserHelper {
             clientApplicationLocale = localeFromString(locale);
         }
         return clientApplicationLocale;
+    }
+
+    public static String addOrReplace(String json, String key, Object value) {
+        JsonObject jsonObject;
+
+        if (json == null || json.trim().isEmpty()) {
+            jsonObject = new JsonObject();
+        } else {
+            jsonObject = new JsonParser().parse(json).getAsJsonObject();
+        }
+
+        if (value instanceof Number) {
+            jsonObject.addProperty(key, (Number) value);
+        } else if (value instanceof Boolean) {
+            jsonObject.addProperty(key, (Boolean) value);
+        } else if (value instanceof String) {
+            jsonObject.addProperty(key, (String) value);
+        } else {
+            jsonObject.add(key, new Gson().toJsonTree(value));
+        }
+
+        return jsonObject.toString();
     }
 }
