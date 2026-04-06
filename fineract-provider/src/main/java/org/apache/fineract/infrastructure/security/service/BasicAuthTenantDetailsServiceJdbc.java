@@ -20,6 +20,7 @@ package org.apache.fineract.infrastructure.security.service;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.HashMap;
 
 import javax.sql.DataSource;
 
@@ -33,6 +34,8 @@ import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * A JDBC implementation of {@link BasicAuthTenantDetailsService} for loading a
@@ -42,6 +45,7 @@ import org.springframework.stereotype.Service;
 public class BasicAuthTenantDetailsServiceJdbc implements BasicAuthTenantDetailsService {
 
     private final JdbcTemplate jdbcTemplate;
+    public static HashMap<String, HashMap<Boolean, FineractPlatformTenant>> tenantsMap = new HashMap<>();
 
     @Autowired
     public BasicAuthTenantDetailsServiceJdbc(@Qualifier("tenantDataSourceJndi") final DataSource dataSource) {
@@ -135,11 +139,24 @@ public class BasicAuthTenantDetailsServiceJdbc implements BasicAuthTenantDetails
     public FineractPlatformTenant loadTenantById(final String tenantIdentifier, final boolean isReport) {
 
         try {
-            final TenantMapper rm = new TenantMapper(isReport);
-            final String sql = "select  " + rm.schema() + " where t.identifier like ?";
+            if (tenantsMap.containsKey(tenantIdentifier) && tenantsMap.get(tenantIdentifier).containsKey(isReport)) {
+                return tenantsMap.get(tenantIdentifier).get(isReport);
+            }
 
-            return this.jdbcTemplate.queryForObject(sql, rm, new Object[] { tenantIdentifier });
-        } catch (final EmptyResultDataAccessException e) {
+            final TenantMapper rm = new TenantMapper(isReport);
+            final String sql = "select  " + rm.schema() + " where t.identifier = ?";
+            FineractPlatformTenant tenant = this.jdbcTemplate.queryForObject(sql, rm, new Object[] { tenantIdentifier });
+            if (tenant != null) {
+                if (!tenantsMap.containsKey(tenantIdentifier)) {
+                    tenantsMap.put(tenantIdentifier, new HashMap<>());
+                }
+                tenantsMap.get(tenantIdentifier).put(isReport, tenant);
+            }
+            return tenant;
+        } catch (final Exception e) {
+            if (e instanceof SQLException) {
+                System.out.println(e);
+            }
             throw new InvalidTenantIdentiferException("The tenant identifier: " + tenantIdentifier + " is not valid.");
         }
     }

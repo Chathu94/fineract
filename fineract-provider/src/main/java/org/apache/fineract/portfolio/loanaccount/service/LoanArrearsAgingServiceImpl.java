@@ -424,22 +424,21 @@ public class LoanArrearsAgingServiceImpl implements LoanArrearsAgingService, Bus
         public Map<Long, List<LoanSchedulePeriodData>> extractData(ResultSet rs) throws SQLException, DataAccessException {
             Map<Long, List<LoanSchedulePeriodData>> scheduleDate = new HashMap<>();
 
+            Long prevLoanId = null;
+            List<LoanSchedulePeriodData> periodDatas = new ArrayList<>();
             while (rs.next()) {
                 Long loanId = rs.getLong("loanId");
-                List<LoanSchedulePeriodData> periodDatas = new ArrayList<>();
                 LoanSchedulePeriodData loanSchedulePeriodData = fetchLoanSchedulePeriodData(rs);
-                periodDatas.add(loanSchedulePeriodData);
-                while (rs.next()) {
-                    Long tempLoanId = rs.getLong("loanId");
-                    if (loanId.equals(tempLoanId)) {
-                        periodDatas.add(fetchLoanSchedulePeriodData(rs));
-                    } else {
-                        rs.previous();
-                        break;
-                    }
+                if (prevLoanId == null || prevLoanId.equals(loanId)) {
+                    periodDatas.add(loanSchedulePeriodData);
+                } else {
+                    scheduleDate.put(prevLoanId, periodDatas);
+                    periodDatas = new ArrayList<>();
+                    periodDatas.add(loanSchedulePeriodData);
                 }
-                scheduleDate.put(loanId, periodDatas);
+                prevLoanId = loanId;
             }
+            scheduleDate.put(prevLoanId, periodDatas);
 
             return scheduleDate;
         }

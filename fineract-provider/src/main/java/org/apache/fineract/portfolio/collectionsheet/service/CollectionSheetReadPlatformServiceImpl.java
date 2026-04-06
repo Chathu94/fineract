@@ -743,7 +743,7 @@ public class CollectionSheetReadPlatformServiceImpl implements CollectionSheetRe
             sb.append("JOIN m_loan_repayment_schedule ls ON ls.loan_id = ln.id AND ls.completed_derived = 0 AND ls.duedate <= :dueDate ");
             sb.append("where ");
             if (checkForOfficeId) {
-                sb.append("of.id = :officeId and ");
+                sb.append("`of`.id = :officeId and ");
             }
             if (checkforStaffId) {
                 sb.append("ln.loan_officer_id = :staffId and ");

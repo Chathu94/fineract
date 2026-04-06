@@ -71,7 +71,17 @@ public class EmbeddedTomcatWithSSLConfiguration {
     }
 
     protected int getHTTPSPort() {
-        // TODO This shouldn't be hard-coded here, but configurable
+        String port = System.getenv("HTTPS_PORT");
+
+        if (port != null && !port.isEmpty()) {
+            try {
+                return Integer.parseInt(port);
+            } catch (NumberFormatException e) {
+                // optional: log warning
+                System.err.println("Invalid HTTPS_PORT env value: " + port + ", falling back to 8443");
+            }
+        }
+
         return 8443;
     }
 

@@ -278,15 +278,13 @@ public class ScheduledJobRunnerServiceImpl implements ScheduledJobRunnerService 
 
         final StringBuilder updateSqlBuilder = new StringBuilder(900);
 
-        updateSqlBuilder.append("UPDATE m_loan as ml,");
-        updateSqlBuilder.append(" (select loan.id ");
-        updateSqlBuilder.append("from m_loan_arrears_aging laa");
-        updateSqlBuilder.append(" INNER JOIN  m_loan loan on laa.loan_id = loan.id ");
-        updateSqlBuilder.append(" INNER JOIN m_product_loan mpl on mpl.id = loan.product_id AND mpl.overdue_days_for_npa is not null ");
-        updateSqlBuilder.append("WHERE loan.loan_status_id = 300  and ");
-        updateSqlBuilder.append("laa.overdue_since_date_derived < SUBDATE(CURDATE(),INTERVAL  ifnull(mpl.overdue_days_for_npa,0) day) ");
-        updateSqlBuilder.append("group by loan.id) as sl ");
-        updateSqlBuilder.append("SET ml.is_npa=1 where ml.id=sl.id ");
+        updateSqlBuilder.append("UPDATE m_loan ml ");
+        updateSqlBuilder.append("JOIN m_loan_arrears_aging laa ON laa.loan_id = ml.id ");
+        updateSqlBuilder.append("JOIN m_product_loan mpl ON mpl.id = ml.product_id AND mpl.overdue_days_for_npa IS NOT NULL ");
+        updateSqlBuilder.append("SET ml.is_npa = 1 ");
+        updateSqlBuilder.append("WHERE ml.loan_status_id = 300 ");
+        updateSqlBuilder.append("AND laa.overdue_since_date_derived < ");
+        updateSqlBuilder.append("SUBDATE(CURDATE(), INTERVAL IFNULL(mpl.overdue_days_for_npa, 0) DAY) ");
 
         final int result = jdbcTemplate.update(updateSqlBuilder.toString());
 

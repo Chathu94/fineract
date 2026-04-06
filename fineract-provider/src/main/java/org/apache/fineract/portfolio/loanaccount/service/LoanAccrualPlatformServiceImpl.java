@@ -26,10 +26,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.apache.fineract.infrastructure.core.domain.FineractPlatformTenant;
+import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.jobs.annotation.CronTarget;
 import org.apache.fineract.infrastructure.jobs.exception.JobExecutionException;
 import org.apache.fineract.infrastructure.jobs.service.JobName;
 import org.apache.fineract.portfolio.loanaccount.data.LoanScheduleAccrualData;
+import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -81,7 +84,9 @@ public class LoanAccrualPlatformServiceImpl implements LoanAccrualPlatformServic
     @Override
     @CronTarget(jobName = JobName.ADD_PERIODIC_ACCRUAL_ENTRIES)
     public void addPeriodicAccruals() throws JobExecutionException {
-        addPeriodicAccruals(LocalDate.now());
+//        run service for 2026-03-31 and then change to LocalDate.now() after testing
+        LocalDate tillDate = new LocalDate(2026, 3, 31);
+        addPeriodicAccruals(tillDate);
 //        if (errors.length() > 0) { throw new JobExecutionException(errors); }
     }
 
@@ -120,9 +125,13 @@ public class LoanAccrualPlatformServiceImpl implements LoanAccrualPlatformServic
 
         List<CompletableFuture<Void>> futures = new ArrayList<>(loanDataMap.size());
 
+        FineractPlatformTenant tenant = ThreadLocalContextUtil.getTenant();
+
         System.out.println("Found " + loanDataMap.size() + " loans");
         for (Map.Entry<Long, Collection<LoanScheduleAccrualData>> entry : loanDataMap.entrySet()) {
             futures.add(CompletableFuture.runAsync(() -> {
+                FineractPlatformTenant originalTenant = ThreadLocalContextUtil.getTenant();
+                ThreadLocalContextUtil.setTenant(tenant);
                 try {
                     int current = pos.getAndIncrement();
                     System.out.println("Processing " + current + "/" + loanDataMap.size());
@@ -135,6 +144,11 @@ public class LoanAccrualPlatformServiceImpl implements LoanAccrualPlatformServic
                                 .append(" with message ")
                                 .append(real.getMessage())
                                 .append('\n');
+                    }
+                } finally {
+                    ThreadLocalContextUtil.clearTenant();
+                    if (originalTenant != null) {
+                        ThreadLocalContextUtil.setTenant(originalTenant);
                     }
                 }
             }, executor));
