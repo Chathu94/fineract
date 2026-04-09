@@ -18,29 +18,15 @@
  */
 package org.apache.fineract.organisation.office.domain;
 
-import java.util.Date;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToMany;
-import javax.persistence.Table;
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
-import javax.persistence.UniqueConstraint;
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
 import org.apache.fineract.organisation.office.exception.CannotUpdateOfficeWithParentOfficeSameAsSelf;
 import org.apache.fineract.organisation.office.exception.RootOfficeParentCannotBeUpdated;
 import org.joda.time.LocalDate;
+
+import javax.persistence.*;
+import java.util.*;
 
 @Entity
 @Table(name = "m_office", uniqueConstraints = { @UniqueConstraint(columnNames = { "name" }, name = "name_org"),
@@ -200,6 +186,11 @@ public class Office extends AbstractPersistableCustom<Long> {
     public String getName() {
         return this.name;
     }
+
+    public Office getParent() {
+        return this.parent;
+    }
+
 
     public String getHierarchy() {
         return this.hierarchy;
