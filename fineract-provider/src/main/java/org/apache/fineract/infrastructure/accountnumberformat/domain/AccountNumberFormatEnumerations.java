@@ -18,6 +18,8 @@
  */
 package org.apache.fineract.infrastructure.accountnumberformat.domain;
 
+import org.apache.fineract.infrastructure.core.data.EnumOptionData;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -26,25 +28,25 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.fineract.infrastructure.core.data.EnumOptionData;
-
 public class AccountNumberFormatEnumerations {
 
     public final static Set<AccountNumberPrefixType> accountNumberPrefixesForClientAccounts = new HashSet<>(Arrays.asList(
-            AccountNumberPrefixType.OFFICE_NAME, AccountNumberPrefixType.CLIENT_TYPE));
+            AccountNumberPrefixType.OFFICE_NAME, AccountNumberPrefixType.CLIENT_TYPE, AccountNumberPrefixType.PARENT_OFFICE_NAME));
     public final static Set<AccountNumberPrefixType> accountNumberPrefixesForLoanAccounts = new HashSet<>(Arrays.asList(
-            AccountNumberPrefixType.OFFICE_NAME, AccountNumberPrefixType.LOAN_PRODUCT_SHORT_NAME));
+            AccountNumberPrefixType.OFFICE_NAME, AccountNumberPrefixType.LOAN_PRODUCT_SHORT_NAME,AccountNumberPrefixType.PARENT_OFFICE_NAME));
     public final static Set<AccountNumberPrefixType> accountNumberPrefixesForSavingsAccounts = new HashSet<>(Arrays.asList(
-            AccountNumberPrefixType.OFFICE_NAME, AccountNumberPrefixType.SAVINGS_PRODUCT_SHORT_NAME));
+            AccountNumberPrefixType.OFFICE_NAME, AccountNumberPrefixType.SAVINGS_PRODUCT_SHORT_NAME,AccountNumberPrefixType.PARENT_OFFICE_NAME));
     public final static Set<AccountNumberPrefixType> accountNumberPrefixesForCenters = new HashSet<>(Arrays.asList(
-    		AccountNumberPrefixType.OFFICE_NAME));
+    		AccountNumberPrefixType.OFFICE_NAME,AccountNumberPrefixType.PARENT_OFFICE_NAME));
     public final static Set<AccountNumberPrefixType> accountNumberPrefixesForGroups = new HashSet<>(Arrays.asList(
-    		AccountNumberPrefixType.OFFICE_NAME));
+    		AccountNumberPrefixType.OFFICE_NAME,AccountNumberPrefixType.PARENT_OFFICE_NAME));
 
     public enum AccountNumberPrefixType {
-        OFFICE_NAME(1, "accountNumberPrefixType.officeName"), CLIENT_TYPE(101, "accountNumberPrefixType.clientType"), LOAN_PRODUCT_SHORT_NAME(
-                201, "accountNumberPrefixType.loanProductShortName"), SAVINGS_PRODUCT_SHORT_NAME(301,
-                "accountNumberPrefixType.savingsProductShortName");
+        OFFICE_NAME(1, "accountNumberPrefixType.officeName"),
+        PARENT_OFFICE_NAME(2, "accountNumberPrefixType.parentOfficeName"),
+        CLIENT_TYPE(101, "accountNumberPrefixType.clientType"),
+        LOAN_PRODUCT_SHORT_NAME(201, "accountNumberPrefixType.loanProductShortName"),
+        SAVINGS_PRODUCT_SHORT_NAME(301, "accountNumberPrefixType.savingsProductShortName");
 
         private final Integer value;
         private final String code;
