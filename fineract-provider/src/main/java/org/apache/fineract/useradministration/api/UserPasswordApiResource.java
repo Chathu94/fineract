@@ -34,7 +34,10 @@ import org.apache.fineract.useradministration.domain.AppUser;
 import org.apache.fineract.useradministration.domain.AppUserPreviousPassword;
 import org.apache.fineract.useradministration.domain.AppUserPreviousPasswordRepository;
 import org.apache.fineract.useradministration.domain.AppUserRepository;
+import org.apache.fineract.useradministration.domain.PasswordValidationPolicy;
+import org.apache.fineract.useradministration.domain.PasswordValidationPolicyRepository;
 import org.apache.fineract.useradministration.exception.PasswordPreviouslyUsedException;
+import org.apache.fineract.infrastructure.core.data.DataValidatorBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -56,19 +59,22 @@ public class UserPasswordApiResource {
 
     private final PlatformSecurityContext context;
     private final FromJsonHelper fromApiJsonHelper;
-    private final Set<String> supportedParameters = new HashSet<>(Arrays.asList("password", "repeatPassword"));
+    private final Set<String> supportedParameters = new HashSet<>(
+            Arrays.asList("password", "repeatPassword", "currentPassword"));
     private final AppUserRepository appUserRepository;
     private final PlatformPasswordEncoder platformPasswordEncoder;
     private final AppUserPreviousPasswordRepository appUserPreviewPasswordRepository;
     private final DefaultToApiJsonSerializer<AppUser> toApiJsonSerializer;
+    private final PasswordValidationPolicyRepository passwordValidationPolicyRepository;
 
     @Autowired
     public UserPasswordApiResource(final PlatformSecurityContext context,
-                                   final FromJsonHelper fromApiJsonHelper,
-                                   final AppUserRepository appUserRepository,
-                                   final PlatformPasswordEncoder platformPasswordEncoder,
-                                   final AppUserPreviousPasswordRepository appUserPreviewPasswordRepository,
-                                   final DefaultToApiJsonSerializer<AppUser> toApiJsonSerializer) {
+            final FromJsonHelper fromApiJsonHelper,
+            final AppUserRepository appUserRepository,
+            final PlatformPasswordEncoder platformPasswordEncoder,
+            final AppUserPreviousPasswordRepository appUserPreviewPasswordRepository,
+            final DefaultToApiJsonSerializer<AppUser> toApiJsonSerializer,
+            final PasswordValidationPolicyRepository passwordValidationPolicyRepository) {
 
         this.context = context;
         this.fromApiJsonHelper = fromApiJsonHelper;
@@ -76,6 +82,7 @@ public class UserPasswordApiResource {
         this.platformPasswordEncoder = platformPasswordEncoder;
         this.appUserPreviewPasswordRepository = appUserPreviewPasswordRepository;
         this.toApiJsonSerializer = toApiJsonSerializer;
+        this.passwordValidationPolicyRepository = passwordValidationPolicyRepository;
     }
 
     @PUT
@@ -95,25 +102,61 @@ public class UserPasswordApiResource {
         final JsonElement parsedCommand = this.fromApiJsonHelper.parse(apiRequestBodyAsJson);
         final String password = this.fromApiJsonHelper.extractStringNamed("password", parsedCommand);
         final String repeatPassword = this.fromApiJsonHelper.extractStringNamed("repeatPassword", parsedCommand);
+        final String currentPassword = this.fromApiJsonHelper.extractStringNamed("currentPassword", parsedCommand);
 
         final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
+        final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors).resource("user");
+
+        if (StringUtils.isBlank(currentPassword)) {
+            final ApiParameterError error = ApiParameterError.parameterError(
+                    "validation.msg.user.current.password.cannot.be.blank",
+                    "Current password cannot be blank.", "currentPassword");
+            dataValidationErrors.add(error);
+        }
+
         if (password == null || !password.equals(repeatPassword)) {
-            final ApiParameterError error = ApiParameterError.parameterError("error.msg.user.password.and.repeat.password.not.match",
+            final ApiParameterError error = ApiParameterError.parameterError(
+                    "error.msg.user.password.and.repeat.password.not.match",
                     "Password and Repeat password do not match.", "password", password);
             dataValidationErrors.add(error);
         }
-        if (!dataValidationErrors.isEmpty()) {
-            throw new PlatformApiDataValidationException("validation.msg.validation.errors.exist", "Validation errors exist.",
-                    dataValidationErrors);
+
+        if (password != null) {
+            final PasswordValidationPolicy validationPolicy = this.passwordValidationPolicyRepository
+                    .findActivePasswordValidationPolicy();
+            final String regex = validationPolicy.getRegex();
+            final String description = validationPolicy.getDescription();
+            baseDataValidator.reset().parameter("password").value(password).matchesRegularExpression(regex,
+                    description);
         }
 
         AppUser userToUpdate = this.appUserRepository.findOne(appUser.getId());
 
+        if (StringUtils.isNotBlank(currentPassword)) {
+            final String currentHashedPassword = userToUpdate.getPassword();
+            userToUpdate.updatePassword(currentPassword);
+            final String currentPasswordEncoded = this.platformPasswordEncoder.encode(userToUpdate);
+            if (!currentPasswordEncoded.equals(currentHashedPassword)) {
+                final ApiParameterError error = ApiParameterError.parameterError(
+                        "error.msg.user.current.password.invalid",
+                        "Invalid current password.", "currentPassword");
+                dataValidationErrors.add(error);
+            }
+        }
+
+        if (!dataValidationErrors.isEmpty()) {
+            throw new PlatformApiDataValidationException("validation.msg.validation.errors.exist",
+                    "Validation errors exist.",
+                    dataValidationErrors);
+        }
+
         userToUpdate.updatePassword(password);
         final String passWordEncodedValue = this.platformPasswordEncoder.encode(userToUpdate);
 
-        PageRequest pageRequest = new PageRequest(0, AppUserApiConstant.numberOfPreviousPasswords, Sort.Direction.DESC, "removalDate");
-        final List<AppUserPreviousPassword> nLastUsedPasswords = this.appUserPreviewPasswordRepository.findByUserId(userToUpdate.getId(), pageRequest);
+        PageRequest pageRequest = new PageRequest(0, AppUserApiConstant.numberOfPreviousPasswords, Sort.Direction.DESC,
+                "removalDate");
+        final List<AppUserPreviousPassword> nLastUsedPasswords = this.appUserPreviewPasswordRepository
+                .findByUserId(userToUpdate.getId(), pageRequest);
 
         for (AppUserPreviousPassword aPreviewPassword : nLastUsedPasswords) {
             if (aPreviewPassword.getPassword().equals(passWordEncodedValue)) {
