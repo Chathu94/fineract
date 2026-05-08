@@ -114,6 +114,7 @@ import org.apache.fineract.portfolio.loanproduct.service.LoanProductReadPlatform
 import org.apache.fineract.portfolio.paymentdetail.data.PaymentDetailData;
 import org.apache.fineract.portfolio.paymenttype.data.PaymentTypeData;
 import org.apache.fineract.portfolio.paymenttype.service.PaymentTypeReadPlatformService;
+import org.apache.fineract.useradministration.data.AppUserData;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.joda.time.Days;
 import org.joda.time.LocalDate;
@@ -1263,7 +1264,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                     + " tr.principal_portion_derived as principal, tr.interest_portion_derived as interest, "
                     + " tr.fee_charges_portion_derived as fees, tr.penalty_charges_portion_derived as penalties, "
                     + " tr.overpayment_portion_derived as overpayment, tr.outstanding_loan_balance_derived as outstandingLoanBalance, "
-                    + " tr.unrecognized_income_portion as unrecognizedIncome,"
+                    + " tr.unrecognized_income_portion as unrecognizedIncome, "
                     + " tr.submitted_on_date as submittedOnDate, "
                     + " tr.manually_adjusted_or_reversed as manuallyReversed, "
                     + " pd.payment_type_id as paymentType,pd.account_number as accountNumber,pd.check_number as checkNumber, "
@@ -1271,17 +1272,23 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                     + " l.currency_code as currencyCode, l.currency_digits as currencyDigits, l.currency_multiplesof as inMultiplesOf, rc.`name` as currencyName, "
                     + " rc.display_symbol as currencyDisplaySymbol, rc.internationalized_name_code as currencyNameCode, "
                     + " pt.value as paymentTypeName, tr.external_id as externalId, tr.office_id as officeId, office.name as officeName, "
-                    + " fromtran.id as fromTransferId, fromtran.is_reversed as fromTransferReversed,"
-                    + " fromtran.transaction_date as fromTransferDate, fromtran.amount as fromTransferAmount,"
-                    + " fromtran.description as fromTransferDescription,"
-                    + " totran.id as toTransferId, totran.is_reversed as toTransferReversed,"
-                    + " totran.transaction_date as toTransferDate, totran.amount as toTransferAmount,"
-                    + " totran.description as toTransferDescription " + " from m_loan l join m_loan_transaction tr on tr.loan_id = l.id"
+                    + " fromtran.id as fromTransferId, fromtran.is_reversed as fromTransferReversed, "
+                    + " fromtran.transaction_date as fromTransferDate, fromtran.amount as fromTransferAmount, "
+                    + " fromtran.description as fromTransferDescription, "
+                    + " totran.id as toTransferId, totran.is_reversed as toTransferReversed, "
+                    + " totran.transaction_date as toTransferDate, totran.amount as toTransferAmount, "
+                    + " totran.description as toTransferDescription, "
+                    + " au.id as appUserId, "
+                    + " au.username as appUserUsername "
+                    + " from m_loan l "
+                    + " join m_loan_transaction tr on tr.loan_id = l.id "
                     + " join m_currency rc on rc.`code` = l.currency_code "
-                    + " left JOIN m_payment_detail pd ON tr.payment_detail_id = pd.id"
-                    + " left join m_payment_type pt on pd.payment_type_id = pt.id" + " left join m_office office on office.id=tr.office_id"
+                    + " left JOIN m_payment_detail pd ON tr.payment_detail_id = pd.id "
+                    + " left join m_payment_type pt on pd.payment_type_id = pt.id "
+                    + " left join m_office office on office.id=tr.office_id "
                     + " left join m_account_transfer_transaction fromtran on fromtran.from_loan_transaction_id = tr.id "
-                    + " left join m_account_transfer_transaction totran on totran.to_loan_transaction_id = tr.id ";
+                    + " left join m_account_transfer_transaction totran on totran.to_loan_transaction_id = tr.id "
+                    + " left join m_appuser au on au.id = tr.appuser_id ";
         }
 
         @Override
@@ -1304,6 +1311,9 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
             final boolean manuallyReversed = rs.getBoolean("manuallyReversed");
 
             PaymentDetailData paymentDetailData = null;
+
+            final Long appUserId = rs.getLong("appUserId");
+            final String appUserUsername = rs.getString("appUserUsername");
 
             if (transactionType.isPaymentOrReceipt()) {
                 final Long paymentTypeId = JdbcSupport.getLong(rs, "paymentType");
@@ -1353,7 +1363,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
             }
             return new LoanTransactionData(id, officeId, officeName, transactionType, paymentDetailData, currencyData, date, totalAmount,
                     principalPortion, interestPortion, feeChargesPortion, penaltyChargesPortion, overPaymentPortion,
-                    unrecognizedIncomePortion, externalId, transfer, null, outstandingLoanBalance, submittedOnDate, manuallyReversed);
+                    unrecognizedIncomePortion, externalId, transfer, null, outstandingLoanBalance, submittedOnDate, manuallyReversed, appUserUsername,appUserId);
         }
     }
 
