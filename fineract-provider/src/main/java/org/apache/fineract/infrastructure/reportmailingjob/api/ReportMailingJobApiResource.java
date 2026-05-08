@@ -39,7 +39,9 @@ import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.serialization.ApiRequestJsonSerializationSettings;
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
 import org.apache.fineract.infrastructure.core.service.Page;
+import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
 import org.apache.fineract.infrastructure.core.service.SearchParameters;
+import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.reportmailingjob.ReportMailingJobConstants;
 import org.apache.fineract.infrastructure.reportmailingjob.data.ReportMailingJobData;
 import org.apache.fineract.infrastructure.reportmailingjob.service.ReportMailingJobReadPlatformService;
@@ -58,24 +60,28 @@ public class ReportMailingJobApiResource {
     private final ApiRequestParameterHelper apiRequestParameterHelper;
     private final DefaultToApiJsonSerializer<ReportMailingJobData> reportMailingToApiJsonSerializer;
     private final ReportMailingJobReadPlatformService reportMailingJobReadPlatformService;
+    private final RoutingDataSource dataSource;
     
     @Autowired
     public ReportMailingJobApiResource(final PlatformSecurityContext platformSecurityContext, 
             final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService, 
             final ApiRequestParameterHelper apiRequestParameterHelper, 
             final DefaultToApiJsonSerializer<ReportMailingJobData> reportMailingToApiJsonSerializer, 
-            final ReportMailingJobReadPlatformService reportMailingJobReadPlatformService) {
+            final ReportMailingJobReadPlatformService reportMailingJobReadPlatformService,
+                                       final RoutingDataSource dataSource) {
         this.platformSecurityContext = platformSecurityContext;
         this.commandsSourceWritePlatformService = commandsSourceWritePlatformService;
         this.apiRequestParameterHelper = apiRequestParameterHelper;
         this.reportMailingToApiJsonSerializer = reportMailingToApiJsonSerializer;
         this.reportMailingJobReadPlatformService = reportMailingJobReadPlatformService;
+        this.dataSource = dataSource;
     }
     
     @POST
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String createReportMailingJob(final String apiRequestBodyAsJson) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
         final CommandWrapper commandWrapper = new CommandWrapperBuilder().
                 createReportMailingJob(ReportMailingJobConstants.REPORT_MAILING_JOB_ENTITY_NAME).
                 withJson(apiRequestBodyAsJson).build();
@@ -90,6 +96,7 @@ public class ReportMailingJobApiResource {
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String updateReportMailingJob(@PathParam("entityId") final Long entityId, final String apiRequestBodyAsJson) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
         final CommandWrapper commandWrapper = new CommandWrapperBuilder().
                 updateReportMailingJob(ReportMailingJobConstants.REPORT_MAILING_JOB_ENTITY_NAME, entityId).
                 withJson(apiRequestBodyAsJson).build();
@@ -104,6 +111,7 @@ public class ReportMailingJobApiResource {
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String deleteReportMailingJob(@PathParam("entityId") final Long entityId, final String apiRequestBodyAsJson) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
         final CommandWrapper commandWrapper = new CommandWrapperBuilder().
                 deleteReportMailingJob(ReportMailingJobConstants.REPORT_MAILING_JOB_ENTITY_NAME, entityId).
                 withJson(apiRequestBodyAsJson).build();
@@ -118,6 +126,7 @@ public class ReportMailingJobApiResource {
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String retrieveReportMailingJob(@PathParam("entityId") final Long entityId, @Context final UriInfo uriInfo) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
         this.platformSecurityContext.authenticatedUser().validateHasReadPermission(ReportMailingJobConstants.REPORT_MAILING_JOB_ENTITY_NAME);
         
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
@@ -136,6 +145,7 @@ public class ReportMailingJobApiResource {
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String retrieveReportMailingJobTemplate(@Context final UriInfo uriInfo) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
         this.platformSecurityContext.authenticatedUser().validateHasReadPermission(ReportMailingJobConstants.REPORT_MAILING_JOB_ENTITY_NAME);
         
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
@@ -151,6 +161,7 @@ public class ReportMailingJobApiResource {
             @QueryParam("offset") final Integer offset,
             @QueryParam("limit") final Integer limit, @QueryParam("orderBy") final String orderBy,
             @QueryParam("sortOrder") final String sortOrder) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
         this.platformSecurityContext.authenticatedUser().validateHasReadPermission(ReportMailingJobConstants.REPORT_MAILING_JOB_ENTITY_NAME);
         
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());

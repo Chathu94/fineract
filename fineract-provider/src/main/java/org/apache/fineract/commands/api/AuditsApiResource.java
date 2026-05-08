@@ -43,6 +43,8 @@ import org.apache.fineract.infrastructure.core.data.PaginationParameters;
 import org.apache.fineract.infrastructure.core.serialization.ApiRequestJsonSerializationSettings;
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
 import org.apache.fineract.infrastructure.core.service.Page;
+import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
+import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
@@ -64,16 +66,18 @@ public class AuditsApiResource {
     private final ApiRequestParameterHelper apiRequestParameterHelper;
     private final DefaultToApiJsonSerializer<AuditData> toApiJsonSerializer;
     private final DefaultToApiJsonSerializer<AuditSearchData> toApiJsonSerializerSearchTemplate;
+    private final RoutingDataSource dataSource;
 
     @Autowired
     public AuditsApiResource(final PlatformSecurityContext context, final AuditReadPlatformService auditReadPlatformService,
             final ApiRequestParameterHelper apiRequestParameterHelper, final DefaultToApiJsonSerializer<AuditData> toApiJsonSerializer,
-            final DefaultToApiJsonSerializer<AuditSearchData> toApiJsonSerializerSearchTemplate) {
+            final DefaultToApiJsonSerializer<AuditSearchData> toApiJsonSerializerSearchTemplate, final RoutingDataSource dataSource) {
         this.context = context;
         this.auditReadPlatformService = auditReadPlatformService;
         this.apiRequestParameterHelper = apiRequestParameterHelper;
         this.toApiJsonSerializer = toApiJsonSerializer;
         this.toApiJsonSerializerSearchTemplate = toApiJsonSerializerSearchTemplate;
+        this.dataSource = dataSource;
     }
 
     @GET
@@ -90,6 +94,7 @@ public class AuditsApiResource {
             @QueryParam("loanid") final Integer loanId, @QueryParam("savingsAccountId") final Integer savingsAccountId,
             @QueryParam("paged") final Boolean paged, @QueryParam("offset") final Integer offset, @QueryParam("limit") final Integer limit,
             @QueryParam("orderBy") final String orderBy, @QueryParam("sortOrder") final String sortOrder) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
         this.context.authenticatedUser().validateHasReadPermission(this.resourceNameForPermissions);
         final PaginationParameters parameters = PaginationParameters.instance(paged, offset, limit, orderBy, sortOrder);
@@ -115,6 +120,7 @@ public class AuditsApiResource {
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String retrieveAuditEntry(@PathParam("auditId") final Long auditId, @Context final UriInfo uriInfo) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
         this.context.authenticatedUser().validateHasReadPermission(this.resourceNameForPermissions);
 
@@ -129,6 +135,7 @@ public class AuditsApiResource {
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String retrieveAuditSearchTemplate(@Context final UriInfo uriInfo) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
         this.context.authenticatedUser().validateHasReadPermission(this.resourceNameForPermissions);
 

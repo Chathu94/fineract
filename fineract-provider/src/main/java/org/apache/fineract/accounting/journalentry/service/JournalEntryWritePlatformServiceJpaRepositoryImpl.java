@@ -27,6 +27,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.math.BigInteger;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.fineract.accounting.closure.domain.GLClosure;
@@ -635,8 +636,7 @@ public class JournalEntryWritePlatformServiceJpaRepositoryImpl implements Journa
         final AppUser user = this.context.authenticatedUser();
         final Long time = System.currentTimeMillis();
         final String uniqueVal = String.valueOf(time) + user.getId() + officeId;
-        final String transactionId = Long.toHexString(Long.parseLong(uniqueVal));
-        return transactionId;
+        return new BigInteger(uniqueVal).toString(16);
     }
 
     private void handleJournalEntryDataIntegrityIssues(final DataIntegrityViolationException dve) {

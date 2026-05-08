@@ -35,6 +35,7 @@ import org.apache.fineract.infrastructure.core.exception.AbstractPlatformService
 import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
 import org.apache.fineract.infrastructure.core.exception.PlatformDataIntegrityException;
 import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
+import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.jobs.annotation.CronTarget;
 import org.apache.fineract.infrastructure.jobs.exception.JobExecutionException;
 import org.apache.fineract.infrastructure.jobs.service.JobName;
@@ -192,6 +193,12 @@ public class StandingInstructionWritePlatformServiceImpl implements StandingInst
     @Override
     @CronTarget(jobName = JobName.EXECUTE_STANDING_INSTRUCTIONS)
     public void executeStandingInstructions() throws JobExecutionException {
+
+        if (ThreadLocalContextUtil.getVTReplicaMode()) {
+            this.jdbcTemplate.execute("SET workload = OLAP");
+            jdbcTemplate.execute("USE @primary");
+        }
+
         Collection<StandingInstructionData> instructionDatas = this.standingInstructionReadPlatformService
                 .retrieveAll(StandingInstructionStatus.ACTIVE.getValue());
         final StringBuilder sb = new StringBuilder();

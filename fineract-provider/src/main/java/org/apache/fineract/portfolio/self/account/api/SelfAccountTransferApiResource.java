@@ -37,6 +37,8 @@ import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDoma
 import org.apache.fineract.infrastructure.core.api.ApiRequestParameterHelper;
 import org.apache.fineract.infrastructure.core.serialization.ApiRequestJsonSerializationSettings;
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
+import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
+import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.portfolio.account.api.AccountTransfersApiResource;
 import org.apache.fineract.portfolio.account.service.AccountTransfersReadPlatformService;
@@ -67,6 +69,7 @@ public class SelfAccountTransferApiResource {
 	private final SelfBeneficiariesTPTReadPlatformService tptBeneficiaryReadPlatformService;
 	private final ConfigurationDomainService configurationDomainService;
 	private final AccountTransfersReadPlatformService accountTransfersReadPlatformService;
+	private final RoutingDataSource dataSource;
 
 	@Autowired
 	public SelfAccountTransferApiResource(
@@ -78,7 +81,8 @@ public class SelfAccountTransferApiResource {
 			final SelfAccountTransferDataValidator dataValidator,
 			final SelfBeneficiariesTPTReadPlatformService tptBeneficiaryReadPlatformService,
 			final ConfigurationDomainService configurationDomainService,
-			final AccountTransfersReadPlatformService accountTransfersReadPlatformService) {
+			final AccountTransfersReadPlatformService accountTransfersReadPlatformService,
+			final RoutingDataSource dataSource) {
 		this.context = context;
 		this.toApiJsonSerializer = toApiJsonSerializer;
 		this.accountTransfersApiResource = accountTransfersApiResource;
@@ -88,6 +92,7 @@ public class SelfAccountTransferApiResource {
 		this.tptBeneficiaryReadPlatformService = tptBeneficiaryReadPlatformService;
 		this.configurationDomainService = configurationDomainService;
 		this.accountTransfersReadPlatformService = accountTransfersReadPlatformService;
+		this.dataSource = dataSource;
 	}
 
 	@GET
@@ -97,6 +102,7 @@ public class SelfAccountTransferApiResource {
 	public String template(
 			@DefaultValue("") @QueryParam("type") final String type,
 			@Context final UriInfo uriInfo) {
+		ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
 		AppUser user = this.context.authenticatedUser();
 		final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper
@@ -123,6 +129,7 @@ public class SelfAccountTransferApiResource {
 	public String create(
 			@DefaultValue("") @QueryParam("type") final String type,
 			final String apiRequestBodyAsJson) {
+		ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
 		Map<String, Object> params = this.dataValidator.validateCreate(type,
 				apiRequestBodyAsJson);
 		if (type.equals("tpt")) {

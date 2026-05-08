@@ -22,7 +22,7 @@ gradle clean tomcatrunwar
 '''
 buildscript {
   repositories {
-  	 jcenter()
+//  	 jcenter()
   	 mavenCentral()
   	 maven { url "https://plugins.gradle.org/m2/" }
       google()
@@ -73,7 +73,7 @@ project.ext.mysqlPassword='mysql'
 group = 'org.apache.fineract'
 buildDir = new File(rootProject.projectDir, "../build")
 repositories {
-	jcenter()
+//	jcenter()
     flatDir { dirs("lib") }
     // mavenLocal() // useful for local dev using MariaDB4j SNAPSHOTs (not needed for real-world non-SNAPHOT builds)
 }

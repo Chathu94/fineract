@@ -43,6 +43,8 @@ import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.infrastructure.core.serialization.ApiRequestJsonSerializationSettings;
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
+import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
+import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.portfolio.account.PortfolioAccountType;
 import org.apache.fineract.portfolio.account.service.AccountTransferEnumerations;
@@ -69,6 +71,7 @@ public class SelfBeneficiariesTPTApiResource {
 			SelfBeneficiariesTPTApiConstants.TRANSFER_LIMIT_PARAM_NAME, SelfBeneficiariesTPTApiConstants.ID_PARAM_NAME,
 			SelfBeneficiariesTPTApiConstants.CLIENT_NAME_PARAM_NAME,
 			SelfBeneficiariesTPTApiConstants.ACCOUNT_TYPE_OPTIONS_PARAM_NAME));
+	private final RoutingDataSource dataSource;
 
 	@Autowired
 	public SelfBeneficiariesTPTApiResource(
@@ -76,12 +79,14 @@ public class SelfBeneficiariesTPTApiResource {
 			final DefaultToApiJsonSerializer<SelfBeneficiariesTPTData> toApiJsonSerializer,
 			final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService,
 			final ApiRequestParameterHelper apiRequestParameterHelper,
-			final SelfBeneficiariesTPTReadPlatformService readPlatformService) {
+			final SelfBeneficiariesTPTReadPlatformService readPlatformService,
+			final RoutingDataSource dataSource) {
 		this.context = context;
 		this.toApiJsonSerializer = toApiJsonSerializer;
 		this.commandsSourceWritePlatformService = commandsSourceWritePlatformService;
 		this.apiRequestParameterHelper = apiRequestParameterHelper;
 		this.readPlatformService = readPlatformService;
+		this.dataSource = dataSource;
 	}
 
 	@GET
@@ -89,6 +94,7 @@ public class SelfBeneficiariesTPTApiResource {
 	@Consumes({ MediaType.APPLICATION_JSON })
 	@Produces({ MediaType.APPLICATION_JSON })
 	public String template(@Context final UriInfo uriInfo) {
+		ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
 		final EnumOptionData loanAccountType = AccountTransferEnumerations
 				.accountType(PortfolioAccountType.LOAN);
@@ -110,6 +116,7 @@ public class SelfBeneficiariesTPTApiResource {
 	@Consumes({ MediaType.APPLICATION_JSON })
 	@Produces({ MediaType.APPLICATION_JSON })
 	public String add(final String apiRequestBodyAsJson) {
+		ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
 
 		final CommandWrapper commandRequest = new CommandWrapperBuilder()
 				.addSelfServiceBeneficiaryTPT().withJson(apiRequestBodyAsJson)
@@ -125,6 +132,7 @@ public class SelfBeneficiariesTPTApiResource {
 	@Produces({ MediaType.APPLICATION_JSON })
 	public String update(@PathParam("beneficiaryId") final Long beneficiaryId,
 			final String apiRequestBodyAsJson) {
+		ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
 
 		final CommandWrapper commandRequest = new CommandWrapperBuilder()
 				.updateSelfServiceBeneficiaryTPT(beneficiaryId)
@@ -140,6 +148,7 @@ public class SelfBeneficiariesTPTApiResource {
 	@Produces({ MediaType.APPLICATION_JSON })
 	public String delete(@PathParam("beneficiaryId") final Long beneficiaryId,
 			final String apiRequestBodyAsJson) {
+		ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
 
 		final CommandWrapper commandRequest = new CommandWrapperBuilder()
 				.deleteSelfServiceBeneficiaryTPT(beneficiaryId)
@@ -153,6 +162,7 @@ public class SelfBeneficiariesTPTApiResource {
 	@Consumes({ MediaType.APPLICATION_JSON })
 	@Produces({ MediaType.APPLICATION_JSON })
 	public String retrieveAll(@Context final UriInfo uriInfo) {
+		ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
 		this.context.authenticatedUser().validateHasReadPermission(
 				SelfBeneficiariesTPTApiConstants.BENEFICIARY_ENTITY_NAME);

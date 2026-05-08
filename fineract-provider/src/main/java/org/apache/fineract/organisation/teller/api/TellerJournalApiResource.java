@@ -28,6 +28,8 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
+import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
+import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.organisation.teller.data.TellerData;
 import org.apache.fineract.organisation.teller.data.TellerJournalData;
@@ -45,14 +47,16 @@ public class TellerJournalApiResource {
     private final PlatformSecurityContext securityContext;
     private final DefaultToApiJsonSerializer<TellerData> jsonSerializer;
     private final TellerManagementReadPlatformService readPlatformService;
+    private final RoutingDataSource dataSource;
 
     @Autowired
     public TellerJournalApiResource(final PlatformSecurityContext securityContext,
-            final DefaultToApiJsonSerializer<TellerData> jsonSerializer, final TellerManagementReadPlatformService readPlatformService) {
+            final DefaultToApiJsonSerializer<TellerData> jsonSerializer, final TellerManagementReadPlatformService readPlatformService, final RoutingDataSource dataSource) {
         super();
         this.securityContext = securityContext;
         this.jsonSerializer = jsonSerializer;
         this.readPlatformService = readPlatformService;
+        this.dataSource = dataSource;
     }
 
     @GET
@@ -60,6 +64,7 @@ public class TellerJournalApiResource {
     @Produces(MediaType.APPLICATION_JSON)
     public String getJournalData(@QueryParam("officeId") final Long officeId, @QueryParam("tellerId") final Long tellerId,
             @QueryParam("cashierId") final Long cashierId, @QueryParam("dateRange") final String dateRange) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
         final DateRange dateRangeHolder = DateRange.fromString(dateRange);
 
         final Collection<TellerJournalData> journals = this.readPlatformService.getJournals(officeId, tellerId, cashierId,

@@ -35,6 +35,8 @@ import javax.ws.rs.core.UriInfo;
 import org.apache.fineract.infrastructure.core.api.ApiRequestParameterHelper;
 import org.apache.fineract.infrastructure.core.serialization.ApiRequestJsonSerializationSettings;
 import org.apache.fineract.infrastructure.core.serialization.ToApiJsonSerializer;
+import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
+import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.portfolio.search.SearchConstants.SEARCH_RESPONSE_PARAMETERS;
 import org.apache.fineract.portfolio.search.data.AdHocQueryDataValidator;
 import org.apache.fineract.portfolio.search.data.AdHocQuerySearchConditions;
@@ -57,16 +59,18 @@ public class SearchApiResource {
     private final ToApiJsonSerializer<Object> toApiJsonSerializer;
     private final ApiRequestParameterHelper apiRequestParameterHelper;
     private final AdHocQueryDataValidator fromApiJsonDeserializer;
+    private final RoutingDataSource dataSource;
 
     @Autowired
     public SearchApiResource(final SearchReadPlatformService searchReadPlatformService,
             final ToApiJsonSerializer<Object> toApiJsonSerializer, final ApiRequestParameterHelper apiRequestParameterHelper,
-            final AdHocQueryDataValidator fromApiJsonDeserializer) {
+            final AdHocQueryDataValidator fromApiJsonDeserializer, final RoutingDataSource dataSource) {
 
         this.searchReadPlatformService = searchReadPlatformService;
         this.toApiJsonSerializer = toApiJsonSerializer;
         this.apiRequestParameterHelper = apiRequestParameterHelper;
         this.fromApiJsonDeserializer = fromApiJsonDeserializer;
+        this.dataSource = dataSource;
 
     }
 
@@ -75,6 +79,7 @@ public class SearchApiResource {
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String retrieveAdHocSearchQueryTemplate(@Context final UriInfo uriInfo) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
         final AdHocSearchQueryData templateData = this.searchReadPlatformService.retrieveAdHocQueryTemplate();
 
@@ -87,6 +92,7 @@ public class SearchApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     public String searchData(@Context final UriInfo uriInfo, @QueryParam("query") final String query,
             @QueryParam("resource") final String resource ,@DefaultValue("false") @QueryParam("exactMatch")  Boolean exactMatch) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
     	
         final SearchConditions searchConditions = new SearchConditions(query, resource,exactMatch);
 
@@ -101,6 +107,7 @@ public class SearchApiResource {
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String advancedSearch(@Context final UriInfo uriInfo, final String json) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
 
         final AdHocQuerySearchConditions searchConditions = this.fromApiJsonDeserializer.retrieveSearchConditions(json);
 

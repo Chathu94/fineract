@@ -49,7 +49,9 @@ import org.apache.fineract.infrastructure.core.serialization.ApiRequestJsonSeria
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.infrastructure.core.serialization.ToApiJsonSerializer;
 import org.apache.fineract.infrastructure.core.service.Page;
+import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
 import org.apache.fineract.infrastructure.core.service.SearchParameters;
+import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.dataqueries.data.DatatableData;
 import org.apache.fineract.infrastructure.dataqueries.data.EntityTables;
 import org.apache.fineract.infrastructure.dataqueries.data.StatusEnum;
@@ -93,6 +95,7 @@ public class CentersApiResource {
     private final CalendarReadPlatformService calendarReadPlatformService;
     private final MeetingReadPlatformService meetingReadPlatformService;
     private final EntityDatatableChecksReadService entityDatatableChecksReadService;
+    private final RoutingDataSource dataSource;
 
     @Autowired
     public CentersApiResource(final PlatformSecurityContext context, final CenterReadPlatformService centerReadPlatformService,
@@ -103,7 +106,7 @@ public class CentersApiResource {
             final CollectionSheetReadPlatformService collectionSheetReadPlatformService, final FromJsonHelper fromJsonHelper,
             final AccountDetailsReadPlatformService accountDetailsReadPlatformService,
             final CalendarReadPlatformService calendarReadPlatformService, final MeetingReadPlatformService meetingReadPlatformService,
-            final EntityDatatableChecksReadService entityDatatableChecksReadService) {
+            final EntityDatatableChecksReadService entityDatatableChecksReadService, final RoutingDataSource dataSource) {
         this.context = context;
         this.centerReadPlatformService = centerReadPlatformService;
         this.centerApiJsonSerializer = centerApiJsonSerializer;
@@ -117,6 +120,7 @@ public class CentersApiResource {
         this.calendarReadPlatformService = calendarReadPlatformService;
         this.meetingReadPlatformService = meetingReadPlatformService;
         this.entityDatatableChecksReadService = entityDatatableChecksReadService;
+        this.dataSource = dataSource;
     }
 
     @GET
@@ -126,6 +130,7 @@ public class CentersApiResource {
     public String retrieveTemplate(@Context final UriInfo uriInfo, @QueryParam("command") final String commandParam,
             @QueryParam("officeId") final Long officeId,
             @DefaultValue("false") @QueryParam("staffInSelectedOfficeOnly") final boolean staffInSelectedOfficeOnly) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
         this.context.authenticatedUser().validateHasReadPermission(GroupingTypesApiConstants.CENTER_RESOURCE_NAME);
 
@@ -156,6 +161,7 @@ public class CentersApiResource {
             @QueryParam("orderBy") final String orderBy, @QueryParam("sortOrder") final String sortOrder,
             @QueryParam("meetingDate") final DateParam meetingDateParam, @QueryParam("dateFormat") final String dateFormat,
             @QueryParam("locale") final String locale) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
         this.context.authenticatedUser().validateHasReadPermission(GroupingTypesApiConstants.CENTER_RESOURCE_NAME);
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
@@ -185,6 +191,7 @@ public class CentersApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     public String retrieveOne(@Context final UriInfo uriInfo, @PathParam("centerId") final Long centerId,
             @DefaultValue("false") @QueryParam("staffInSelectedOfficeOnly") final boolean staffInSelectedOfficeOnly) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
         this.context.authenticatedUser().validateHasReadPermission(GroupingTypesApiConstants.CENTER_RESOURCE_NAME);
         final Set<String> associationParameters = ApiParameterHelper.extractAssociationsForResponseIfProvided(uriInfo.getQueryParameters());
@@ -233,6 +240,7 @@ public class CentersApiResource {
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String create(final String apiRequestBodyAsJson) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
 
         final CommandWrapper commandRequest = new CommandWrapperBuilder() //
                 .createCenter() //
@@ -248,6 +256,7 @@ public class CentersApiResource {
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String update(@PathParam("centerId") final Long centerId, final String apiRequestBodyAsJson) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
 
         final CommandWrapper commandRequest = new CommandWrapperBuilder() //
                 .updateCenter(centerId) //
@@ -262,6 +271,7 @@ public class CentersApiResource {
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String delete(@PathParam("centerId") final Long centerId) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
 
         final CommandWrapper commandRequest = new CommandWrapperBuilder() //
                 .deleteCenter(centerId) //
@@ -276,6 +286,7 @@ public class CentersApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     public String activate(@PathParam("centerId") final Long centerId, @QueryParam("command") final String commandParam,
             final String apiRequestBodyAsJson, @Context final UriInfo uriInfo) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
 
         final CommandWrapperBuilder builder = new CommandWrapperBuilder().withJson(apiRequestBodyAsJson);
 
@@ -323,6 +334,7 @@ public class CentersApiResource {
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String retrieveGroupAccount(@PathParam("centerId") final Long centerId, @Context final UriInfo uriInfo) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
         this.context.authenticatedUser().validateHasReadPermission(GroupingTypesApiConstants.CENTER_RESOURCE_NAME);
 

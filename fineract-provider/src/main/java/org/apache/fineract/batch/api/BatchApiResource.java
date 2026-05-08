@@ -36,6 +36,8 @@ import org.apache.fineract.batch.domain.BatchResponse;
 import org.apache.fineract.batch.serialization.BatchRequestJsonHelper;
 import org.apache.fineract.batch.service.BatchApiService;
 import org.apache.fineract.infrastructure.core.serialization.ToApiJsonSerializer;
+import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
+import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
@@ -65,6 +67,7 @@ public class BatchApiResource {
     private final ToApiJsonSerializer<BatchResponse> toApiJsonSerializer;
     private final BatchApiService service;
     private final BatchRequestJsonHelper batchRequestJsonHelper;
+    private final RoutingDataSource dataSource;
 
     /**
      * Constructs a 'BatchApiService' with context, toApiJsonSerializer, service
@@ -77,12 +80,13 @@ public class BatchApiResource {
      */
     @Autowired
     public BatchApiResource(final PlatformSecurityContext context, final ToApiJsonSerializer<BatchResponse> toApiJsonSerializer,
-            final BatchApiService service, final BatchRequestJsonHelper batchRequestJsonHelper) {
+            final BatchApiService service, final BatchRequestJsonHelper batchRequestJsonHelper, final RoutingDataSource dataSource) {
 
         this.context = context;
         this.toApiJsonSerializer = toApiJsonSerializer;
         this.service = service;
         this.batchRequestJsonHelper = batchRequestJsonHelper;
+        this.dataSource = dataSource;
     }
 
     /**
@@ -99,6 +103,7 @@ public class BatchApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     public String handleBatchRequests(@DefaultValue("false") @QueryParam("enclosingTransaction") final boolean enclosingTransaction,
             final String jsonRequestString, @Context UriInfo uriInfo) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
 
         // Handles user authentication
         this.context.authenticatedUser();

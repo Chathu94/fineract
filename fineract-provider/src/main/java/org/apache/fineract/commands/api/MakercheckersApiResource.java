@@ -46,6 +46,8 @@ import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.exception.UnrecognizedQueryParamException;
 import org.apache.fineract.infrastructure.core.serialization.ApiRequestJsonSerializationSettings;
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
+import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
+import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
@@ -64,17 +66,20 @@ public class MakercheckersApiResource {
     private final DefaultToApiJsonSerializer<AuditSearchData> toApiJsonSerializerSearchTemplate;
     private final ApiRequestParameterHelper apiRequestParameterHelper;
     private final PortfolioCommandSourceWritePlatformService writePlatformService;
+    private final RoutingDataSource dataSource;
 
     @Autowired
     public MakercheckersApiResource(final AuditReadPlatformService readPlatformService,
             final DefaultToApiJsonSerializer<AuditData> toApiJsonSerializerAudit,
             final DefaultToApiJsonSerializer<AuditSearchData> toApiJsonSerializerSearchTemplate,
-            final ApiRequestParameterHelper apiRequestParameterHelper, final PortfolioCommandSourceWritePlatformService writePlatformService) {
+            final ApiRequestParameterHelper apiRequestParameterHelper, final PortfolioCommandSourceWritePlatformService writePlatformService,
+                                    final RoutingDataSource dataSource) {
         this.readPlatformService = readPlatformService;
         this.apiRequestParameterHelper = apiRequestParameterHelper;
         this.toApiJsonSerializerAudit = toApiJsonSerializerAudit;
         this.toApiJsonSerializerSearchTemplate = toApiJsonSerializerSearchTemplate;
         this.writePlatformService = writePlatformService;
+        this.dataSource = dataSource;
     }
 
     @GET
@@ -86,6 +91,7 @@ public class MakercheckersApiResource {
             @QueryParam("makerDateTimeTo") final String makerDateTimeTo, @QueryParam("officeId") final Integer officeId,
             @QueryParam("groupId") final Integer groupId, @QueryParam("clientId") final Integer clientId,
             @QueryParam("loanid") final Integer loanId, @QueryParam("savingsAccountId") final Integer savingsAccountId) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
         final String extraCriteria = getExtraCriteria(actionName, entityName, resourceId, makerId, makerDateTimeFrom, makerDateTimeTo,
                 officeId, groupId, clientId, loanId, savingsAccountId);
@@ -103,6 +109,7 @@ public class MakercheckersApiResource {
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String retrieveAuditSearchTemplate(@Context final UriInfo uriInfo) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
 
@@ -119,6 +126,7 @@ public class MakercheckersApiResource {
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String approveMakerCheckerEntry(@PathParam("auditId") final Long auditId, @QueryParam("command") final String commandParam) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
 
         CommandProcessingResult result = null;
         if (is(commandParam, "approve")) {
@@ -141,6 +149,7 @@ public class MakercheckersApiResource {
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String deleteMakerCheckerEntry(@PathParam("auditId") final Long auditId) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
 
         final Long id = this.writePlatformService.deleteEntry(auditId);
 

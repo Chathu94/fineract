@@ -27,6 +27,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.fineract.infrastructure.core.domain.FineractPlatformTenant;
+import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
 import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.jobs.annotation.CronTarget;
 import org.apache.fineract.infrastructure.jobs.exception.JobExecutionException;
@@ -35,6 +36,7 @@ import org.apache.fineract.portfolio.loanaccount.data.LoanScheduleAccrualData;
 import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -42,12 +44,15 @@ public class LoanAccrualPlatformServiceImpl implements LoanAccrualPlatformServic
 
     private final LoanReadPlatformService loanReadPlatformService;
     private final LoanAccrualWritePlatformService loanAccrualWritePlatformService;
+    private final JdbcTemplate jdbcTemplate;
 
     @Autowired
     public LoanAccrualPlatformServiceImpl(final LoanReadPlatformService loanReadPlatformService,
-            final LoanAccrualWritePlatformService loanAccrualWritePlatformService) {
+            final LoanAccrualWritePlatformService loanAccrualWritePlatformService,
+                                          final RoutingDataSource dataSource) {
         this.loanReadPlatformService = loanReadPlatformService;
         this.loanAccrualWritePlatformService = loanAccrualWritePlatformService;
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
     @Override
@@ -85,13 +90,19 @@ public class LoanAccrualPlatformServiceImpl implements LoanAccrualPlatformServic
     @CronTarget(jobName = JobName.ADD_PERIODIC_ACCRUAL_ENTRIES)
     public void addPeriodicAccruals() throws JobExecutionException {
 //        run service for 2026-03-31 and then change to LocalDate.now() after testing
-        LocalDate tillDate = new LocalDate(2026, 3, 31);
-        addPeriodicAccruals(tillDate);
-//        if (errors.length() > 0) { throw new JobExecutionException(errors); }
+//        LocalDate tillDate = new LocalDate(2026, 3, 31);
+        String errors = addPeriodicAccruals(LocalDate.now());
+        if (errors.length() > 0) { throw new JobExecutionException(errors); }
     }
 
     @Override
     public String addPeriodicAccruals(final LocalDate tilldate) {
+
+        if (ThreadLocalContextUtil.getVTReplicaMode()) {
+            this.jdbcTemplate.execute("SET workload = OLAP");
+            jdbcTemplate.execute("USE @primary");
+        }
+
         Collection<LoanScheduleAccrualData> loanScheduleAccrualDatas = this.loanReadPlatformService.retrivePeriodicAccrualData(tilldate);
         return addPeriodicAccruals(tilldate, loanScheduleAccrualDatas);
     }
@@ -132,11 +143,18 @@ public class LoanAccrualPlatformServiceImpl implements LoanAccrualPlatformServic
             futures.add(CompletableFuture.runAsync(() -> {
                 FineractPlatformTenant originalTenant = ThreadLocalContextUtil.getTenant();
                 ThreadLocalContextUtil.setTenant(tenant);
+
+                if (ThreadLocalContextUtil.getVTReplicaMode()) {
+                    this.jdbcTemplate.execute("SET workload = OLAP");
+                    jdbcTemplate.execute("USE @primary");
+                }
+
                 try {
                     int current = pos.getAndIncrement();
                     System.out.println("Processing " + current + "/" + loanDataMap.size());
                     loanAccrualWritePlatformService.addPeriodicAccruals(tilldate, entry.getKey(), entry.getValue());
                 } catch (Exception e) {
+                    System.out.print(e);
                     Throwable real = (e.getCause() != null) ? e.getCause() : e;
                     synchronized (sb) {
                         sb.append("failed to add accrual transaction for loan ")

@@ -38,6 +38,8 @@ import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.serialization.ApiRequestJsonSerializationSettings;
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
 import org.apache.fineract.infrastructure.core.service.Page;
+import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
+import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.portfolio.products.constants.ProductsApiConstants;
 import org.apache.fineract.portfolio.products.data.ProductData;
@@ -59,16 +61,18 @@ public class ProductsApiResource {
     private final DefaultToApiJsonSerializer<ProductData> toApiJsonSerializer;
     private final PlatformSecurityContext platformSecurityContext;
     private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
+    private final RoutingDataSource dataSource;
 
     @Autowired
     public ProductsApiResource(final ApplicationContext applicationContext, final ApiRequestParameterHelper apiRequestParameterHelper,
             final DefaultToApiJsonSerializer<ProductData> toApiJsonSerializer, final PlatformSecurityContext platformSecurityContext,
-            final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService) {
+            final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService, final RoutingDataSource dataSource) {
         this.applicationContext = applicationContext;
         this.apiRequestParameterHelper = apiRequestParameterHelper;
         this.toApiJsonSerializer = toApiJsonSerializer;
         this.platformSecurityContext = platformSecurityContext;
         this.commandsSourceWritePlatformService = commandsSourceWritePlatformService;
+        this.dataSource = dataSource;
     }
 
     @GET
@@ -76,6 +80,7 @@ public class ProductsApiResource {
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String retrieveTemplate(@PathParam("type") final String productType, @Context final UriInfo uriInfo) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
         String serviceName = productType + ProductsApiConstants.READPLATFORM_NAME;
         try {
             ProductReadPlatformService service = (ProductReadPlatformService) this.applicationContext.getBean(serviceName);
@@ -93,6 +98,7 @@ public class ProductsApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     public String retrieveProduct(@PathParam("productId") final Long productId, @PathParam("type") final String productType,
             @Context final UriInfo uriInfo) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
         try {
             String serviceName = productType + ProductsApiConstants.READPLATFORM_NAME;
             ProductReadPlatformService service = (ProductReadPlatformService) this.applicationContext.getBean(serviceName);
@@ -109,6 +115,7 @@ public class ProductsApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     public String retrieveAllProducts(@PathParam("type") final String productType, @QueryParam("offset") final Integer offset, @QueryParam("limit") final Integer limit,
             @Context final UriInfo uriInfo) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
         try {
             String serviceName = productType + ProductsApiConstants.READPLATFORM_NAME;
             ProductReadPlatformService service = (ProductReadPlatformService) this.applicationContext.getBean(serviceName);
@@ -124,6 +131,7 @@ public class ProductsApiResource {
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String createProduct(@PathParam("type") final String productType, final String apiRequestBodyAsJson) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
         CommandWrapper commandWrapper = null;
         this.platformSecurityContext.authenticatedUser();
         commandWrapper = new CommandWrapperBuilder().createProduct(productType).withJson(apiRequestBodyAsJson).build();
@@ -137,6 +145,7 @@ public class ProductsApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     public String handleCommands(@PathParam("type") final String productType, @PathParam("productId") final Long productId,
             @QueryParam("command") final String commandParam, @SuppressWarnings("unused") @Context final UriInfo uriInfo, final String apiRequestBodyAsJson) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
         CommandWrapper commandWrapper = new CommandWrapperBuilder().createProductCommand(productType, commandParam, productId)
                 .withJson(apiRequestBodyAsJson).build();
         final CommandProcessingResult commandProcessingResult = this.commandsSourceWritePlatformService.logCommandSource(commandWrapper);
@@ -149,6 +158,7 @@ public class ProductsApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     public String updateProduct(@PathParam("type") final String productType, @PathParam("productId") final Long productId,
             final String apiRequestBodyAsJson) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
         this.platformSecurityContext.authenticatedUser();
         final CommandWrapper commandRequest = new CommandWrapperBuilder().updateProduct(productType, productId)
                 .withJson(apiRequestBodyAsJson).build();

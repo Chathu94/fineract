@@ -39,6 +39,8 @@ import org.apache.fineract.infrastructure.core.api.ApiRequestParameterHelper;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.serialization.ApiRequestJsonSerializationSettings;
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
+import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
+import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.portfolio.paymenttype.data.PaymentTypeData;
 import org.apache.fineract.portfolio.paymenttype.domain.PaymentTypeRepositoryWrapper;
@@ -57,6 +59,7 @@ public class PaymentTypeApiResource {
     private final ApiRequestParameterHelper apiRequestParameterHelper;
     // private final String resourceNameForPermissions = "PAYMENT_TYPE";
     private final PaymentTypeRepositoryWrapper paymentTypeRepositoryWrapper;
+    private final RoutingDataSource dataSource;
 
     // private final Set<String> RESPONSE_DATA_PARAMETERS = new
     // HashSet<>(Arrays.asList("id", "value", "description", "isCashPayment"));
@@ -64,7 +67,8 @@ public class PaymentTypeApiResource {
     @Autowired
     public PaymentTypeApiResource(PlatformSecurityContext securityContext, DefaultToApiJsonSerializer<PaymentTypeData> jsonSerializer,
             PaymentTypeReadPlatformService readPlatformService, PaymentTypeRepositoryWrapper paymentTypeRepositoryWrapper,
-            ApiRequestParameterHelper apiRequestParameterHelper, PortfolioCommandSourceWritePlatformService commandWritePlatformService) {
+            ApiRequestParameterHelper apiRequestParameterHelper, PortfolioCommandSourceWritePlatformService commandWritePlatformService,
+                                  final RoutingDataSource dataSource) {
         super();
         this.securityContext = securityContext;
         this.jsonSerializer = jsonSerializer;
@@ -72,12 +76,14 @@ public class PaymentTypeApiResource {
         this.paymentTypeRepositoryWrapper = paymentTypeRepositoryWrapper;
         this.apiRequestParameterHelper = apiRequestParameterHelper;
         this.commandWritePlatformService = commandWritePlatformService;
+        this.dataSource = dataSource;
     }
 
     @GET
     @Consumes({ MediaType.TEXT_HTML, MediaType.APPLICATION_JSON })
     @Produces(MediaType.APPLICATION_JSON)
     public String getAllPaymentTypes(@Context final UriInfo uriInfo) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
         this.securityContext.authenticatedUser().validateHasReadPermission(PaymentTypeApiResourceConstants.resourceNameForPermissions);
         final Collection<PaymentTypeData> paymentTypes = this.readPlatformService.retrieveAllPaymentTypes();
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
@@ -89,6 +95,7 @@ public class PaymentTypeApiResource {
     @Consumes({ MediaType.TEXT_HTML, MediaType.APPLICATION_JSON })
     @Produces(MediaType.APPLICATION_JSON)
     public String retrieveOnePaymentType(@PathParam("paymentTypeId") final Long paymentTypeId, @Context final UriInfo uriInfo) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
         this.securityContext.authenticatedUser().validateHasReadPermission(PaymentTypeApiResourceConstants.resourceNameForPermissions);
         this.paymentTypeRepositoryWrapper.findOneWithNotFoundDetection(paymentTypeId);
         final PaymentTypeData paymentTypes = this.readPlatformService.retrieveOne(paymentTypeId);
@@ -100,6 +107,7 @@ public class PaymentTypeApiResource {
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String createPaymentType(final String apiRequestBodyAsJson) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
 
         final CommandWrapper commandRequest = new CommandWrapperBuilder().createPaymentType().withJson(apiRequestBodyAsJson).build();
 
@@ -113,6 +121,7 @@ public class PaymentTypeApiResource {
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String updatePaymentType(@PathParam("paymentTypeId") final Long paymentTypeId, final String apiRequestBodyAsJson) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
 
         final CommandWrapper commandRequest = new CommandWrapperBuilder().updatePaymentType(paymentTypeId).withJson(apiRequestBodyAsJson)
                 .build();
@@ -127,6 +136,7 @@ public class PaymentTypeApiResource {
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String deleteCode(@PathParam("paymentTypeId") final Long paymentTypeId) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
 
         final CommandWrapper commandRequest = new CommandWrapperBuilder().deletePaymentType(paymentTypeId).build();
 

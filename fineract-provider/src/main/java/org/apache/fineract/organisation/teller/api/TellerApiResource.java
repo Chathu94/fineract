@@ -38,7 +38,9 @@ import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformS
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
 import org.apache.fineract.infrastructure.core.service.Page;
+import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
 import org.apache.fineract.infrastructure.core.service.SearchParameters;
+import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.organisation.teller.data.CashierData;
 import org.apache.fineract.organisation.teller.data.CashierTransactionData;
@@ -63,22 +65,25 @@ public class TellerApiResource {
     private final DefaultToApiJsonSerializer<TellerData> jsonSerializer;
     private final TellerManagementReadPlatformService readPlatformService;
     private final PortfolioCommandSourceWritePlatformService commandWritePlatformService;
+    private final RoutingDataSource dataSource;
 
     @Autowired
     public TellerApiResource(PlatformSecurityContext securityContext, DefaultToApiJsonSerializer<TellerData> jsonSerializer,
             TellerManagementReadPlatformService readPlatformService,
-            PortfolioCommandSourceWritePlatformService commandWritePlatformService) {
+            PortfolioCommandSourceWritePlatformService commandWritePlatformService, final RoutingDataSource dataSource) {
         super();
         this.securityContext = securityContext;
         this.jsonSerializer = jsonSerializer;
         this.readPlatformService = readPlatformService;
         this.commandWritePlatformService = commandWritePlatformService;
+        this.dataSource = dataSource;
     }
 
     @GET
     @Consumes({ MediaType.TEXT_HTML, MediaType.APPLICATION_JSON })
     @Produces(MediaType.APPLICATION_JSON)
     public String getTellerData(@QueryParam("officeId") final Long officeId) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
         final Collection<TellerData> foundTellers = this.readPlatformService.getTellers(officeId);
 
         return this.jsonSerializer.serialize(foundTellers);
@@ -89,6 +94,7 @@ public class TellerApiResource {
     @Consumes({ MediaType.TEXT_HTML, MediaType.APPLICATION_JSON })
     @Produces(MediaType.APPLICATION_JSON)
     public String findTeller(@PathParam("tellerId") final Long tellerId) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
         final TellerData teller = this.readPlatformService.findTeller(tellerId);
 
         return this.jsonSerializer.serialize(teller);
@@ -98,6 +104,7 @@ public class TellerApiResource {
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces(MediaType.APPLICATION_JSON)
     public String createTeller(final String tellerData) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
         final CommandWrapper request = new CommandWrapperBuilder().createTeller().withJson(tellerData).build();
 
         final CommandProcessingResult result = this.commandWritePlatformService.logCommandSource(request);
@@ -110,6 +117,7 @@ public class TellerApiResource {
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces(MediaType.APPLICATION_JSON)
     public String updateTeller(@PathParam("tellerId") final Long tellerId, final String tellerData) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
         final CommandWrapper request = new CommandWrapperBuilder().updateTeller(tellerId).withJson(tellerData).build();
 
         final CommandProcessingResult result = this.commandWritePlatformService.logCommandSource(request);
@@ -122,6 +130,7 @@ public class TellerApiResource {
     @Consumes({ MediaType.TEXT_HTML, MediaType.APPLICATION_JSON })
     @Produces(MediaType.APPLICATION_JSON)
     public String deleteTeller(@PathParam("tellerId") final Long tellerId) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
         final CommandWrapper request = new CommandWrapperBuilder().deleteTeller(tellerId).build();
 
         final CommandProcessingResult result = this.commandWritePlatformService.logCommandSource(request);
@@ -135,6 +144,7 @@ public class TellerApiResource {
     @Produces(MediaType.APPLICATION_JSON)
     public String getCashierData(@PathParam("tellerId") final Long tellerId, @QueryParam("fromdate") final String fromDateStr,
             @QueryParam("todate") final String toDateStr) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
         final DateTimeFormatter dateFormatter = ISODateTimeFormat.basicDate();
 
         final Date fromDate = (fromDateStr != null ? dateFormatter.parseDateTime(fromDateStr).toDate() : new Date());
@@ -158,6 +168,7 @@ public class TellerApiResource {
     @Consumes({ MediaType.TEXT_HTML, MediaType.APPLICATION_JSON })
     @Produces(MediaType.APPLICATION_JSON)
     public String findCashierData(@PathParam("tellerId") final Long tellerId, @PathParam("cashierId") final Long cashierId) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
         final CashierData cashier = this.readPlatformService.findCashier(cashierId);
 
         return this.jsonSerializer.serialize(cashier);
@@ -168,6 +179,7 @@ public class TellerApiResource {
     @Consumes({ MediaType.TEXT_HTML, MediaType.APPLICATION_JSON })
     @Produces(MediaType.APPLICATION_JSON)
     public String getCashierTemplate(@PathParam("tellerId") final Long tellerId) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
         final TellerData teller = this.readPlatformService.findTeller(tellerId);
         Long officeId = teller.getOfficeId();
@@ -182,6 +194,7 @@ public class TellerApiResource {
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces(MediaType.APPLICATION_JSON)
     public String createCashier(@PathParam("tellerId") final Long tellerId, final String cashierData) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
         final CommandWrapper request = new CommandWrapperBuilder().allocateTeller(tellerId).withJson(cashierData).build();
 
         final CommandProcessingResult result = this.commandWritePlatformService.logCommandSource(request);
@@ -195,6 +208,7 @@ public class TellerApiResource {
     @Produces(MediaType.APPLICATION_JSON)
     public String updateCashier(@PathParam("tellerId") final Long tellerId, @PathParam("cashierId") final Long cashierId,
             final String cashierDate) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
         final CommandWrapper request = new CommandWrapperBuilder().updateAllocationTeller(tellerId, cashierId).withJson(cashierDate)
                 .build();
 
@@ -208,6 +222,7 @@ public class TellerApiResource {
     @Consumes({ MediaType.TEXT_HTML, MediaType.APPLICATION_JSON })
     @Produces(MediaType.APPLICATION_JSON)
     public String deleteCashier(@PathParam("tellerId") final Long tellerId, @PathParam("cashierId") final Long cashierId) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
         final CommandWrapper request = new CommandWrapperBuilder().deleteAllocationTeller(tellerId, cashierId).build();
 
         final CommandProcessingResult result = this.commandWritePlatformService.logCommandSource(request);
@@ -221,6 +236,7 @@ public class TellerApiResource {
     @Produces(MediaType.APPLICATION_JSON)
     public String allocateCashToCashier(@PathParam("tellerId") final Long tellerId, @PathParam("cashierId") final Long cashierId,
             final String cashierTxnData) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
         final CommandWrapper request = new CommandWrapperBuilder().allocateCashToCashier(tellerId, cashierId).withJson(cashierTxnData)
                 .build();
 
@@ -236,6 +252,7 @@ public class TellerApiResource {
     @Produces(MediaType.APPLICATION_JSON)
     public String settleCashFromCashier(@PathParam("tellerId") final Long tellerId, @PathParam("cashierId") final Long cashierId,
             final String cashierTxnData) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
         final CommandWrapper request = new CommandWrapperBuilder().settleCashFromCashier(tellerId, cashierId).withJson(cashierTxnData)
                 .build();
 
@@ -252,6 +269,7 @@ public class TellerApiResource {
     public String getTransactionsForCashier(@PathParam("tellerId") final Long tellerId, @PathParam("cashierId") final Long cashierId,
             @QueryParam("currencyCode") final String currencyCode, @QueryParam("offset") final Integer offset, @QueryParam("limit") final Integer limit,
             @QueryParam("orderBy") final String orderBy, @QueryParam("sortOrder") final String sortOrder) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
         final TellerData teller = this.readPlatformService.findTeller(tellerId);
         final CashierData cashier = this.readPlatformService.findCashier(cashierId);
 
@@ -272,6 +290,7 @@ public class TellerApiResource {
             @PathParam("cashierId") final Long cashierId, @QueryParam("currencyCode") final String currencyCode,
             @QueryParam("offset") final Integer offset, @QueryParam("limit") final Integer limit,
             @QueryParam("orderBy") final String orderBy, @QueryParam("sortOrder") final String sortOrder) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
         final TellerData teller = this.readPlatformService.findTeller(tellerId);
         final CashierData cashier = this.readPlatformService.findCashier(cashierId);
 
@@ -291,6 +310,7 @@ public class TellerApiResource {
     @Consumes({ MediaType.TEXT_HTML, MediaType.APPLICATION_JSON })
     @Produces(MediaType.APPLICATION_JSON)
     public String getCashierTxnTemplate(@PathParam("tellerId") final Long tellerId, @PathParam("cashierId") final Long cashierId) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
         final CashierTransactionData cashierTxnTemplate = this.readPlatformService.retrieveCashierTxnTemplate(cashierId);
 
@@ -302,6 +322,7 @@ public class TellerApiResource {
     @Consumes({ MediaType.TEXT_HTML, MediaType.APPLICATION_JSON })
     @Produces(MediaType.APPLICATION_JSON)
     public String getTransactionData(@PathParam("tellerId") final Long tellerId, @QueryParam("dateRange") final String dateRange) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
         final DateRange dateRangeHolder = DateRange.fromString(dateRange);
 
         final Collection<TellerTransactionData> transactions = this.readPlatformService.fetchTellerTransactionsByTellerId(tellerId,
@@ -315,6 +336,7 @@ public class TellerApiResource {
     @Consumes({ MediaType.TEXT_HTML, MediaType.APPLICATION_JSON })
     @Produces(MediaType.APPLICATION_JSON)
     public String findTransactionData(@PathParam("tellerId") final Long tellerid, @PathParam("transactionId") final Long transactionId) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
         final TellerTransactionData transaction = this.readPlatformService.findTellerTransaction(transactionId);
 
         return this.jsonSerializer.serialize(transaction);
@@ -326,6 +348,7 @@ public class TellerApiResource {
     @Produces(MediaType.APPLICATION_JSON)
     public String getJournalData(@PathParam("tellerId") final Long tellerId, @QueryParam("cashierId") final Long cashierDate,
             @QueryParam("dateRange") final String dateRange) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
         final DateRange dateRangeHolder = DateRange.fromString(dateRange);
 
         final Collection<TellerJournalData> journals = this.readPlatformService.fetchTellerJournals(tellerId, cashierDate,

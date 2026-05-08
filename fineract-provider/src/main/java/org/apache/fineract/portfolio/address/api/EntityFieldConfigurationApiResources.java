@@ -40,6 +40,8 @@ import org.apache.fineract.infrastructure.core.api.ApiRequestParameterHelper;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.serialization.ApiRequestJsonSerializationSettings;
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
+import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
+import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.portfolio.address.data.AddressData;
 import org.apache.fineract.portfolio.address.data.FieldConfigurationData;
@@ -64,6 +66,7 @@ public class EntityFieldConfigurationApiResources {
 	private final DefaultToApiJsonSerializer<FieldConfigurationData> toApiJsonSerializerfld;
 	private final ApiRequestParameterHelper apiRequestParameterHelper;
 	private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
+	private final RoutingDataSource dataSource;
 
 	@Autowired
 	public EntityFieldConfigurationApiResources(final PlatformSecurityContext context,
@@ -71,19 +74,22 @@ public class EntityFieldConfigurationApiResources {
 			final FieldConfigurationReadPlatformService readPlatformServicefld,
 			final DefaultToApiJsonSerializer<FieldConfigurationData> toApiJsonSerializerfld,
 			final ApiRequestParameterHelper apiRequestParameterHelper,
-			final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService) {
+			final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService,
+												final RoutingDataSource dataSource) {
 		this.context = context;
 		this.toApiJsonSerializer = toApiJsonSerializer;
 		this.readPlatformServicefld = readPlatformServicefld;
 		this.toApiJsonSerializerfld = toApiJsonSerializerfld;
 		this.apiRequestParameterHelper = apiRequestParameterHelper;
 		this.commandsSourceWritePlatformService = commandsSourceWritePlatformService;
+		this.dataSource = dataSource;
 	}
 
 	@GET
 	@Consumes({ MediaType.APPLICATION_JSON })
 	@Produces({ MediaType.APPLICATION_JSON })
 	public String getAddresses(@PathParam("entity") final String entityname, @Context final UriInfo uriInfo) {
+		ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 		this.context.authenticatedUser().validateHasReadPermission(this.resourceNameForPermissions);
 
 		final Collection<FieldConfigurationData> fldconfig = this.readPlatformServicefld

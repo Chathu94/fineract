@@ -41,6 +41,8 @@ import org.apache.fineract.infrastructure.core.api.ApiRequestParameterHelper;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.serialization.ApiRequestJsonSerializationSettings;
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
+import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
+import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.portfolio.floatingrates.data.FloatingRateData;
 import org.apache.fineract.portfolio.floatingrates.service.FloatingRatesReadPlatformService;
@@ -66,6 +68,7 @@ public class FloatingRatesApiResource {
 	private final DefaultToApiJsonSerializer<FloatingRateData> toApiJsonSerializer;
 	private final FloatingRatesReadPlatformService floatingRatesReadPlatformService;
 	private final ApiRequestParameterHelper apiRequestParameterHelper;
+	private final RoutingDataSource dataSource;
 
 	@Autowired
 	public FloatingRatesApiResource(
@@ -73,18 +76,21 @@ public class FloatingRatesApiResource {
 			final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService,
 			final DefaultToApiJsonSerializer<FloatingRateData> toApiJsonSerializer,
 			final ApiRequestParameterHelper apiRequestParameterHelper,
-			final FloatingRatesReadPlatformService floatingRatesReadPlatformService) {
+			final FloatingRatesReadPlatformService floatingRatesReadPlatformService,
+			final RoutingDataSource dataSource) {
 		this.context = context;
 		this.commandsSourceWritePlatformService = commandsSourceWritePlatformService;
 		this.toApiJsonSerializer = toApiJsonSerializer;
 		this.apiRequestParameterHelper = apiRequestParameterHelper;
 		this.floatingRatesReadPlatformService = floatingRatesReadPlatformService;
+		this.dataSource = dataSource;
 	}
 
 	@POST
 	@Consumes({ MediaType.APPLICATION_JSON })
 	@Produces({ MediaType.APPLICATION_JSON })
 	public String createFloatingRate(final String apiRequestBodyAsJson) {
+		ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
 
 		final CommandWrapper commandRequest = new CommandWrapperBuilder()
 				.createFloatingRate().withJson(apiRequestBodyAsJson).build();
@@ -97,6 +103,7 @@ public class FloatingRatesApiResource {
 	@Consumes({ MediaType.APPLICATION_JSON })
 	@Produces({ MediaType.APPLICATION_JSON })
 	public String retrieveAll(@Context final UriInfo uriInfo) {
+		ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 		this.context.authenticatedUser().validateHasReadPermission(
 				RESOURCE_NAME);
 		final List<FloatingRateData> floatingRates = this.floatingRatesReadPlatformService
@@ -114,6 +121,7 @@ public class FloatingRatesApiResource {
 	public String retrieveOne(
 			@PathParam("floatingRateId") final Long floatingRateId,
 			@Context final UriInfo uriInfo) {
+		ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 		this.context.authenticatedUser().validateHasReadPermission(
 				RESOURCE_NAME);
 		final FloatingRateData floatingRates = this.floatingRatesReadPlatformService
@@ -131,6 +139,7 @@ public class FloatingRatesApiResource {
 	public String updateFloatingRate(
 			@PathParam("floatingRateId") final Long floatingRateId,
 			final String apiRequestBodyAsJson) {
+		ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
 		final CommandWrapper commandRequest = new CommandWrapperBuilder()
 				.updateFloatingRate(floatingRateId)
 				.withJson(apiRequestBodyAsJson).build();

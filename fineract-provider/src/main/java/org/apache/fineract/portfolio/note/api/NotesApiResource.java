@@ -42,6 +42,8 @@ import org.apache.fineract.infrastructure.core.api.ApiRequestParameterHelper;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.serialization.ApiRequestJsonSerializationSettings;
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
+import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
+import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.portfolio.note.data.NoteData;
 import org.apache.fineract.portfolio.note.domain.NoteType;
@@ -65,16 +67,18 @@ public class NotesApiResource {
     private final DefaultToApiJsonSerializer<NoteData> toApiJsonSerializer;
     private final ApiRequestParameterHelper apiRequestParameterHelper;
     private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
+    private final RoutingDataSource dataSource;
 
     @Autowired
     public NotesApiResource(final PlatformSecurityContext context, final NoteReadPlatformService readPlatformService,
             final DefaultToApiJsonSerializer<NoteData> toApiJsonSerializer, final ApiRequestParameterHelper apiRequestParameterHelper,
-            final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService) {
+            final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService, final RoutingDataSource dataSource) {
         this.context = context;
         this.readPlatformService = readPlatformService;
         this.toApiJsonSerializer = toApiJsonSerializer;
         this.apiRequestParameterHelper = apiRequestParameterHelper;
         this.commandsSourceWritePlatformService = commandsSourceWritePlatformService;
+        this.dataSource = dataSource;
     }
 
     @GET
@@ -82,6 +86,7 @@ public class NotesApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     public String retrieveNotesByResource(@PathParam("resourceType") final String resourceType,
             @PathParam("resourceId") final Long resourceId, @Context final UriInfo uriInfo) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
         final NoteType noteType = NoteType.fromApiUrl(resourceType);
 
@@ -103,6 +108,7 @@ public class NotesApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     public String retrieveNote(@PathParam("resourceType") final String resourceType, @PathParam("resourceId") final Long resourceId,
             @PathParam("noteId") final Long noteId, @Context final UriInfo uriInfo) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
         final NoteType noteType = NoteType.fromApiUrl(resourceType);
 
@@ -123,6 +129,7 @@ public class NotesApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     public String addNewNote(@PathParam("resourceType") final String resourceType, @PathParam("resourceId") final Long resourceId,
             final String apiRequestBodyAsJson) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
 
         final NoteType noteType = NoteType.fromApiUrl(resourceType);
 
@@ -143,6 +150,7 @@ public class NotesApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     public String updateNote(@PathParam("resourceType") final String resourceType, @PathParam("resourceId") final Long resourceId,
             @PathParam("noteId") final Long noteId, final String apiRequestBodyAsJson) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
 
         final NoteType noteType = NoteType.fromApiUrl(resourceType);
 
@@ -164,6 +172,7 @@ public class NotesApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     public String deleteNote(@PathParam("resourceType") final String resourceType, @PathParam("resourceId") final Long resourceId,
             @PathParam("noteId") final Long noteId) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
 
         final NoteType noteType = NoteType.fromApiUrl(resourceType);
 

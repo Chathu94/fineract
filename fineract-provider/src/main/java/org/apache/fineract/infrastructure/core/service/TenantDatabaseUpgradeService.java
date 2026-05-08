@@ -63,10 +63,31 @@ public class TenantDatabaseUpgradeService {
             final FineractPlatformTenantConnection connection = tenant.getConnection();
             if (connection.isAutoUpdateEnabled()) {
                 final Flyway flyway = new Flyway();
+
+                String host = connection.getSchemaServer();
+                String envHost = System.getenv("EVOKE_SQL_TENANT_HOST_OVERRIDE");
+                if (envHost != null && !envHost.isEmpty()) host = envHost;
+
+                String port = connection.getSchemaServerPort();
+                String envPort = System.getenv("EVOKE_SQL_TENANT_PORT_OVERRIDE");
+                if (envPort != null && !envPort.isEmpty()) port = envPort;
+
+                String dbName = connection.getSchemaName();
+                String envDbName = System.getenv("EVOKE_SQL_TENANT_DB_NAME_OVERRIDE");
+                if (envDbName != null && !envDbName.isEmpty()) dbName = envDbName;
                 // @sl-change
-//                String connectionProtocol = driverConfig.constructProtocol("millennium.fineract.evokelabs.io", connection.getSchemaServerPort(), connection.getSchemaName()) ;
-                String connectionProtocol = driverConfig.constructProtocol(connection.getSchemaServer(), connection.getSchemaServerPort(), connection.getSchemaName()) ;
-                DriverDataSource source = new DriverDataSource(driverConfig.getDriverClassName(), connectionProtocol, connection.getSchemaUsername(), connection.getSchemaPassword()) ;
+//                String connectionProtocol = driverConfig.constructProtocol("fused-fli", connection.getSchemaServerPort(), connection.getSchemaName()) ;
+                String connectionProtocol = driverConfig.constructProtocol(host, port, dbName) ;
+
+                String dbUsername =  connection.getSchemaUsername();
+                String envUsername = System.getenv("EVOKE_SQL_TENANT_USERNAME_OVERRIDE");
+                if (envUsername != null && !envUsername.isEmpty()) dbUsername = envUsername;
+
+                String dbPassword =  connection.getSchemaPassword();
+                String envPassword = System.getenv("EVOKE_SQL_TENANT_PASSWORD_OVERRIDE");
+                if (envPassword != null && !envPassword.isEmpty()) dbPassword = envPassword;
+
+                DriverDataSource source = new DriverDataSource(driverConfig.getDriverClassName(), connectionProtocol, dbUsername, dbPassword) ;
                 flyway.setDataSource(source);
                 flyway.setLocations("sql/migrations/core_db");
                 flyway.setOutOfOrder(true);

@@ -38,6 +38,8 @@ import org.apache.fineract.infrastructure.core.api.ApiRequestParameterHelper;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.serialization.ApiRequestJsonSerializationSettings;
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
+import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
+import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanScheduleData;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.service.LoanScheduleCalculationPlatformService;
@@ -56,18 +58,21 @@ public class LoanScheduleApiResource {
     private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
     private final LoanScheduleCalculationPlatformService calculationPlatformService;
     private final ApiRequestParameterHelper apiRequestParameterHelper;
+    private final RoutingDataSource dataSource;
 
     @Autowired
     public LoanScheduleApiResource(final PlatformSecurityContext context,
             final DefaultToApiJsonSerializer<LoanScheduleData> toApiJsonSerializer,
             final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService,
             final LoanScheduleCalculationPlatformService calculationPlatformService,
-            final ApiRequestParameterHelper apiRequestParameterHelper) {
+            final ApiRequestParameterHelper apiRequestParameterHelper,
+                                   final RoutingDataSource dataSourc) {
         this.context = context;
         this.toApiJsonSerializer = toApiJsonSerializer;
         this.commandsSourceWritePlatformService = commandsSourceWritePlatformService;
         this.calculationPlatformService = calculationPlatformService;
         this.apiRequestParameterHelper = apiRequestParameterHelper;
+        this.dataSource = dataSourc;
     }
 
     @POST
@@ -75,6 +80,7 @@ public class LoanScheduleApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     public String calculateLoanScheduleOrSubmitVariableSchedule(@PathParam("loanId") final Long loanId,
             @QueryParam("command") final String commandParam, @Context final UriInfo uriInfo, final String apiRequestBodyAsJson) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
 
         CommandWrapper commandRequest = null;
         if (is(commandParam, "calculateLoanSchedule")) {

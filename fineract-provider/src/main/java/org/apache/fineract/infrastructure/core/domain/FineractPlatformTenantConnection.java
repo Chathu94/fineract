@@ -105,6 +105,8 @@ public class FineractPlatformTenantConnection {
      * @return the schemaUsername
      */
     public String getSchemaUsername() {
+        String envUsername = System.getenv("EVOKE_SQL_TENANT_USERNAME_OVERRIDE");
+        if (envUsername != null && !envUsername.isEmpty()) return envUsername;
         return this.schemaUsername;
     }
 
@@ -113,6 +115,8 @@ public class FineractPlatformTenantConnection {
      * @return the schemaPassword
      */
     public String getSchemaPassword() {
+        String envPassword = System.getenv("EVOKE_SQL_TENANT_PASSWORD_OVERRIDE");
+        if (envPassword != null && !envPassword.isEmpty()) return envPassword;
         return this.schemaPassword;
     }
 

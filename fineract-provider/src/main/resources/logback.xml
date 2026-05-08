@@ -1,54 +1,67 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--
-
-    Licensed to the Apache Software Foundation (ASF) under one
-    or more contributor license agreements. See the NOTICE file
-    distributed with this work for additional information
-    regarding copyright ownership. The ASF licenses this file
-    to you under the Apache License, Version 2.0 (the
-    "License"); you may not use this file except in compliance
-    with the License. You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing,
-    software distributed under the License is distributed on an
-    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-    KIND, either express or implied. See the License for the
-    specific language governing permissions and limitations
-    under the License.
-
--->
 
 <configuration>
-	<appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
-		<layout class="ch.qos.logback.classic.PatternLayout">
-			<Pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</Pattern>
-		</layout>
-	</appender>
 
-	<appender name="FILE" class="ch.qos.logback.core.FileAppender">
-		<file>${catalina.base}/logs/fineract-platform.log</file>
-		<append>true</append>
-		<!-- encoders are assigned the type ch.qos.logback.classic.encoder.PatternLayoutEncoder 
-			by default -->
-		<encoder>
-			<pattern>%-4relative [%thread] %-5level %logger{35} - %msg%n</pattern>
+	<!-- Optional: enable Logback internal status logs only when needed -->
+	<!-- Set env LOGLB_DEBUG=true to see status logs -->
+	<property name="LOGLB_DEBUG" value="${LOGLB_DEBUG:-false}" />
+
+	<if condition='property("LOGLB_DEBUG").equals("true")'>
+		<then>
+			<statusListener class="ch.qos.logback.core.status.OnConsoleStatusListener"/>
+		</then>
+	</if>
+
+	<!-- Log directory:
+         1) If running under Tomcat, you can set LOG_DIR=${catalina.base}/logs
+         2) Otherwise defaults to ./logs
+    -->
+<!--	<property name="LOG_DIR" value="${LOG_DIR:-logs}" />-->
+
+	<appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+		<encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+			<pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
 		</encoder>
 	</appender>
 
+	<logger name="org.fineract.platform" level="debug"/>
+	<logger name="org.apache.fineract.infrastructure.security.filter" level="info"/>
+	<logger name="org.apache.fineract" level="debug"/>
+	<logger name="org.springframework.web" level="info"/>
+	<logger name="org.springframework.beans" level="info"/>
+	<logger name="net.sf.ehcache" level="debug"/>
+	<logger name="org.pentaho" level="warn"/>
+	<logger name="org.hibernate.cache" level="debug"/>
 
-	<logger name="org.fineract.platform" level="debug" />
-	<logger name="org.apache.fineract.infrastructure.security.filter"
-		level="info" />
-	<logger name="org.apache.fineract" level="debug" />
-	<logger name="org.springframework.web" level="info" />
-	<logger name="org.springframework.beans" level="info" />
-	<logger name="net.sf.ehcache" level="error" />
-	<logger name="org.hibernate.cache" level="error" />
+<!--	&lt;!&ndash; Spring Cache (HIT / MISS / PUT) &ndash;&gt;-->
+	<logger name="org.springframework.cache.interceptor" level="trace"/>
+	<logger name="org.springframework.cache" level="trace"/>
+
+<!--	&lt;!&ndash; Redis interaction (VERY IMPORTANT) &ndash;&gt;-->
+<!--	<logger name="org.springframework.data.redis" level="debug"/>-->
+<!--	<logger name="org.springframework.data.redis.core" level="trace"/>-->
+
+<!--	<logger name="org.apache.openjpa" level="trace"/>-->
+
+<!--	&lt;!&ndash; Connection factory logs &ndash;&gt;-->
+<!--	<logger name="org.springframework.data.redis.connection" level="debug"/>-->
+
+<!--	&lt;!&ndash; Jedis client activity &ndash;&gt;-->
+<!--	<logger name="redis.clients.jedis" level="debug"/>-->
+
+<!--	&lt;!&ndash; Optional: show which CacheManager is being used &ndash;&gt;-->
+	<logger name="org.apache.fineract.infrastructure.cache" level="debug"/>
+
+<!--	&lt;!&ndash; Spring Cache internal decision logs &ndash;&gt;-->
+	<logger name="org.springframework.cache.interceptor.CacheAspectSupport" level="trace"/>
+	<logger name="org.springframework.cache.interceptor.CacheInterceptor" level="trace"/>
+	<logger name="org.springframework.cache.annotation" level="trace"/>
+
+<!--	&lt;!&ndash; If using @Cacheable key generation &ndash;&gt;-->
+<!--	<logger name="org.springframework.cache.interceptor.SimpleKeyGenerator" level="trace"/>-->
 
 	<root level="info">
-		<appender-ref ref="STDOUT" />
-		<appender-ref ref="FILE" />
+		<appender-ref ref="STDOUT"/>
 	</root>
+
 </configuration>

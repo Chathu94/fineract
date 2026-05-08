@@ -47,6 +47,8 @@ import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.exception.UnrecognizedQueryParamException;
 import org.apache.fineract.infrastructure.core.serialization.ApiRequestJsonSerializationSettings;
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
+import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
+import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.organisation.holiday.data.HolidayData;
 import org.apache.fineract.organisation.holiday.service.HolidayReadPlatformService;
@@ -65,22 +67,26 @@ public class HolidaysApiResource {
     private final ApiRequestParameterHelper apiRequestParameterHelper;
 
     private final HolidayReadPlatformService holidayReadPlatformService;
+    private final RoutingDataSource dataSource;
 
     @Autowired
     public HolidaysApiResource(final DefaultToApiJsonSerializer<HolidayData> toApiJsonSerializer,
             final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService, final PlatformSecurityContext context,
-            final ApiRequestParameterHelper apiRequestParameterHelper, final HolidayReadPlatformService holidayReadPlatformService) {
+            final ApiRequestParameterHelper apiRequestParameterHelper, final HolidayReadPlatformService holidayReadPlatformService,
+                               final RoutingDataSource dataSource) {
         this.toApiJsonSerializer = toApiJsonSerializer;
         this.commandsSourceWritePlatformService = commandsSourceWritePlatformService;
         this.context = context;
         this.apiRequestParameterHelper = apiRequestParameterHelper;
         this.holidayReadPlatformService = holidayReadPlatformService;
+        this.dataSource = dataSource;
     }
 
     @POST
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String createNewHoliday(final String apiRequestBodyAsJson) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
 
         final CommandWrapper commandRequest = new CommandWrapperBuilder().createHoliday().withJson(apiRequestBodyAsJson).build();
 
@@ -95,6 +101,7 @@ public class HolidaysApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     public String handleCommands(@PathParam("holidayId") final Long holidayId, @QueryParam("command") final String commandParam,
             final String apiRequestBodyAsJson) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
 
         String jsonApiRequest = apiRequestBodyAsJson;
         if (StringUtils.isBlank(jsonApiRequest)) {
@@ -119,6 +126,7 @@ public class HolidaysApiResource {
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String retrieveOne(@PathParam("holidayId") final Long holidayId, @Context final UriInfo uriInfo) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
         this.context.authenticatedUser().validateHasReadPermission(HOLIDAY_RESOURCE_NAME);
 
@@ -134,6 +142,7 @@ public class HolidaysApiResource {
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String update(@PathParam("holidayId") final Long holidayId, final String jsonRequestBody) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
 
         final CommandWrapper commandRequest = new CommandWrapperBuilder().updateHoliday(holidayId).withJson(jsonRequestBody).build();
 
@@ -147,6 +156,7 @@ public class HolidaysApiResource {
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String delete(@PathParam("holidayId") final Long holidayId) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
         final CommandWrapper commandRequest = new CommandWrapperBuilder().deleteHoliday(holidayId).build();
         final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
         return this.toApiJsonSerializer.serialize(result);
@@ -162,6 +172,7 @@ public class HolidaysApiResource {
     public String retrieveAllHolidays(@Context final UriInfo uriInfo, @QueryParam("officeId") final Long officeId,
             @QueryParam("fromDate") final DateParam fromDateParam, @QueryParam("toDate") final DateParam toDateParam,
             @QueryParam("locale") final String locale, @QueryParam("dateFormat") final String dateFormat) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
         this.context.authenticatedUser().validateHasReadPermission(HOLIDAY_RESOURCE_NAME);
 
@@ -186,6 +197,7 @@ public class HolidaysApiResource {
     @Consumes({MediaType.APPLICATION_JSON})
     @Produces({MediaType.APPLICATION_JSON})
     public String retrieveRepaymentScheduleUpdationTyeOptions(@Context final UriInfo uriInfo){
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
         this.context.authenticatedUser().validateHasReadPermission(HOLIDAY_RESOURCE_NAME);
         return this.toApiJsonSerializer.serialize(this.holidayReadPlatformService.retrieveRepaymentScheduleUpdationTyeOptions());
     }

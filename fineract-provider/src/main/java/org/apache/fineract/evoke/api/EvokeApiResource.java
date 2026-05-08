@@ -18,6 +18,12 @@
  */
 package org.apache.fineract.evoke.api;
 
+import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
+import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
+import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
+import org.apache.fineract.organisation.teller.data.CashierData;
+import org.apache.fineract.organisation.teller.service.TellerManagementReadPlatformService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
@@ -34,10 +40,17 @@ import java.net.URL;
 @Component
 @Scope("singleton")
 public class EvokeApiResource {
+    private final RoutingDataSource dataSource;
+
+    @Autowired
+    public EvokeApiResource(final RoutingDataSource dataSource) {
+        this.dataSource = dataSource;
+    }
 
     @GET
     @Path("/health")
     public String health(@QueryParam("checkTablet") final Boolean checkTablet) throws MalformedURLException {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
         if (checkTablet != null && checkTablet) {
             URL url = new URL("http://localhost:8080/debug/health");
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream(), "UTF-8"))) {

@@ -31,6 +31,8 @@ import javax.ws.rs.Path;
 import org.apache.commons.lang.StringUtils;
 import org.apache.fineract.infrastructure.core.exception.InvalidJsonException;
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
+import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
+import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.useradministration.api.UsersApiResource;
 import org.apache.fineract.useradministration.domain.AppUser;
@@ -47,19 +49,23 @@ public class SelfUserApiResource {
         private final PlatformSecurityContext context;
         private final FromJsonHelper fromApiJsonHelper;
         private final Set<String> supportedParameters = new HashSet<>(Arrays.asList("password", "repeatPassword"));
+        private final RoutingDataSource dataSource;
 
         @Autowired
         public SelfUserApiResource(final UsersApiResource usersApiResource,
                 final PlatformSecurityContext context,
-                final FromJsonHelper fromApiJsonHelper){
+                final FromJsonHelper fromApiJsonHelper,
+                                   final RoutingDataSource dataSource){
 
                 this.usersApiResource = usersApiResource;
                 this.context = context;
                 this.fromApiJsonHelper = fromApiJsonHelper;
+                this.dataSource = dataSource;
         }
 
         @PUT
         public String update(final String apiRequestBodyAsJson) {
+                ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
                 if (StringUtils.isBlank(apiRequestBodyAsJson)) { throw new InvalidJsonException(); }
 
                 final Type typeOfMap = new TypeToken<Map<String, Object>>() {}.getType();

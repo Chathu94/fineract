@@ -18,6 +18,8 @@
  */
 package org.apache.fineract.spm.api;
 
+import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
+import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.spm.data.LookupTableData;
 import org.apache.fineract.spm.domain.LookupTable;
@@ -46,15 +48,18 @@ public class LookupTableApiResource {
     private final PlatformSecurityContext securityContext;
     private final SpmService spmService;
     private final LookupTableService lookupTableService;
+    private final RoutingDataSource dataSource;
 
     @Autowired
     public LookupTableApiResource(final PlatformSecurityContext securityContext,
                                   final SpmService spmService,
-                                  final LookupTableService lookupTableService) {
+                                  final LookupTableService lookupTableService,
+                                  final RoutingDataSource dataSource) {
         super();
         this.securityContext = securityContext;
         this.spmService = spmService;
         this.lookupTableService = lookupTableService;
+        this.dataSource = dataSource;
     }
 
     @GET
@@ -62,6 +67,7 @@ public class LookupTableApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     @Transactional
     public List<LookupTableData> fetchLookupTables(@PathParam("surveyId") final Long surveyId) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
         this.securityContext.authenticatedUser();
 
         final Survey survey = findSurvey(surveyId);
@@ -82,6 +88,7 @@ public class LookupTableApiResource {
     @Transactional
     public LookupTableData findLookupTable(@PathParam("surveyId") final Long surveyId,
                                            @PathParam("key") final String key) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
         this.securityContext.authenticatedUser();
 
         findSurvey(surveyId);
@@ -101,6 +108,7 @@ public class LookupTableApiResource {
     @Transactional
     public void createLookupTable(@PathParam("surveyId") final Long surveyId,
                                   final LookupTableData lookupTableData) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
         this.securityContext.authenticatedUser();
 
         final Survey survey = findSurvey(surveyId);

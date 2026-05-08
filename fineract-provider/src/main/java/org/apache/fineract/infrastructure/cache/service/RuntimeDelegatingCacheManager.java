@@ -58,7 +58,7 @@ public class RuntimeDelegatingCacheManager implements CacheManager {
 
     @Override
     public Cache getCache(final String name) {
-        return this.currentCacheManager.getCache(name);
+        return this.noOpCacheManager.getCache(name);
     }
 
     @Override

@@ -34,7 +34,9 @@ import org.apache.fineract.infrastructure.core.api.ApiRequestParameterHelper;
 import org.apache.fineract.infrastructure.core.serialization.ApiRequestJsonSerializationSettings;
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
 import org.apache.fineract.infrastructure.core.service.Page;
+import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
 import org.apache.fineract.infrastructure.core.service.SearchParameters;
+import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.portfolio.account.data.StandingInstructionDTO;
 import org.apache.fineract.portfolio.account.data.StandingInstructionHistoryData;
@@ -52,16 +54,19 @@ public class StandingInstructionHistoryApiResource {
     private final DefaultToApiJsonSerializer<StandingInstructionHistoryData> toApiJsonSerializer;
     private final ApiRequestParameterHelper apiRequestParameterHelper;
     private final StandingInstructionHistoryReadPlatformService standingInstructionHistoryReadPlatformService;
+    private final RoutingDataSource dataSource;
 
     @Autowired
     public StandingInstructionHistoryApiResource(final PlatformSecurityContext context,
             final ApiRequestParameterHelper apiRequestParameterHelper,
             final StandingInstructionHistoryReadPlatformService standingInstructionHistoryReadPlatformService,
-            final DefaultToApiJsonSerializer<StandingInstructionHistoryData> toApiJsonSerializer) {
+            final DefaultToApiJsonSerializer<StandingInstructionHistoryData> toApiJsonSerializer,
+                                                 final RoutingDataSource dataSource) {
         this.context = context;
         this.toApiJsonSerializer = toApiJsonSerializer;
         this.apiRequestParameterHelper = apiRequestParameterHelper;
         this.standingInstructionHistoryReadPlatformService = standingInstructionHistoryReadPlatformService;
+        this.dataSource = dataSource;
     }
 
     @GET
@@ -75,6 +80,7 @@ public class StandingInstructionHistoryApiResource {
             @QueryParam("fromAccountId") final Long fromAccount, @QueryParam("fromAccountType") final Integer fromAccountType,
             @QueryParam("locale") final String locale, @QueryParam("dateFormat") final String dateFormat,
             @QueryParam("fromDate") final DateParam fromDateParam, @QueryParam("toDate") final DateParam toDateParam) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
         this.context.authenticatedUser().validateHasReadPermission(StandingInstructionApiConstants.STANDING_INSTRUCTION_RESOURCE_NAME);
 

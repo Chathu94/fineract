@@ -34,6 +34,8 @@ import javax.ws.rs.core.UriInfo;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.fineract.infrastructure.core.exception.UnrecognizedQueryParamException;
+import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
+import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.portfolio.client.exception.ClientNotFoundException;
 import org.apache.fineract.portfolio.loanaccount.api.LoanChargesApiResource;
@@ -62,6 +64,7 @@ public class SelfLoansApiResource {
 	private final AppuserLoansMapperReadService appuserLoansMapperReadService;
 	private final AppuserClientMapperReadService appUserClientMapperReadService;
 	private final SelfLoansDataValidator dataValidator;
+	private final RoutingDataSource dataSource;
 
 	@Autowired
 	public SelfLoansApiResource(final PlatformSecurityContext context,
@@ -70,7 +73,8 @@ public class SelfLoansApiResource {
 			final LoanChargesApiResource loanChargesApiResource,
 			final AppuserLoansMapperReadService appuserLoansMapperReadService,
 			final AppuserClientMapperReadService appUserClientMapperReadService,
-			final SelfLoansDataValidator dataValidator) {
+			final SelfLoansDataValidator dataValidator,
+								final RoutingDataSource dataSource) {
 		this.context = context;
 		this.loansApiResource = loansApiResource;
 		this.loanTransactionsApiResource = loanTransactionsApiResource;
@@ -78,6 +82,7 @@ public class SelfLoansApiResource {
 		this.appuserLoansMapperReadService = appuserLoansMapperReadService;
 		this.appUserClientMapperReadService = appUserClientMapperReadService;
 		this.dataValidator = dataValidator;
+		this.dataSource = dataSource;
 	}
 
 	@GET
@@ -86,6 +91,7 @@ public class SelfLoansApiResource {
 	@Produces({ MediaType.APPLICATION_JSON })
 	public String retrieveLoan(@PathParam("loanId") final Long loanId,
 			@Context final UriInfo uriInfo) {
+		ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
 		this.dataValidator.validateRetrieveLoan(uriInfo);
 
@@ -103,6 +109,7 @@ public class SelfLoansApiResource {
 	public String retrieveTransaction(@PathParam("loanId") final Long loanId,
 			@PathParam("transactionId") final Long transactionId,
 			@Context final UriInfo uriInfo) {
+		ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
 		this.dataValidator.validateRetrieveTransaction(uriInfo);
 
@@ -119,6 +126,7 @@ public class SelfLoansApiResource {
 	public String retrieveAllLoanCharges(
 			@PathParam("loanId") final Long loanId,
 			@Context final UriInfo uriInfo) {
+		ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
 		validateAppuserLoanMapping(loanId);
 
@@ -133,6 +141,7 @@ public class SelfLoansApiResource {
 	public String retrieveLoanCharge(@PathParam("loanId") final Long loanId,
 			@PathParam("chargeId") final Long loanChargeId,
 			@Context final UriInfo uriInfo) {
+		ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
 		validateAppuserLoanMapping(loanId);
 
@@ -147,6 +156,7 @@ public class SelfLoansApiResource {
     		@QueryParam("productId") final Long productId,
     		@QueryParam("templateType") final String templateType,
     		@Context final UriInfo uriInfo) {
+		ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
     	
     	if(clientId != null){
         	validateAppuserClientsMapping(clientId);
@@ -173,6 +183,7 @@ public class SelfLoansApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     public String calculateLoanScheduleOrSubmitLoanApplication(@QueryParam("command") final String commandParam,
             @Context final UriInfo uriInfo, final String apiRequestBodyAsJson) {
+		ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
     	
     	HashMap<String, Object> attr = this.dataValidator.validateLoanApplication(apiRequestBodyAsJson);
         final Long clientId = (Long) attr.get("clientId");
@@ -187,6 +198,7 @@ public class SelfLoansApiResource {
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String modifyLoanApplication(@PathParam("loanId") final Long loanId, final String apiRequestBodyAsJson) {
+		ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
 
     	HashMap<String, Object> attr = this.dataValidator.validateModifyLoanApplication(apiRequestBodyAsJson);
         validateAppuserLoanMapping(loanId);
@@ -204,6 +216,7 @@ public class SelfLoansApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     public String stateTransitions(@PathParam("loanId") final Long loanId, @QueryParam("command") final String commandParam,
             final String apiRequestBodyAsJson) {
+		ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
     	if (!is(commandParam, "withdrawnByApplicant")) {
     		throw new UnrecognizedQueryParamException("command", commandParam);
     	}

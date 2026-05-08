@@ -45,6 +45,8 @@ import org.apache.fineract.infrastructure.core.api.ApiRequestParameterHelper;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.serialization.ApiRequestJsonSerializationSettings;
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
+import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
+import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.portfolio.collateral.data.CollateralData;
 import org.apache.fineract.portfolio.collateral.service.CollateralReadPlatformService;
@@ -68,19 +70,21 @@ public class CollateralsApiResource {
     private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
     private final PlatformSecurityContext context;
     private final CodeValueReadPlatformService codeValueReadPlatformService;
+    private final RoutingDataSource dataSource;
 
     @Autowired
     public CollateralsApiResource(final PlatformSecurityContext context, final CollateralReadPlatformService collateralReadPlatformService,
             final DefaultToApiJsonSerializer<CollateralData> toApiJsonSerializer,
             final ApiRequestParameterHelper apiRequestParameterHelper,
             final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService,
-            final CodeValueReadPlatformService codeValueReadPlatformService) {
+            final CodeValueReadPlatformService codeValueReadPlatformService, final RoutingDataSource dataSource) {
         this.context = context;
         this.apiRequestParameterHelper = apiRequestParameterHelper;
         this.commandsSourceWritePlatformService = commandsSourceWritePlatformService;
         this.apiJsonSerializerService = toApiJsonSerializer;
         this.collateralReadPlatformService = collateralReadPlatformService;
         this.codeValueReadPlatformService = codeValueReadPlatformService;
+        this.dataSource = dataSource;
     }
 
     @GET
@@ -88,6 +92,7 @@ public class CollateralsApiResource {
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String newCollateralTemplate(@Context final UriInfo uriInfo) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
         this.context.authenticatedUser().validateHasReadPermission(this.resourceNameForPermission);
 
         this.context.authenticatedUser().validateHasReadPermission(this.resourceNameForPermission);
@@ -103,6 +108,7 @@ public class CollateralsApiResource {
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String retrieveCollateralDetails(@Context final UriInfo uriInfo, @PathParam("loanId") final Long loanId) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
         this.context.authenticatedUser().validateHasReadPermission(this.resourceNameForPermission);
 
         final List<CollateralData> CollateralDatas = this.collateralReadPlatformService.retrieveCollateralsForValidLoan(loanId);
@@ -118,6 +124,7 @@ public class CollateralsApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     public String retrieveCollateralDetails(@Context final UriInfo uriInfo, @PathParam("loanId") final Long loanId,
             @PathParam("collateralId") final Long CollateralId) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
         this.context.authenticatedUser().validateHasReadPermission(this.resourceNameForPermission);
 
         CollateralData CollateralData = this.collateralReadPlatformService.retrieveCollateral(loanId, CollateralId);
@@ -136,6 +143,7 @@ public class CollateralsApiResource {
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String createCollateral(@PathParam("loanId") final Long loanId, final String apiRequestBodyAsJson) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
 
         final CommandWrapper commandRequest = new CommandWrapperBuilder().createCollateral(loanId).withJson(apiRequestBodyAsJson).build();
 
@@ -150,6 +158,7 @@ public class CollateralsApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     public String updateCollateral(@PathParam("loanId") final Long loanId, @PathParam("collateralId") final Long collateralId,
             final String jsonRequestBody) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
         final CommandWrapper commandRequest = new CommandWrapperBuilder().updateCollateral(loanId, collateralId).withJson(jsonRequestBody)
                 .build();
 
@@ -163,6 +172,7 @@ public class CollateralsApiResource {
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String deleteCollateral(@PathParam("loanId") final Long loanId, @PathParam("collateralId") final Long collateralId) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
         final CommandWrapper commandRequest = new CommandWrapperBuilder().deleteCollateral(loanId, collateralId).build();
 
         final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);

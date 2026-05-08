@@ -38,6 +38,8 @@ import javax.ws.rs.core.UriInfo;
 
 import org.apache.fineract.infrastructure.core.api.ApiParameterHelper;
 import org.apache.fineract.infrastructure.core.serialization.ToApiJsonSerializer;
+import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
+import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.dataqueries.data.GenericResultsetData;
 import org.apache.fineract.infrastructure.dataqueries.data.ReportData;
 import org.apache.fineract.infrastructure.dataqueries.service.GenericDataService;
@@ -61,16 +63,18 @@ public class RunreportsApiResource {
     private final ReadReportingService readExtraDataAndReportingService;
     private final GenericDataService genericDataService;
     private final ReportingProcessServiceProvider reportingProcessServiceProvider;
+    private final RoutingDataSource dataSource;
 
     @Autowired
     public RunreportsApiResource(final PlatformSecurityContext context, final ReadReportingService readExtraDataAndReportingService,
             final GenericDataService genericDataService, final ToApiJsonSerializer<ReportData> toApiJsonSerializer,
-            final ReportingProcessServiceProvider reportingProcessServiceProvider) {
+            final ReportingProcessServiceProvider reportingProcessServiceProvider, final RoutingDataSource dataSource) {
         this.context = context;
         this.readExtraDataAndReportingService = readExtraDataAndReportingService;
         this.genericDataService = genericDataService;
         this.toApiJsonSerializer = toApiJsonSerializer;
         this.reportingProcessServiceProvider = reportingProcessServiceProvider;
+        this.dataSource = dataSource;
     }
 
     @GET
@@ -78,6 +82,7 @@ public class RunreportsApiResource {
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON, "text/csv", "application/vnd.ms-excel", "application/pdf", "text/html" })
     public Response runReport(@PathParam("reportName") final String reportName, @Context final UriInfo uriInfo) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
         final MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
 

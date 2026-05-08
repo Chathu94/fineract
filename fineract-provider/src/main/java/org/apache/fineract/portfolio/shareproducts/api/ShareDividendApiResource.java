@@ -37,7 +37,9 @@ import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.exception.UnrecognizedQueryParamException;
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
 import org.apache.fineract.infrastructure.core.service.Page;
+import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
 import org.apache.fineract.infrastructure.core.service.SearchParameters;
+import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.portfolio.shareaccounts.data.ShareAccountDividendData;
 import org.apache.fineract.portfolio.shareaccounts.service.ShareAccountDividendReadPlatformService;
@@ -59,6 +61,7 @@ public class ShareDividendApiResource {
     private final ShareAccountDividendReadPlatformService shareAccountDividendReadPlatformService;
     private final ShareProductDividendReadPlatformService shareProductDividendReadPlatformService;
     private final String resourceNameForPermissions = "DIVIDEND_SHAREPRODUCT";
+    private final RoutingDataSource dataSource;
 
     @Autowired
     public ShareDividendApiResource(final DefaultToApiJsonSerializer<ShareProductDividendPayOutData> toApiJsonSerializer,
@@ -66,13 +69,15 @@ public class ShareDividendApiResource {
             final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService,
             final DefaultToApiJsonSerializer<ShareAccountDividendData> toApiDividendsJsonSerializer,
             final ShareAccountDividendReadPlatformService shareAccountDividendReadPlatformService,
-            final ShareProductDividendReadPlatformService shareProductDividendReadPlatformService) {
+            final ShareProductDividendReadPlatformService shareProductDividendReadPlatformService,
+                                    final RoutingDataSource dataSource) {
         this.toApiJsonSerializer = toApiJsonSerializer;
         this.platformSecurityContext = platformSecurityContext;
         this.commandsSourceWritePlatformService = commandsSourceWritePlatformService;
         this.toApiAccountDetailJsonSerializer = toApiDividendsJsonSerializer;
         this.shareAccountDividendReadPlatformService = shareAccountDividendReadPlatformService;
         this.shareProductDividendReadPlatformService = shareProductDividendReadPlatformService;
+        this.dataSource = dataSource;
     }
 
     @GET
@@ -81,6 +86,7 @@ public class ShareDividendApiResource {
     public String retrieveAll(@PathParam("productId") final Long productId, @QueryParam("offset") final Integer offset,
             @QueryParam("limit") final Integer limit, @QueryParam("orderBy") final String orderBy,
             @QueryParam("sortOrder") final String sortOrder, @QueryParam("status") final Integer status) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
         this.platformSecurityContext.authenticatedUser().validateHasReadPermission(this.resourceNameForPermissions);
         final SearchParameters searchParameters = SearchParameters.forPagination(offset, limit, orderBy, sortOrder);
@@ -96,6 +102,7 @@ public class ShareDividendApiResource {
     public String retrieveDividendDetails(@PathParam("dividendId") final Long dividendId, @QueryParam("offset") final Integer offset,
             @QueryParam("limit") final Integer limit, @QueryParam("orderBy") final String orderBy,
             @QueryParam("sortOrder") final String sortOrder, @QueryParam("accountNo") final String accountNo) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
         this.platformSecurityContext.authenticatedUser().validateHasReadPermission(this.resourceNameForPermissions);
         final SearchParameters searchParameters = SearchParameters.forPaginationAndAccountNumberSearch(offset, limit, orderBy, sortOrder,
@@ -109,6 +116,7 @@ public class ShareDividendApiResource {
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String createDividendDetail(@PathParam("productId") final Long productId, final String apiRequestBodyAsJson) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
         this.platformSecurityContext.authenticatedUser();
         CommandWrapper commandWrapper = new CommandWrapperBuilder().createShareProductDividendPayoutCommand(productId)
                 .withJson(apiRequestBodyAsJson).build();
@@ -122,6 +130,7 @@ public class ShareDividendApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     public String updateDividendDetail(@PathParam("productId") final Long productId, @PathParam("dividendId") final Long dividendId,
             @QueryParam("command") final String commandParam, final String apiRequestBodyAsJson) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
         CommandWrapper commandWrapper = null;
         this.platformSecurityContext.authenticatedUser();
         if (is(commandParam, "approve")) {
@@ -139,6 +148,7 @@ public class ShareDividendApiResource {
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String deleteDividendDetail(@PathParam("productId") final Long productId, @PathParam("dividendId") final Long dividendId) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
         this.platformSecurityContext.authenticatedUser();
         final CommandWrapper commandWrapper = new CommandWrapperBuilder().deleteShareProductDividendPayoutCommand(productId, dividendId)
                 .build();

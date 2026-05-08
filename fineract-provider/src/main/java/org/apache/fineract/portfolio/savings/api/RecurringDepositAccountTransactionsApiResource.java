@@ -43,6 +43,8 @@ import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.exception.UnrecognizedQueryParamException;
 import org.apache.fineract.infrastructure.core.serialization.ApiRequestJsonSerializationSettings;
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
+import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
+import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.portfolio.paymenttype.data.PaymentTypeData;
 import org.apache.fineract.portfolio.paymenttype.service.PaymentTypeReadPlatformService;
@@ -68,6 +70,7 @@ public class RecurringDepositAccountTransactionsApiResource {
     private final SavingsAccountReadPlatformService savingsAccountReadPlatformService;
     private final DepositAccountReadPlatformService depositAccountReadPlatformService;
     private final PaymentTypeReadPlatformService paymentTypeReadPlatformService;
+    private final RoutingDataSource dataSource;
     private static final Set<String> FIXED_DEPOSIT_TRANSACTION_RESPONSE_DATA_PARAMETERS = new HashSet<>(
             Arrays.asList(DepositsApiConstants.idParamName, DepositsApiConstants.accountIdParamName,
                     DepositsApiConstants.accountNoParamName, DepositsApiConstants.currencyParamName,
@@ -82,7 +85,8 @@ public class RecurringDepositAccountTransactionsApiResource {
             final ApiRequestParameterHelper apiRequestParameterHelper,
             final SavingsAccountReadPlatformService savingsAccountReadPlatformService,
             final DepositAccountReadPlatformService depositAccountReadPlatformService,
-            final PaymentTypeReadPlatformService paymentTypeReadPlatformService) {
+            final PaymentTypeReadPlatformService paymentTypeReadPlatformService,
+                                                          final RoutingDataSource dataSource) {
         this.context = context;
         this.toApiJsonSerializer = toApiJsonSerializer;
         this.commandsSourceWritePlatformService = commandsSourceWritePlatformService;
@@ -90,6 +94,7 @@ public class RecurringDepositAccountTransactionsApiResource {
         this.savingsAccountReadPlatformService = savingsAccountReadPlatformService;
         this.depositAccountReadPlatformService = depositAccountReadPlatformService;
         this.paymentTypeReadPlatformService = paymentTypeReadPlatformService;
+        this.dataSource = dataSource;
     }
 
     private boolean is(final String commandParam, final String commandValue) {
@@ -102,6 +107,7 @@ public class RecurringDepositAccountTransactionsApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     public String retrieveTemplate(@PathParam("recurringDepositAccountId") final Long recurringDepositAccountId,
             @QueryParam("command") final String commandParam, @Context final UriInfo uriInfo) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
         this.context.authenticatedUser().validateHasReadPermission(DepositsApiConstants.RECURRING_DEPOSIT_ACCOUNT_RESOURCE_NAME);
 
@@ -140,6 +146,7 @@ public class RecurringDepositAccountTransactionsApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     public String retrieveOne(@PathParam("recurringDepositAccountId") final Long recurringDepositAccountId,
             @PathParam("transactionId") final Long transactionId, @Context final UriInfo uriInfo) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
         this.context.authenticatedUser().validateHasReadPermission(DepositsApiConstants.RECURRING_DEPOSIT_ACCOUNT_RESOURCE_NAME);
         SavingsAccountTransactionData transactionData = this.savingsAccountReadPlatformService.retrieveSavingsTransaction(
@@ -159,6 +166,7 @@ public class RecurringDepositAccountTransactionsApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     public String transaction(@PathParam("recurringDepositAccountId") final Long recurringDepositAccountId,
             @QueryParam("command") final String commandParam, final String apiRequestBodyAsJson) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
 
         final CommandWrapperBuilder builder = new CommandWrapperBuilder().withJson(apiRequestBodyAsJson);
 
@@ -187,6 +195,7 @@ public class RecurringDepositAccountTransactionsApiResource {
     public String handleTransactionCommands(@PathParam("recurringDepositAccountId") final Long recurringDepositAccountId,
             @PathParam("transactionId") final Long transactionId, @QueryParam("command") final String commandParam,
             final String apiRequestBodyAsJson) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
 
         String jsonApiRequest = apiRequestBodyAsJson;
         if (StringUtils.isBlank(jsonApiRequest)) {

@@ -18,6 +18,8 @@
  */
 package org.apache.fineract.spm.api;
 
+import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
+import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.spm.data.SurveyData;
 import org.apache.fineract.spm.domain.Survey;
@@ -41,12 +43,14 @@ public class SpmApiResource {
 
     private final PlatformSecurityContext securityContext;
     private final SpmService spmService;
+    private final RoutingDataSource dataSource;
 
     @Autowired
     public SpmApiResource(final PlatformSecurityContext securityContext,
-                          final SpmService spmService) {
+                          final SpmService spmService, final RoutingDataSource dataSource) {
         this.securityContext = securityContext;
         this.spmService = spmService;
+        this.dataSource = dataSource;
     }
 
     @GET
@@ -54,6 +58,7 @@ public class SpmApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     @Transactional
     public List<SurveyData> fetchActiveSurveys() {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
         this.securityContext.authenticatedUser();
 
         final List<SurveyData> result = new ArrayList<>();
@@ -75,6 +80,7 @@ public class SpmApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     @Transactional
     public SurveyData findSurvey(@PathParam("id") final Long id) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
         this.securityContext.authenticatedUser();
 
         final Survey survey = this.spmService.findById(id);

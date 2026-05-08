@@ -29,6 +29,8 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
+import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
+import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.portfolio.client.domain.Client;
 import org.apache.fineract.portfolio.client.domain.ClientRepositoryWrapper;
@@ -54,15 +56,18 @@ public class ScorecardApiResource {
     private final SpmService spmService;
     private final ScorecardService scorecardService;
     private final ClientRepositoryWrapper clientRepositoryWrapper;
+    private final RoutingDataSource dataSource;
 
     @Autowired
     public ScorecardApiResource(final PlatformSecurityContext securityContext, final SpmService spmService,
-                                final ScorecardService scorecardService, final ClientRepositoryWrapper clientRepositoryWrapper) {
+                                final ScorecardService scorecardService, final ClientRepositoryWrapper clientRepositoryWrapper,
+                                final RoutingDataSource dataSource) {
         super();
         this.securityContext = securityContext;
         this.spmService = spmService;
         this.scorecardService = scorecardService;
         this.clientRepositoryWrapper = clientRepositoryWrapper;
+        this.dataSource = dataSource;
     }
 
     @GET
@@ -70,6 +75,7 @@ public class ScorecardApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     @Transactional
     public List<ScorecardData> findBySurvey(@PathParam("surveyId") final Long surveyId) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
         this.securityContext.authenticatedUser();
 
         final Survey survey = findSurvey(surveyId);
@@ -88,6 +94,7 @@ public class ScorecardApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     @Transactional
     public void createScorecard(@PathParam("surveyId") final Long surveyId, final ScorecardData scorecardData) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
         final AppUser appUser = this.securityContext.authenticatedUser();
         final Survey survey = findSurvey(surveyId);
         final Client client = this.clientRepositoryWrapper.findOneWithNotFoundDetection(scorecardData.getClientId());
@@ -101,6 +108,7 @@ public class ScorecardApiResource {
     @Transactional
     public List<ScorecardData> findBySurveyClient(@PathParam("surveyId") final Long surveyId,
                                                   @PathParam("clientId") final Long clientId) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
         this.securityContext.authenticatedUser();
         final Survey survey = findSurvey(surveyId);
         final Client client = this.clientRepositoryWrapper.findOneWithNotFoundDetection(clientId);

@@ -42,6 +42,8 @@ import org.apache.fineract.infrastructure.core.api.ApiRequestParameterHelper;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.serialization.ApiRequestJsonSerializationSettings;
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
+import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
+import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.creditbureau.data.CreditBureauConfigurationData;
 import org.apache.fineract.infrastructure.creditbureau.data.CreditBureauData;
 import org.apache.fineract.infrastructure.creditbureau.data.CreditBureauLoanProductMappingData;
@@ -73,6 +75,7 @@ public class CreditBureauConfigurationAPI {
 	private final ApiRequestParameterHelper apiRequestParameterHelper;
 	private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
 	private final CreditBureauReadConfigurationService creditBureauConfiguration;
+	private final RoutingDataSource dataSource;
 
 	@Autowired
 	public CreditBureauConfigurationAPI(final PlatformSecurityContext context,
@@ -85,7 +88,8 @@ public class CreditBureauConfigurationAPI {
 			final ApiRequestParameterHelper apiRequestParameterHelper,
 			final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService,
 			final DefaultToApiJsonSerializer<CreditBureauConfigurationData> toApiJsonSerializerReport,
-			final CreditBureauReadConfigurationService creditBureauConfiguration) {
+			final CreditBureauReadConfigurationService creditBureauConfiguration,
+										final RoutingDataSource dataSource) {
 		this.context = context;
 		this.readPlatformService = readPlatformService;
 		this.apiRequestParameterHelper = apiRequestParameterHelper;
@@ -97,13 +101,14 @@ public class CreditBureauConfigurationAPI {
 		this.commandsSourceWritePlatformService = commandsSourceWritePlatformService;
 		this.toApiJsonSerializerReport = toApiJsonSerializerReport;
 		this.creditBureauConfiguration = creditBureauConfiguration;
-
+		this.dataSource = dataSource;
 	}
 
 	@GET
 	@Consumes({ MediaType.APPLICATION_JSON })
 	@Produces({ MediaType.APPLICATION_JSON })
 	public String getCreditBureau(@Context final UriInfo uriInfo) {
+		ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 		this.context.authenticatedUser().validateHasReadPermission(this.resourceNameForPermissions);
 
 		final Collection<CreditBureauData> creditBureau = this.readPlatformService.retrieveCreditBureau();
@@ -119,6 +124,7 @@ public class CreditBureauConfigurationAPI {
 	@Consumes({ MediaType.APPLICATION_JSON })
 	@Produces({ MediaType.APPLICATION_JSON })
 	public String getCreditBureauLoanProductMapping(@Context final UriInfo uriInfo) {
+		ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 		this.context.authenticatedUser().validateHasReadPermission(this.resourceNameForPermissions);
 
 		final Collection<CreditBureauLoanProductMappingData> creditBureauLoanProductMapping = this.readPlatformServiceCreditBureauLoanProduct
@@ -135,6 +141,7 @@ public class CreditBureauConfigurationAPI {
 	@Consumes({ MediaType.APPLICATION_JSON })
 	@Produces({ MediaType.APPLICATION_JSON })
 	public String getOrganisationCreditBureau(@Context final UriInfo uriInfo) {
+		ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 		this.context.authenticatedUser().validateHasReadPermission(this.resourceNameForPermissions);
 
 		final Collection<OrganisationCreditBureauData> organisationCreditBureau = this.readPlatformServiceOrganisationCreditBureau
@@ -152,6 +159,7 @@ public class CreditBureauConfigurationAPI {
 	@Consumes({ MediaType.APPLICATION_JSON })
 	@Produces({ MediaType.APPLICATION_JSON })
 	public String getConfiguration(@PathParam("organisationCreditBureauId") final Long organisationCreditBureauId, @Context final UriInfo uriInfo) {
+		ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 		// System.out.println("config triggered");
 
 		this.context.authenticatedUser().validateHasReadPermission(this.resourceNameForPermissions);
@@ -168,6 +176,7 @@ public class CreditBureauConfigurationAPI {
 	@Consumes({ MediaType.APPLICATION_JSON })
 	@Produces({ MediaType.APPLICATION_JSON })
 	public String fetchLoanProducts(@Context final UriInfo uriInfo) {
+		ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 		this.context.authenticatedUser().validateHasReadPermission(this.resourceNameForPermissions);
 
 		final Collection<CreditBureauLoanProductMappingData> creditBureauLoanProductMapping = this.readPlatformServiceCreditBureauLoanProduct
@@ -183,6 +192,7 @@ public class CreditBureauConfigurationAPI {
 	@Consumes({ MediaType.APPLICATION_JSON })
 	@Produces({ MediaType.APPLICATION_JSON })
 	public String updateCreditBureau(final String apiRequestBodyAsJson) {
+		ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
 
 		final CommandWrapper commandRequest = new CommandWrapperBuilder().updateCreditBureau()
 				.withJson(apiRequestBodyAsJson).build();
@@ -197,6 +207,7 @@ public class CreditBureauConfigurationAPI {
 	@Consumes({ MediaType.APPLICATION_JSON })
 	@Produces({ MediaType.APPLICATION_JSON })
 	public String updateCreditBureauLoanProductMapping(final String apiRequestBodyAsJson) {
+		ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
 
 		final CommandWrapper commandRequest = new CommandWrapperBuilder().updateCreditBureauLoanProductMapping()
 				.withJson(apiRequestBodyAsJson).build();
@@ -211,6 +222,7 @@ public class CreditBureauConfigurationAPI {
 	@Consumes({ MediaType.APPLICATION_JSON })
 	@Produces({ MediaType.APPLICATION_JSON })
 	public String addOrganisationCreditBureau(@PathParam("organisationCreditBureauId") final Long organisationCreditBureauId, final String apiRequestBodyAsJson) {
+		ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
 
 		final CommandWrapper commandRequest = new CommandWrapperBuilder().addOrganisationCreditBureau(organisationCreditBureauId)
 				.withJson(apiRequestBodyAsJson).build();
@@ -225,6 +237,7 @@ public class CreditBureauConfigurationAPI {
 	@Consumes({ MediaType.APPLICATION_JSON })
 	@Produces({ MediaType.APPLICATION_JSON })
 	public String createCreditBureauLoanProductMapping(@PathParam("CreditBureauId") final Long CreditBureauId, final String apiRequestBodyAsJson) {
+		ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
 
 		final CommandWrapper commandRequest = new CommandWrapperBuilder().createCreditBureauLoanProductMapping(CreditBureauId)
 				.withJson(apiRequestBodyAsJson).build();

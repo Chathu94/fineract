@@ -29,6 +29,8 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
+import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
+import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.organisation.teller.data.CashierData;
 import org.apache.fineract.organisation.teller.service.TellerManagementReadPlatformService;
 import org.joda.time.format.DateTimeFormatter;
@@ -44,12 +46,15 @@ public class CashierApiResource {
 
     private final DefaultToApiJsonSerializer<CashierData> jsonSerializer;
     private final TellerManagementReadPlatformService readPlatformService;
+    private final RoutingDataSource dataSource;
 
     @Autowired
     public CashierApiResource(DefaultToApiJsonSerializer<CashierData> jsonSerializer,
-            TellerManagementReadPlatformService readPlatformService) {
+            TellerManagementReadPlatformService readPlatformService,
+                              final RoutingDataSource dataSource) {
         this.jsonSerializer = jsonSerializer;
         this.readPlatformService = readPlatformService;
+        this.dataSource = dataSource;
     }
 
     @GET
@@ -57,6 +62,7 @@ public class CashierApiResource {
     @Produces(MediaType.APPLICATION_JSON)
     public String getCashierData(@QueryParam("officeId") final Long officeId, @QueryParam("tellerId") final Long tellerId,
             @QueryParam("staffId") final Long staffId, @QueryParam("date") final String date) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
         final DateTimeFormatter dateFormatter = ISODateTimeFormat.basicDate();
 
         final Date dateRestriction = (date != null ? dateFormatter.parseDateTime(date).toDate() : new Date());

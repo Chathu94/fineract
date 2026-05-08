@@ -38,6 +38,8 @@ import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.serialization.ApiRequestJsonSerializationSettings;
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
 import org.apache.fineract.infrastructure.core.service.Page;
+import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
+import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.portfolio.accounts.constants.AccountsApiConstants;
 import org.apache.fineract.portfolio.accounts.data.AccountData;
@@ -60,18 +62,21 @@ public class AccountsApiResource {
     private final DefaultToApiJsonSerializer<AccountData> toApiJsonSerializer;
     private final PlatformSecurityContext platformSecurityContext;
     private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
+    private final RoutingDataSource dataSource;
     
     @Autowired
     public AccountsApiResource(final ApplicationContext applicationContext,
             final ApiRequestParameterHelper apiRequestParameterHelper,
             final DefaultToApiJsonSerializer<AccountData> toApiJsonSerializer,
             final PlatformSecurityContext platformSecurityContext,
-            final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService) {
+            final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService,
+                               final RoutingDataSource dataSource) {
         this.applicationContext = applicationContext ;
         this.apiRequestParameterHelper = apiRequestParameterHelper ;
         this.toApiJsonSerializer = toApiJsonSerializer ;
         this.platformSecurityContext = platformSecurityContext ; 
         this.commandsSourceWritePlatformService = commandsSourceWritePlatformService ;
+        this.dataSource = dataSource;
     }
     
     @GET
@@ -81,6 +86,7 @@ public class AccountsApiResource {
     public String template(@PathParam("type") final String accountType, @QueryParam("clientId") final Long clientId, 
     		@QueryParam("productId") final Long productId,
             @Context final UriInfo uriInfo) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
         try {
             this.platformSecurityContext.authenticatedUser() ;
             String serviceName = accountType+AccountsApiConstants.READPLATFORM_NAME ;
@@ -99,6 +105,7 @@ public class AccountsApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     public String retrieveAccount(@PathParam("accountId") final Long accountId, @PathParam("type") final String accountType,
             @Context final UriInfo uriInfo) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
         try {
             String serviceName = accountType+AccountsApiConstants.READPLATFORM_NAME ;
             final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
@@ -114,6 +121,7 @@ public class AccountsApiResource {
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String retrieveAllAccounts(@PathParam("type") final String accountType, @QueryParam("offset") final Integer offset, @QueryParam("limit") final Integer limit, @Context final UriInfo uriInfo) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
         try {
             String serviceName = accountType+AccountsApiConstants.READPLATFORM_NAME ;
             AccountReadPlatformService service = (AccountReadPlatformService) this.applicationContext.getBean(serviceName) ;
@@ -129,6 +137,7 @@ public class AccountsApiResource {
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String createAccount(@PathParam("type") final String accountType, final String apiRequestBodyAsJson) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
         CommandWrapper commandWrapper = null;
         this.platformSecurityContext.authenticatedUser();
         commandWrapper = new CommandWrapperBuilder().createAccount(accountType).withJson(apiRequestBodyAsJson).build();
@@ -142,6 +151,7 @@ public class AccountsApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     public String handleCommands(@PathParam("type") final String accountType, @PathParam("accountId") final Long accountId, @QueryParam("command") final String commandParam,
             final String apiRequestBodyAsJson) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
         CommandWrapper commandWrapper = null;
         this.platformSecurityContext.authenticatedUser();
         commandWrapper = new CommandWrapperBuilder().createAccountCommand(accountType, accountId, commandParam).withJson(apiRequestBodyAsJson).build();
@@ -154,6 +164,7 @@ public class AccountsApiResource {
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String updateAccount(@PathParam("type") final String accountType, @PathParam("accountId") final Long accountId, final String apiRequestBodyAsJson) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
         this.platformSecurityContext.authenticatedUser();
         final CommandWrapper commandRequest = new CommandWrapperBuilder().updateAccount(accountType, accountId)
                 .withJson(apiRequestBodyAsJson).build();

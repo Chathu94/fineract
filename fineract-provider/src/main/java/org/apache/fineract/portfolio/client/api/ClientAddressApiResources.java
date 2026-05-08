@@ -42,6 +42,8 @@ import org.apache.fineract.infrastructure.core.api.ApiRequestParameterHelper;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.serialization.ApiRequestJsonSerializationSettings;
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
+import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
+import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.portfolio.address.data.AddressData;
 import org.apache.fineract.portfolio.address.service.AddressReadPlatformServiceImpl;
@@ -64,18 +66,21 @@ public class ClientAddressApiResources {
 	private final DefaultToApiJsonSerializer<AddressData> toApiJsonSerializer;
 	private final ApiRequestParameterHelper apiRequestParameterHelper;
 	private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
+	private final RoutingDataSource dataSource;
 
 	@Autowired
 	public ClientAddressApiResources(final PlatformSecurityContext context,
 			final AddressReadPlatformServiceImpl readPlatformService,
 			final DefaultToApiJsonSerializer<AddressData> toApiJsonSerializer,
 			final ApiRequestParameterHelper apiRequestParameterHelper,
-			final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService) {
+			final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService,
+									 final RoutingDataSource dataSource) {
 		this.context = context;
 		this.readPlatformService = readPlatformService;
 		this.toApiJsonSerializer = toApiJsonSerializer;
 		this.apiRequestParameterHelper = apiRequestParameterHelper;
 		this.commandsSourceWritePlatformService = commandsSourceWritePlatformService;
+		this.dataSource = dataSource;
 	}
 
 	@GET
@@ -83,6 +88,7 @@ public class ClientAddressApiResources {
 	@Consumes({ MediaType.APPLICATION_JSON })
 	@Produces({ MediaType.APPLICATION_JSON })
 	public String getAddressesTemplate(@Context final UriInfo uriInfo) {
+		ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 		this.context.authenticatedUser().validateHasReadPermission(this.resourceNameForPermissions);
 
 		final AddressData template = this.readPlatformService.retrieveTemplate();
@@ -99,6 +105,7 @@ public class ClientAddressApiResources {
 	@Produces({ MediaType.APPLICATION_JSON })
 	public String getAddresses(@QueryParam("status") final String status, @QueryParam("type") final long addressTypeId,
 			@PathParam("clientid") final long clientid, @Context final UriInfo uriInfo) {
+		ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 		Collection<AddressData> address;
 
 		this.context.authenticatedUser().validateHasReadPermission(this.resourceNameForPermissions);
@@ -125,6 +132,7 @@ public class ClientAddressApiResources {
 	@Produces({ MediaType.APPLICATION_JSON })
 	public String AddClientAddress(@QueryParam("type") final long addressTypeId,
 			@PathParam("clientid") final long clientid, final String apiRequestBodyAsJson) {
+		ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
 
 		final CommandWrapper commandRequest = new CommandWrapperBuilder().addClientAddress(clientid, addressTypeId)
 				.withJson(apiRequestBodyAsJson).build();
@@ -139,6 +147,7 @@ public class ClientAddressApiResources {
 	@Consumes({ MediaType.APPLICATION_JSON })
 	@Produces({ MediaType.APPLICATION_JSON })
 	public String UpdateClientAddress(@PathParam("clientid") final long clientid, final String apiRequestBodyAsJson) {
+		ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
 
 		final CommandWrapper commandRequest = new CommandWrapperBuilder().updateClientAddress(clientid)
 				.withJson(apiRequestBodyAsJson).build();

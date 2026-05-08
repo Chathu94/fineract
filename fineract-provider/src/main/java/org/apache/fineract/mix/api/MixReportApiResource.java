@@ -26,6 +26,8 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
+import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
+import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.mix.data.XBRLData;
 import org.apache.fineract.mix.service.XBRLBuilder;
 import org.apache.fineract.mix.service.XBRLResultService;
@@ -40,17 +42,20 @@ public class MixReportApiResource {
 
     private final XBRLResultService xbrlResultService;
     private final XBRLBuilder xbrlBuilder;
+    private final RoutingDataSource dataSource;
 
     @Autowired
-    public MixReportApiResource(final XBRLResultService xbrlResultService, final XBRLBuilder xbrlBuilder) {
+    public MixReportApiResource(final XBRLResultService xbrlResultService, final XBRLBuilder xbrlBuilder, final RoutingDataSource dataSource) {
         this.xbrlResultService = xbrlResultService;
         this.xbrlBuilder = xbrlBuilder;
+        this.dataSource = dataSource;
     }
 
     @GET
     @Produces({ MediaType.APPLICATION_XML })
     public String retrieveXBRLReport(@QueryParam("startDate") final Date startDate, @QueryParam("endDate") final Date endDate,
             @QueryParam("currency") final String currency) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
         final XBRLData data = this.xbrlResultService.getXBRLResult(startDate, endDate, currency);
 

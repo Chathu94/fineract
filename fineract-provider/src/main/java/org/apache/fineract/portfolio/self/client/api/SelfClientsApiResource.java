@@ -30,6 +30,8 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
+import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
+import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.documentmanagement.api.ImagesApiResource;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.portfolio.client.api.ClientApiConstants;
@@ -56,6 +58,7 @@ public class SelfClientsApiResource {
 	private final ClientTransactionsApiResource clientTransactionsApiResource;
 	private final AppuserClientMapperReadService appUserClientMapperReadService;
 	private final SelfClientDataValidator dataValidator;
+	private final RoutingDataSource dataSource;
 
 	@Autowired
 	public SelfClientsApiResource(
@@ -65,7 +68,8 @@ public class SelfClientsApiResource {
 			final ClientChargesApiResource clientChargesApiResource,
 			final ClientTransactionsApiResource clientTransactionsApiResource,
 			final AppuserClientMapperReadService appUserClientMapperReadService,
-			final SelfClientDataValidator dataValidator) {
+			final SelfClientDataValidator dataValidator,
+			final RoutingDataSource dataSource) {
 		this.context = context;
 		this.clientApiResource = clientApiResource;
 		this.imagesApiResource = imagesApiResource;
@@ -73,6 +77,7 @@ public class SelfClientsApiResource {
 		this.clientTransactionsApiResource = clientTransactionsApiResource;
 		this.appUserClientMapperReadService = appUserClientMapperReadService;
 		this.dataValidator = dataValidator;
+		this.dataSource = dataSource;
 	}
 
 	@GET
@@ -86,6 +91,7 @@ public class SelfClientsApiResource {
 			@QueryParam("limit") final Integer limit,
 			@QueryParam("orderBy") final String orderBy,
 			@QueryParam("sortOrder") final String sortOrder) {
+		ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
 		final String sqlSearch = null;
 		final Long officeId = null;
@@ -103,6 +109,7 @@ public class SelfClientsApiResource {
 	@Produces({ MediaType.APPLICATION_JSON })
 	public String retrieveOne(@PathParam("clientId") final Long clientId,
 			@Context final UriInfo uriInfo) {
+		ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
 		this.dataValidator.validateRetrieveOne(uriInfo);
 
@@ -120,6 +127,7 @@ public class SelfClientsApiResource {
 	public String retrieveAssociatedAccounts(
 			@PathParam("clientId") final Long clientId,
 			@Context final UriInfo uriInfo) {
+		ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
 		validateAppuserClientsMapping(clientId);
 
@@ -136,6 +144,7 @@ public class SelfClientsApiResource {
 			@QueryParam("maxWidth") final Integer maxWidth,
 			@QueryParam("maxHeight") final Integer maxHeight,
 			@QueryParam("output") final String output) {
+		ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
 		validateAppuserClientsMapping(clientId);
 
@@ -154,6 +163,7 @@ public class SelfClientsApiResource {
 			@Context final UriInfo uriInfo,
 			@QueryParam("limit") final Integer limit,
 			@QueryParam("offset") final Integer offset) {
+		ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
 		validateAppuserClientsMapping(clientId);
 
@@ -169,6 +179,7 @@ public class SelfClientsApiResource {
 			@PathParam("clientId") final Long clientId,
 			@PathParam("chargeId") final Long chargeId,
 			@Context final UriInfo uriInfo) {
+		ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
 		this.dataValidator.validateClientCharges(uriInfo);
 
@@ -187,6 +198,7 @@ public class SelfClientsApiResource {
 			@Context final UriInfo uriInfo,
 			@QueryParam("offset") final Integer offset,
 			@QueryParam("limit") final Integer limit) {
+		ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
 		validateAppuserClientsMapping(clientId);
 
@@ -202,6 +214,7 @@ public class SelfClientsApiResource {
 			@PathParam("clientId") final Long clientId,
 			@PathParam("transactionId") final Long transactionId,
 			@Context final UriInfo uriInfo) {
+		ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
 		validateAppuserClientsMapping(clientId);
 

@@ -37,7 +37,9 @@ import org.apache.fineract.infrastructure.core.api.ApiParameterHelper;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.serialization.ToApiJsonSerializer;
 import org.apache.fineract.infrastructure.core.service.Page;
+import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
 import org.apache.fineract.infrastructure.core.service.SearchParameters;
+import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.dataqueries.data.EntityDataTableChecksData;
 import org.apache.fineract.infrastructure.dataqueries.data.EntityDataTableChecksTemplateData;
 import org.apache.fineract.infrastructure.dataqueries.data.GenericResultsetData;
@@ -59,18 +61,21 @@ public class EntityDatatableChecksApiResource {
     private final EntityDatatableChecksReadService readEntityDatatableChecksService;
     private final ToApiJsonSerializer<GenericResultsetData> toApiJsonSerializer;
     private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
+    private final RoutingDataSource dataSource;
     private final static org.slf4j.Logger logger = LoggerFactory.getLogger(EntityDatatableChecksApiResource.class);
 
     @Autowired
     public EntityDatatableChecksApiResource(final PlatformSecurityContext context, final GenericDataService genericDataService,
             final EntityDatatableChecksReadService readEntityDatatableChecksService,
             final ToApiJsonSerializer<GenericResultsetData> toApiJsonSerializer,
-            final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService) {
+            final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService,
+                                            final RoutingDataSource dataSource) {
         this.context = context;
         this.genericDataService = genericDataService;
         this.readEntityDatatableChecksService = readEntityDatatableChecksService;
         this.toApiJsonSerializer = toApiJsonSerializer;
         this.commandsSourceWritePlatformService = commandsSourceWritePlatformService;
+        this.dataSource = dataSource;
     }
 
     @GET
@@ -79,6 +84,7 @@ public class EntityDatatableChecksApiResource {
     public String retrieveAll(@Context final UriInfo uriInfo, @QueryParam("status") final Long status,
             @QueryParam("entity") final String entity, @QueryParam("productId") final Long productId,
             @QueryParam("offset") final Integer offset, @QueryParam("limit") final Integer limit) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
         final SearchParameters searchParameters = SearchParameters.forPagination(offset, limit);
         final Page<EntityDataTableChecksData> result = this.readEntityDatatableChecksService.retrieveAll(searchParameters, status, entity,
                 productId);
@@ -92,6 +98,7 @@ public class EntityDatatableChecksApiResource {
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String getTemplate(@Context final UriInfo uriInfo) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
         final EntityDataTableChecksTemplateData result = this.readEntityDatatableChecksService.retrieveTemplate();
 
@@ -103,6 +110,7 @@ public class EntityDatatableChecksApiResource {
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String createEntityDatatableCheck(final String apiRequestBodyAsJson) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
 
         final CommandWrapper commandRequest = new CommandWrapperBuilder().createEntityDatatableChecks(apiRequestBodyAsJson).build();
         final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
@@ -114,6 +122,7 @@ public class EntityDatatableChecksApiResource {
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String deleteDatatable(@PathParam("entityDatatableCheckId") final long entityDatatableCheckId, final String apiRequestBodyAsJson) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
 
         final CommandWrapper commandRequest = new CommandWrapperBuilder().deleteEntityDatatableChecks(entityDatatableCheckId,
                 apiRequestBodyAsJson).build();

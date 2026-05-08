@@ -47,12 +47,15 @@ import org.apache.fineract.infrastructure.core.api.ApiRequestParameterHelper;
 import org.apache.fineract.infrastructure.core.api.JsonQuery;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.PaginationParameters;
+import org.apache.fineract.infrastructure.core.domain.FineractPlatformTenant;
 import org.apache.fineract.infrastructure.core.exception.UnrecognizedQueryParamException;
 import org.apache.fineract.infrastructure.core.serialization.ApiRequestJsonSerializationSettings;
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.infrastructure.core.serialization.ToApiJsonSerializer;
 import org.apache.fineract.infrastructure.core.service.Page;
+import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
 import org.apache.fineract.infrastructure.core.service.SearchParameters;
+import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.dataqueries.data.DatatableData;
 import org.apache.fineract.infrastructure.dataqueries.data.EntityTables;
 import org.apache.fineract.infrastructure.dataqueries.data.StatusEnum;
@@ -104,6 +107,7 @@ public class GroupsApiResource {
     private final CalendarReadPlatformService calendarReadPlatformService;
     private final MeetingReadPlatformService meetingReadPlatformService;
     private final EntityDatatableChecksReadService entityDatatableChecksReadService;
+    private final RoutingDataSource dataSource;
 
     @Autowired
     public GroupsApiResource(final PlatformSecurityContext context, final GroupReadPlatformService groupReadPlatformService,
@@ -117,7 +121,7 @@ public class GroupsApiResource {
             final GroupRolesReadPlatformService groupRolesReadPlatformService,
             final AccountDetailsReadPlatformService accountDetailsReadPlatformService,
             final CalendarReadPlatformService calendarReadPlatformService, final MeetingReadPlatformService meetingReadPlatformService,
-            final EntityDatatableChecksReadService entityDatatableChecksReadService) {
+            final EntityDatatableChecksReadService entityDatatableChecksReadService, final RoutingDataSource dataSource) {
 
         this.context = context;
         this.groupReadPlatformService = groupReadPlatformService;
@@ -135,6 +139,7 @@ public class GroupsApiResource {
         this.calendarReadPlatformService = calendarReadPlatformService;
         this.meetingReadPlatformService = meetingReadPlatformService;
         this.entityDatatableChecksReadService = entityDatatableChecksReadService;
+        this.dataSource = dataSource;
     }
 
     @GET
@@ -145,6 +150,8 @@ public class GroupsApiResource {
             @QueryParam("center") final boolean isCenterGroup, @QueryParam("centerId") final Long centerId,
             @QueryParam("command") final String commandParam,
             @DefaultValue("false") @QueryParam("staffInSelectedOfficeOnly") final boolean staffInSelectedOfficeOnly) {
+
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
         this.context.authenticatedUser().validateHasReadPermission(GroupingTypesApiConstants.GROUP_RESOURCE_NAME);
 
@@ -185,6 +192,8 @@ public class GroupsApiResource {
             @QueryParam("orderBy") final String orderBy, @QueryParam("sortOrder") final String sortOrder, 
             @QueryParam("orphansOnly") final Boolean orphansOnly) {
 
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
+
         this.context.authenticatedUser().validateHasReadPermission(GroupingTypesApiConstants.GROUP_RESOURCE_NAME);
         final PaginationParameters parameters = PaginationParameters.instance(paged, offset, limit, orderBy, sortOrder);
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
@@ -207,6 +216,8 @@ public class GroupsApiResource {
     public String retrieveOne(@Context final UriInfo uriInfo, @PathParam("groupId") final Long groupId,
             @DefaultValue("false") @QueryParam("staffInSelectedOfficeOnly") final boolean staffInSelectedOfficeOnly,
             @QueryParam("roleId") final Long roleId) {
+
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
         this.context.authenticatedUser().validateHasReadPermission(GroupingTypesApiConstants.GROUP_RESOURCE_NAME);
         final Set<String> associationParameters = ApiParameterHelper.extractAssociationsForResponseIfProvided(uriInfo.getQueryParameters());
@@ -303,6 +314,8 @@ public class GroupsApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     public String create(final String apiRequestBodyAsJson) {
 
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
+
         final CommandWrapper commandRequest = new CommandWrapperBuilder() //
                 .createGroup() //
                 .withJson(apiRequestBodyAsJson) //
@@ -316,6 +329,8 @@ public class GroupsApiResource {
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String unassignLoanOfficer(@PathParam("groupId") final Long groupId, final String apiRequestBodyAsJson) {
+
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
 
         final CommandWrapper commandRequest = new CommandWrapperBuilder() //
                 .unassignGroupStaff(groupId) //
@@ -332,6 +347,8 @@ public class GroupsApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     public String update(@PathParam("groupId") final Long groupId, final String apiRequestBodyAsJson) {
 
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
+
         final CommandWrapper commandRequest = new CommandWrapperBuilder() //
                 .updateGroup(groupId) //
                 .withJson(apiRequestBodyAsJson) //
@@ -345,6 +362,8 @@ public class GroupsApiResource {
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String delete(@PathParam("groupId") final Long groupId) {
+
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
 
         final CommandWrapper commandRequest = new CommandWrapperBuilder() //
                 .deleteGroup(groupId) //
@@ -360,6 +379,9 @@ public class GroupsApiResource {
     public String activateOrGenerateCollectionSheet(@PathParam("groupId") final Long groupId,
             @QueryParam("command") final String commandParam, @QueryParam("roleId") final Long roleId, final String apiRequestBodyAsJson,
             @Context final UriInfo uriInfo) {
+
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
+
         final CommandWrapperBuilder builder = new CommandWrapperBuilder().withJson(apiRequestBodyAsJson);
 
         CommandProcessingResult result = null;
@@ -430,6 +452,8 @@ public class GroupsApiResource {
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String retrieveAccounts(@PathParam("groupId") final Long groupId, @Context final UriInfo uriInfo) {
+
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
         this.context.authenticatedUser().validateHasReadPermission("GROUP");
 

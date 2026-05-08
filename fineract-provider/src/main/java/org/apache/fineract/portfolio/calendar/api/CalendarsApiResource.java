@@ -48,6 +48,8 @@ import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.infrastructure.core.serialization.ApiRequestJsonSerializationSettings;
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
+import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
+import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.portfolio.calendar.data.CalendarData;
 import org.apache.fineract.portfolio.calendar.domain.Calendar;
@@ -83,18 +85,20 @@ public class CalendarsApiResource {
     private final ApiRequestParameterHelper apiRequestParameterHelper;
     private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
     private final CalendarDropdownReadPlatformService dropdownReadPlatformService;
+    private final RoutingDataSource dataSource;
 
     @Autowired
     public CalendarsApiResource(final PlatformSecurityContext context, final CalendarReadPlatformService readPlatformService,
             final DefaultToApiJsonSerializer<CalendarData> toApiJsonSerializer, final ApiRequestParameterHelper apiRequestParameterHelper,
             final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService,
-            final CalendarDropdownReadPlatformService dropdownReadPlatformService) {
+            final CalendarDropdownReadPlatformService dropdownReadPlatformService, final RoutingDataSource dataSource) {
         this.context = context;
         this.readPlatformService = readPlatformService;
         this.toApiJsonSerializer = toApiJsonSerializer;
         this.apiRequestParameterHelper = apiRequestParameterHelper;
         this.commandsSourceWritePlatformService = commandsSourceWritePlatformService;
         this.dropdownReadPlatformService = dropdownReadPlatformService;
+        this.dataSource = dataSource;
     }
 
     @GET
@@ -103,6 +107,7 @@ public class CalendarsApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     public String retrieveCalendar(@PathParam("calendarId") final Long calendarId, @PathParam("entityType") final String entityType,
             @PathParam("entityId") final Long entityId, @Context final UriInfo uriInfo) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
         this.context.authenticatedUser().validateHasReadPermission(this.resourceNameForPermissions);
         final Integer entityTypeId = CalendarEntityType.valueOf(entityType.toUpperCase()).getValue();
@@ -135,6 +140,7 @@ public class CalendarsApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     public String retrieveCalendarsByEntity(@PathParam("entityType") final String entityType, @PathParam("entityId") final Long entityId,
             @Context final UriInfo uriInfo, @DefaultValue("all") @QueryParam("calendarType") final String calendarType) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
         this.context.authenticatedUser().validateHasReadPermission(this.resourceNameForPermissions);
 
@@ -166,6 +172,7 @@ public class CalendarsApiResource {
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String retrieveNewCalendarDetails(@Context final UriInfo uriInfo) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
         this.context.authenticatedUser().validateHasReadPermission(this.resourceNameForPermissions);
 
@@ -181,6 +188,7 @@ public class CalendarsApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     public String createCalendar(@PathParam("entityType") final String entityType, @PathParam("entityId") final Long entityId,
             final String apiRequestBodyAsJson) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
 
         final CalendarEntityType calendarEntityType = CalendarEntityType.getEntityType(entityType);
         if (calendarEntityType == null) { throw new CalendarEntityTypeNotSupportedException(entityType); }
@@ -201,6 +209,7 @@ public class CalendarsApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     public String updateCalendar(@PathParam("entityType") final String entityType, @PathParam("entityId") final Long entityId,
             @PathParam("calendarId") final Long calendarId, final String jsonRequestBody) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
 
         final CommandWrapper commandRequest = new CommandWrapperBuilder().updateCalendar(entityType, entityId, calendarId)
                 .withJson(jsonRequestBody).build();
@@ -216,6 +225,7 @@ public class CalendarsApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     public String deleteCalendar(@PathParam("entityType") final String entityType, @PathParam("entityId") final Long entityId,
             @PathParam("calendarId") final Long calendarId) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
 
         final CommandWrapper commandRequest = new CommandWrapperBuilder().deleteCalendar(entityType, entityId, calendarId).build();
 

@@ -29,6 +29,8 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriInfo;
 
+import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
+import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.portfolio.savings.api.SavingsAccountChargesApiResource;
 import org.apache.fineract.portfolio.savings.api.SavingsAccountTransactionsApiResource;
@@ -52,6 +54,7 @@ public class SelfSavingsApiResource {
 	private final SavingsAccountTransactionsApiResource savingsAccountTransactionsApiResource;
 	private final AppuserSavingsMapperReadService appuserSavingsMapperReadService;
 	private final SelfSavingsDataValidator dataValidator;
+	private final RoutingDataSource dataSource;
 
 	@Autowired
 	public SelfSavingsApiResource(
@@ -60,13 +63,15 @@ public class SelfSavingsApiResource {
 			final SavingsAccountChargesApiResource savingsAccountChargesApiResource,
 			final SavingsAccountTransactionsApiResource savingsAccountTransactionsApiResource,
 			final AppuserSavingsMapperReadService appuserSavingsMapperReadService,
-			final SelfSavingsDataValidator dataValidator) {
+			final SelfSavingsDataValidator dataValidator,
+			final RoutingDataSource dataSource) {
 		this.context = context;
 		this.savingsAccountsApiResource = savingsAccountsApiResource;
 		this.savingsAccountChargesApiResource = savingsAccountChargesApiResource;
 		this.savingsAccountTransactionsApiResource = savingsAccountTransactionsApiResource;
 		this.appuserSavingsMapperReadService = appuserSavingsMapperReadService;
 		this.dataValidator = dataValidator;
+		this.dataSource = dataSource;
 	}
 
 	@GET
@@ -77,6 +82,7 @@ public class SelfSavingsApiResource {
 			@PathParam("accountId") final Long accountId,
 			@DefaultValue("all") @QueryParam("chargeStatus") final String chargeStatus,
 			@Context final UriInfo uriInfo) {
+		ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
 		this.dataValidator.validateRetrieveSavings(uriInfo);
 
@@ -95,6 +101,7 @@ public class SelfSavingsApiResource {
 			@PathParam("accountId") final Long accountId,
 			@PathParam("transactionId") final Long transactionId,
 			@Context final UriInfo uriInfo) {
+		ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
 		this.dataValidator.validateRetrieveSavingsTransaction(uriInfo);
 
@@ -112,6 +119,7 @@ public class SelfSavingsApiResource {
 			@PathParam("accountId") final Long accountId,
 			@DefaultValue("all") @QueryParam("chargeStatus") final String chargeStatus,
 			@Context final UriInfo uriInfo) {
+		ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
 		validateAppuserSavingsAccountMapping(accountId);
 
@@ -128,6 +136,7 @@ public class SelfSavingsApiResource {
 			@PathParam("accountId") final Long accountId,
 			@PathParam("savingsAccountChargeId") final Long savingsAccountChargeId,
 			@Context final UriInfo uriInfo) {
+		ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
 		validateAppuserSavingsAccountMapping(accountId);
 

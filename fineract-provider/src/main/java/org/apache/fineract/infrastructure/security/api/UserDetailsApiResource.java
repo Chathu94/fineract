@@ -30,6 +30,8 @@ import javax.ws.rs.core.MediaType;
 
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.infrastructure.core.serialization.ToApiJsonSerializer;
+import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
+import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.security.data.AuthenticatedOauthUserData;
 import org.apache.fineract.infrastructure.security.service.SpringSecurityPlatformSecurityContext;
 import org.apache.fineract.useradministration.data.RoleData;
@@ -56,19 +58,23 @@ public class UserDetailsApiResource {
     private final ResourceServerTokenServices tokenServices;
     private final ToApiJsonSerializer<AuthenticatedOauthUserData> apiJsonSerializerService;
     private final SpringSecurityPlatformSecurityContext springSecurityPlatformSecurityContext;
+    private final RoutingDataSource dataSource;
 
     @Autowired
     public UserDetailsApiResource(@Qualifier("tokenServices") final ResourceServerTokenServices tokenServices,
             final ToApiJsonSerializer<AuthenticatedOauthUserData> apiJsonSerializerService,
-            final SpringSecurityPlatformSecurityContext springSecurityPlatformSecurityContext) {
+            final SpringSecurityPlatformSecurityContext springSecurityPlatformSecurityContext,
+                                  final RoutingDataSource dataSource) {
         this.tokenServices = tokenServices;
         this.apiJsonSerializerService = apiJsonSerializerService;
         this.springSecurityPlatformSecurityContext = springSecurityPlatformSecurityContext;
+        this.dataSource = dataSource;
     }
 
     @GET
     @Produces({ MediaType.APPLICATION_JSON })
     public String fetchAuthenticatedUserData(@QueryParam("access_token") final String accessToken) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
         final Authentication authentication = this.tokenServices.loadAuthentication(accessToken);
         if (authentication.isAuthenticated()) {

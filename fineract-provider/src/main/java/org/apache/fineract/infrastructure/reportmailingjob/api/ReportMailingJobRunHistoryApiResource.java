@@ -31,7 +31,9 @@ import org.apache.fineract.infrastructure.core.api.ApiRequestParameterHelper;
 import org.apache.fineract.infrastructure.core.serialization.ApiRequestJsonSerializationSettings;
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
 import org.apache.fineract.infrastructure.core.service.Page;
+import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
 import org.apache.fineract.infrastructure.core.service.SearchParameters;
+import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.reportmailingjob.ReportMailingJobConstants;
 import org.apache.fineract.infrastructure.reportmailingjob.data.ReportMailingJobRunHistoryData;
 import org.apache.fineract.infrastructure.reportmailingjob.service.ReportMailingJobRunHistoryReadPlatformService;
@@ -49,16 +51,19 @@ public class ReportMailingJobRunHistoryApiResource {
     private final ApiRequestParameterHelper apiRequestParameterHelper;
     private final DefaultToApiJsonSerializer<ReportMailingJobRunHistoryData> reportMailingToApiJsonSerializer;
     private final ReportMailingJobRunHistoryReadPlatformService reportMailingJobRunHistoryReadPlatformService;
+    private final RoutingDataSource dataSource;
     
     @Autowired
     public ReportMailingJobRunHistoryApiResource(final PlatformSecurityContext platformSecurityContext, 
             final ApiRequestParameterHelper apiRequestParameterHelper, 
             final DefaultToApiJsonSerializer<ReportMailingJobRunHistoryData> reportMailingToApiJsonSerializer, 
-            final ReportMailingJobRunHistoryReadPlatformService reportMailingJobRunHistoryReadPlatformService) {
+            final ReportMailingJobRunHistoryReadPlatformService reportMailingJobRunHistoryReadPlatformService,
+                                                 final RoutingDataSource dataSource) {
         this.platformSecurityContext = platformSecurityContext;
         this.apiRequestParameterHelper = apiRequestParameterHelper;
         this.reportMailingToApiJsonSerializer = reportMailingToApiJsonSerializer;
         this.reportMailingJobRunHistoryReadPlatformService = reportMailingJobRunHistoryReadPlatformService;
+        this.dataSource = dataSource;
     }
     
     @GET
@@ -68,6 +73,7 @@ public class ReportMailingJobRunHistoryApiResource {
             @QueryParam("reportMailingJobId") final Long reportMailingJobId, @QueryParam("offset") final Integer offset,
             @QueryParam("limit") final Integer limit, @QueryParam("orderBy") final String orderBy,
             @QueryParam("sortOrder") final String sortOrder) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
         this.platformSecurityContext.authenticatedUser().validateHasReadPermission(ReportMailingJobConstants.REPORT_MAILING_JOB_ENTITY_NAME);
         final SearchParameters searchParameters = SearchParameters.fromReportMailingJobRunHistory(offset, limit, orderBy, sortOrder);
         

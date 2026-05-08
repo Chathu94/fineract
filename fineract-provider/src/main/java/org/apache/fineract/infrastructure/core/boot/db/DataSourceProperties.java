@@ -80,15 +80,19 @@ public class DataSourceProperties extends PoolProperties {
      */
     protected void setDefaults() {
         setInitialSize(3);
-        // setMaxIdle(6); -- strange, why?
-        // setMinIdle(3); -- JavaDoc says default is initialSize.. so shouldn't
-        // be needed
-        if (getValidationQuery() == null) setValidationQuery("SELECT 1");
+
+        setValidationQuery("SELECT 1");
+        setValidationQueryTimeout(5);
+
         setTestOnBorrow(true);
         setTestOnReturn(true);
         setTestWhileIdle(true);
+
         setTimeBetweenEvictionRunsMillis(30000);
-        setTimeBetweenEvictionRunsMillis(60000);
+        setMinEvictableIdleTimeMillis(60000);
+
+        setRollbackOnReturn(true);
+        setRemoveAbandoned(false);
         setLogAbandoned(true);
         setSuspectTimeout(60);
 
@@ -107,9 +111,21 @@ public class DataSourceProperties extends PoolProperties {
 		if (StringUtils.hasText(url)) {
 			throw new IllegalStateException();
 		}
+
+        String host = getHost();
+        String envHost = System.getenv("EVOKE_SQL_TENANT_HOST_OVERRIDE");
+        if (envHost != null && !envHost.isEmpty()) host = envHost;
+
+        String port = String.valueOf(getPort());
+        String envPort = System.getenv("EVOKE_SQL_TENANT_PORT_OVERRIDE");
+        if (envPort != null && !envPort.isEmpty()) port = envPort;
+
+        String dbName = getDBName();
+        String envDbName = System.getenv("EVOKE_SQL_TENANT_DB_NAME_OVERRIDE");
+        if (envDbName != null && !envDbName.isEmpty()) dbName = envDbName;
         // @sl-change
-//		return jdbcProtocol + ":" + jdbcSubprotocol + "://millennium.fineract.evokelabs.io:" + getPort() + "/" + getDBName();
-        return jdbcProtocol + ":" + jdbcSubprotocol + "://" + getHost() + ":" + getPort() + "/" + getDBName();
+//		return jdbcProtocol + ":" + jdbcSubprotocol + "://fused-fli:" + getPort() + "/" + getDBName();
+        return jdbcProtocol + ":" + jdbcSubprotocol + "://" + host + ":" + port + "/" + dbName;
         }
 
 	public String getHost() {
@@ -138,6 +154,8 @@ public class DataSourceProperties extends PoolProperties {
 
 	@Override
 	public String getUsername() {
+        String envUsername = System.getenv("EVOKE_SQL_TENANT_USERNAME_OVERRIDE");
+        if (envUsername != null && !envUsername.isEmpty()) return envUsername;
 		return this.username;
 	}
 
@@ -148,6 +166,8 @@ public class DataSourceProperties extends PoolProperties {
 
 	@Override
 	public String getPassword() {
+        String envPassword = System.getenv("EVOKE_SQL_TENANT_PASSWORD_OVERRIDE");
+        if (envPassword != null && !envPassword.isEmpty()) return envPassword;
 		return this.password;
 	}
 

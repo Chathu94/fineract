@@ -48,6 +48,8 @@ import org.apache.fineract.infrastructure.core.exception.UnrecognizedQueryParamE
 import org.apache.fineract.infrastructure.core.serialization.ApiRequestJsonSerializationSettings;
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
+import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
+import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.portfolio.calendar.data.CalendarData;
 import org.apache.fineract.portfolio.calendar.domain.CalendarEntityType;
@@ -85,6 +87,7 @@ public class MeetingsApiResource {
 			Arrays.asList(MeetingApiConstants.idParamName, MeetingApiConstants.meetingDateParamName,
 					MeetingApiConstants.clientsAttendance, MeetingApiConstants.clients,
 					MeetingApiConstants.calendarData, MeetingApiConstants.attendanceTypeOptions));
+    private final RoutingDataSource dataSource;
 
     @Autowired
     public MeetingsApiResource(final PlatformSecurityContext context, final MeetingReadPlatformService readPlatformService,
@@ -92,7 +95,7 @@ public class MeetingsApiResource {
             final ClientReadPlatformService clientReadPlatformService, final CalendarReadPlatformService calendarReadPlatformService,
             final AttendanceDropdownReadPlatformService attendanceDropdownReadPlatformService,
             final DefaultToApiJsonSerializer<MeetingData> toApiJsonSerializer, final ApiRequestParameterHelper apiRequestParameterHelper,
-            final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService) {
+            final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService, final RoutingDataSource dataSource) {
         this.context = context;
         this.readPlatformService = readPlatformService;
         this.attendanceReadPlatformService = attendanceReadPlatformService;
@@ -102,6 +105,7 @@ public class MeetingsApiResource {
         this.toApiJsonSerializer = toApiJsonSerializer;
         this.apiRequestParameterHelper = apiRequestParameterHelper;
         this.commandsSourceWritePlatformService = commandsSourceWritePlatformService;
+        this.dataSource = dataSource;
     }
 
     @GET
@@ -110,6 +114,7 @@ public class MeetingsApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     public String template(@PathParam("entityType") final String entityType, @PathParam("entityId") final Long entityId,
             @QueryParam("calendarId") final Long calendarId, @Context final UriInfo uriInfo) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
         this.context.authenticatedUser().validateHasReadPermission(MEETING_RESOURCE_NAME);
         final Integer entityTypeId = CalendarEntityType.valueOf(entityType.toUpperCase()).getValue();
@@ -150,6 +155,7 @@ public class MeetingsApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     public String retrieveMeetings(@PathParam("entityType") final String entityType, @PathParam("entityId") final Long entityId,
             @QueryParam("limit") final Integer limit, @Context final UriInfo uriInfo) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
         this.context.authenticatedUser().validateHasReadPermission(MEETING_RESOURCE_NAME);
 
@@ -166,6 +172,7 @@ public class MeetingsApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     public String retrieveMeeting(@PathParam("meetingId") final Long meetingId, @PathParam("entityType") final String entityType,
             @PathParam("entityId") final Long entityId, @Context final UriInfo uriInfo) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
         this.context.authenticatedUser().validateHasReadPermission(MEETING_RESOURCE_NAME);
         final Integer entityTypeId = CalendarEntityType.valueOf(entityType.toUpperCase()).getValue();
@@ -183,6 +190,7 @@ public class MeetingsApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     public String createMeeting(@PathParam("entityType") final String entityType, @PathParam("entityId") final Long entityId,
             final String apiRequestBodyAsJson) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
 
         final CalendarEntityType calendarEntityType = CalendarEntityType.getEntityType(entityType);
         if (calendarEntityType == null) { throw new CalendarEntityTypeNotSupportedException(entityType); }
@@ -204,6 +212,7 @@ public class MeetingsApiResource {
     public String performMeetingCommands(@PathParam("entityType") final String entityType, @PathParam("entityId") final Long entityId,
             @PathParam("meetingId") final Long meetingId, @QueryParam("command") final String commandParam,
             final String apiRequestBodyAsJson) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
 
         final CommandWrapperBuilder builder = new CommandWrapperBuilder().withJson(apiRequestBodyAsJson);
 
@@ -225,6 +234,7 @@ public class MeetingsApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     public String updateMeeting(@PathParam("entityType") final String entityType, @PathParam("entityId") final Long entityId,
             @PathParam("meetingId") final Long meetingId, final String jsonRequestBody) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
 
         final CommandWrapper commandRequest = new CommandWrapperBuilder().updateMeeting(entityType, entityId, meetingId)
                 .withJson(jsonRequestBody).build();
@@ -240,6 +250,7 @@ public class MeetingsApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     public String deleteMeeting(@PathParam("entityType") final String entityType, @PathParam("entityId") final Long entityId,
             @PathParam("meetingId") final Long meetingId) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
 
         final CommandWrapper commandRequest = new CommandWrapperBuilder().deleteMeeting(entityType, entityId, meetingId).build();
 

@@ -43,6 +43,8 @@ import org.apache.fineract.infrastructure.core.api.ApiRequestParameterHelper;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.serialization.ApiRequestJsonSerializationSettings;
 import org.apache.fineract.infrastructure.core.serialization.ToApiJsonSerializer;
+import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
+import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.documentmanagement.command.DocumentCommand;
 import org.apache.fineract.infrastructure.documentmanagement.data.DocumentData;
 import org.apache.fineract.infrastructure.documentmanagement.data.FileData;
@@ -72,16 +74,19 @@ public class DocumentManagementApiResource {
     private final DocumentWritePlatformService documentWritePlatformService;
     private final ApiRequestParameterHelper apiRequestParameterHelper;
     private final ToApiJsonSerializer<DocumentData> toApiJsonSerializer;
+    private final RoutingDataSource dataSource;
 
     @Autowired
     public DocumentManagementApiResource(final PlatformSecurityContext context,
             final DocumentReadPlatformService documentReadPlatformService, final DocumentWritePlatformService documentWritePlatformService,
-            final ApiRequestParameterHelper apiRequestParameterHelper, final ToApiJsonSerializer<DocumentData> toApiJsonSerializer) {
+            final ApiRequestParameterHelper apiRequestParameterHelper, final ToApiJsonSerializer<DocumentData> toApiJsonSerializer,
+                                         final RoutingDataSource dataSource) {
         this.context = context;
         this.documentReadPlatformService = documentReadPlatformService;
         this.documentWritePlatformService = documentWritePlatformService;
         this.apiRequestParameterHelper = apiRequestParameterHelper;
         this.toApiJsonSerializer = toApiJsonSerializer;
+        this.dataSource = dataSource;
     }
 
     @GET
@@ -89,6 +94,7 @@ public class DocumentManagementApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     public String retreiveAllDocuments(@Context final UriInfo uriInfo, @PathParam("entityType") final String entityType,
             @PathParam("entityId") final Long entityId) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
         this.context.authenticatedUser().validateHasReadPermission(this.SystemEntityType);
 
@@ -105,6 +111,7 @@ public class DocumentManagementApiResource {
             @HeaderParam("Content-Length") final Long fileSize, @FormDataParam("file") final InputStream inputStream,
             @FormDataParam("file") final FormDataContentDisposition fileDetails, @FormDataParam("file") final FormDataBodyPart bodyPart,
             @FormDataParam("name") final String name, @FormDataParam("description") final String description) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
 
         /**
          * TODO: also need to have a backup and stop reading from stream after
@@ -132,6 +139,7 @@ public class DocumentManagementApiResource {
             @FormDataParam("file") final InputStream inputStream, @FormDataParam("file") final FormDataContentDisposition fileDetails,
             @FormDataParam("file") final FormDataBodyPart bodyPart, @FormDataParam("name") final String name,
             @FormDataParam("description") final String description) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
 
         final Set<String> modifiedParams = new HashSet<>();
         modifiedParams.add("name");
@@ -168,6 +176,7 @@ public class DocumentManagementApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     public String getDocument(@PathParam("entityType") final String entityType, @PathParam("entityId") final Long entityId,
             @PathParam("documentId") final Long documentId, @Context final UriInfo uriInfo) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
         this.context.authenticatedUser().validateHasReadPermission(this.SystemEntityType);
 
@@ -183,6 +192,7 @@ public class DocumentManagementApiResource {
     @Produces({ MediaType.APPLICATION_OCTET_STREAM })
     public Response downloadFile(@PathParam("entityType") final String entityType, @PathParam("entityId") final Long entityId,
             @PathParam("documentId") final Long documentId) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
         this.context.authenticatedUser().validateHasReadPermission(this.SystemEntityType);
 
@@ -200,6 +210,7 @@ public class DocumentManagementApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     public String deleteDocument(@PathParam("entityType") final String entityType, @PathParam("entityId") final Long entityId,
             @PathParam("documentId") final Long documentId) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
 
         final DocumentCommand documentCommand = new DocumentCommand(null, documentId, entityType, entityId, null, null, null, null, null,
                 null);

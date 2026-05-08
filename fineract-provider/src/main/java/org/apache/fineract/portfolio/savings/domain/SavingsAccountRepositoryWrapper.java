@@ -21,12 +21,14 @@ package org.apache.fineract.portfolio.savings.domain;
 import java.util.List;
 import java.util.stream.Stream;
 
+import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
 import org.apache.fineract.portfolio.savings.DepositAccountType;
 import org.apache.fineract.portfolio.savings.exception.SavingsAccountNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.repository.query.Param;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -45,12 +47,13 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class SavingsAccountRepositoryWrapper {
 
-    
+    private final JdbcTemplate jdbcTemplate;
     private final SavingsAccountRepository repository;
 
     @Autowired
-    public SavingsAccountRepositoryWrapper(final SavingsAccountRepository repository) {
+    public SavingsAccountRepositoryWrapper(final SavingsAccountRepository repository, final RoutingDataSource dataSource) {
         this.repository = repository;
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
     @Transactional(readOnly=true)
@@ -84,6 +87,8 @@ public class SavingsAccountRepositoryWrapper {
     }
 
     public Slice<Long> findIdsByStatus(@Param("status") Integer status, Pageable pageable) {
+        this.jdbcTemplate.execute("SET workload = OLAP");
+            jdbcTemplate.execute("USE @primary");
         return this.repository.findIdsByStatus(status, pageable);
     }
 

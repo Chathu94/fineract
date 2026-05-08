@@ -50,7 +50,9 @@ import org.apache.fineract.infrastructure.core.serialization.ApiRequestJsonSeria
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
 import org.apache.fineract.infrastructure.core.serialization.JsonParserHelper;
 import org.apache.fineract.infrastructure.core.service.Page;
+import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
 import org.apache.fineract.infrastructure.core.service.SearchParameters;
+import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
@@ -73,17 +75,19 @@ public class JournalEntriesApiResource {
     private final ApiRequestParameterHelper apiRequestParameterHelper;
     private final PlatformSecurityContext context;
     private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
+    private final RoutingDataSource dataSource;
 
     @Autowired
     public JournalEntriesApiResource(final PlatformSecurityContext context,
             final JournalEntryReadPlatformService journalEntryReadPlatformService,
             final DefaultToApiJsonSerializer<Object> toApiJsonSerializer, final ApiRequestParameterHelper apiRequestParameterHelper,
-            final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService) {
+            final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService, final RoutingDataSource dataSource) {
         this.context = context;
         this.apiRequestParameterHelper = apiRequestParameterHelper;
         this.commandsSourceWritePlatformService = commandsSourceWritePlatformService;
         this.apiJsonSerializerService = toApiJsonSerializer;
         this.journalEntryReadPlatformService = journalEntryReadPlatformService;
+        this.dataSource = dataSource;
     }
 
     @GET
@@ -98,6 +102,7 @@ public class JournalEntriesApiResource {
             @QueryParam("locale") final String locale, @QueryParam("dateFormat") final String dateFormat,
             @QueryParam("loanId") final Long loanId, @QueryParam("savingsId") final Long savingsId,
             @QueryParam("runningBalance") final boolean runningBalance, @QueryParam("transactionDetails") final boolean transactionDetails) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
         this.context.authenticatedUser().validateHasReadPermission(this.resourceNameForPermission);
 
@@ -127,6 +132,7 @@ public class JournalEntriesApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     public String retreiveJournalEntryById(@PathParam("journalEntryId") final Long journalEntryId, @Context final UriInfo uriInfo,
             @QueryParam("runningBalance") final boolean runningBalance, @QueryParam("transactionDetails") final boolean transactionDetails) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
         this.context.authenticatedUser().validateHasReadPermission(this.resourceNameForPermission);
         JournalEntryAssociationParametersData associationParametersData = new JournalEntryAssociationParametersData(transactionDetails,
@@ -143,6 +149,7 @@ public class JournalEntriesApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     public String createGLJournalEntry(final String jsonRequestBody, @QueryParam("command") final String commandParam,
                                        @QueryParam("manual") final Integer manualParam) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
 
         CommandProcessingResult result = null;
         String updatedJson = jsonRequestBody;
@@ -172,6 +179,7 @@ public class JournalEntriesApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     public String createReversalJournalEntry(final String jsonRequestBody, @PathParam("transactionId") final String transactionId,
             @QueryParam("command") final String commandParam) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
         CommandProcessingResult result = null;
         if (is(commandParam, "reverse")) {
             final CommandWrapper commandRequest = new CommandWrapperBuilder().reverseJournalEntry(transactionId).withJson(jsonRequestBody)
@@ -190,6 +198,7 @@ public class JournalEntriesApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     public String retrieveJournalEntries(@QueryParam("offset") final Integer offset, @QueryParam("limit") final Integer limit,
             @QueryParam("entryId") final Long entryId, @Context final UriInfo uriInfo) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
         this.context.authenticatedUser();
         String transactionId = "P"+entryId ;
         SearchParameters params = SearchParameters.forPagination(offset, limit) ;
@@ -205,6 +214,7 @@ public class JournalEntriesApiResource {
     @Path("openingbalance")
     public String retrieveOpeningBalance(@Context final UriInfo uriInfo, @QueryParam("officeId") final Long officeId,
             @QueryParam("currencyCode") final String currencyCode) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
         this.context.authenticatedUser().validateHasReadPermission(this.resourceNameForPermission);
         final OfficeOpeningBalancesData officeOpeningBalancesData = this.journalEntryReadPlatformService.retrieveOfficeOpeningBalances(

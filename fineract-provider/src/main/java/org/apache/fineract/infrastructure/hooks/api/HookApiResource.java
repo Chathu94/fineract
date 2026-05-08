@@ -42,6 +42,8 @@ import org.apache.fineract.infrastructure.core.api.ApiRequestParameterHelper;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.serialization.ApiRequestJsonSerializationSettings;
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
+import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
+import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.hooks.data.HookData;
 import org.apache.fineract.infrastructure.hooks.service.HookReadPlatformService;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
@@ -61,6 +63,7 @@ public class HookApiResource {
 	private final DefaultToApiJsonSerializer<HookData> toApiJsonSerializer;
 	private final ApiRequestParameterHelper apiRequestParameterHelper;
 	private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
+	private final RoutingDataSource dataSource;
 
 	@Autowired
 	public HookApiResource(
@@ -68,16 +71,19 @@ public class HookApiResource {
 			final HookReadPlatformService readPlatformService,
 			final DefaultToApiJsonSerializer<HookData> toApiJsonSerializer,
 			final ApiRequestParameterHelper apiRequestParameterHelper,
-			final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService) {
+			final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService,
+			final RoutingDataSource dataSource) {
 		this.context = context;
 		this.readPlatformService = readPlatformService;
 		this.toApiJsonSerializer = toApiJsonSerializer;
 		this.apiRequestParameterHelper = apiRequestParameterHelper;
 		this.commandsSourceWritePlatformService = commandsSourceWritePlatformService;
+		this.dataSource = dataSource;
 	}
 
 	@GET
 	public String retrieveHooks(@Context final UriInfo uriInfo) {
+		ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
 		this.context.authenticatedUser().validateHasReadPermission(
 				HOOK_RESOURCE_NAME);
@@ -95,6 +101,7 @@ public class HookApiResource {
 	@Path("{hookId}")
 	public String retrieveHook(@PathParam("hookId") final Long hookId,
 			@Context final UriInfo uriInfo) {
+		ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
 		this.context.authenticatedUser().validateHasReadPermission(
 				HOOK_RESOURCE_NAME);
@@ -117,6 +124,7 @@ public class HookApiResource {
 	@GET
 	@Path("template")
 	public String template(@Context final UriInfo uriInfo) {
+		ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
 		this.context.authenticatedUser().validateHasReadPermission(
 				HOOK_RESOURCE_NAME);
@@ -132,6 +140,7 @@ public class HookApiResource {
 
 	@POST
 	public String createHook(final String apiRequestBodyAsJson) {
+		ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
 
 		final CommandWrapper commandRequest = new CommandWrapperBuilder()
 				.createHook().withJson(apiRequestBodyAsJson).build();
@@ -146,6 +155,7 @@ public class HookApiResource {
 	@Path("{hookId}")
 	public String updateHook(@PathParam("hookId") final Long hookId,
 			final String apiRequestBodyAsJson) {
+		ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
 
 		final CommandWrapper commandRequest = new CommandWrapperBuilder()
 				.updateHook(hookId).withJson(apiRequestBodyAsJson).build();
@@ -159,6 +169,7 @@ public class HookApiResource {
 	@DELETE
 	@Path("{hookId}")
 	public String deleteHook(@PathParam("hookId") final Long hookId) {
+		ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
 
 		final CommandWrapper commandRequest = new CommandWrapperBuilder()
 				.deleteHook(hookId).build();

@@ -37,6 +37,8 @@ import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.serialization.ApiRequestJsonSerializationSettings;
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.infrastructure.core.serialization.ToApiJsonSerializer;
+import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
+import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.portfolio.collectionsheet.CollectionSheetConstants;
 import org.apache.fineract.portfolio.collectionsheet.data.IndividualCollectionSheetData;
@@ -58,18 +60,21 @@ public class CollectionSheetApiResourse {
     private final ApiRequestParameterHelper apiRequestPrameterHelper;
     private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
     private final PlatformSecurityContext context;
+    private final RoutingDataSource dataSource;
 
     @Autowired
     public CollectionSheetApiResourse(final CollectionSheetReadPlatformService collectionSheetReadPlatformService,
             final ToApiJsonSerializer<Object> toApiJsonSerializer, final FromJsonHelper fromJsonHelper,
             final ApiRequestParameterHelper apiRequestPrameterHelper,
-            final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService, final PlatformSecurityContext context) {
+            final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService, final PlatformSecurityContext context,
+                                      final RoutingDataSource dataSource) {
         this.collectionSheetReadPlatformService = collectionSheetReadPlatformService;
         this.toApiJsonSerializer = toApiJsonSerializer;
         this.fromJsonHelper = fromJsonHelper;
         this.apiRequestPrameterHelper = apiRequestPrameterHelper;
         this.commandsSourceWritePlatformService = commandsSourceWritePlatformService;
         this.context = context;
+        this.dataSource = dataSource;
     }
 
     @POST
@@ -77,6 +82,7 @@ public class CollectionSheetApiResourse {
     @Produces({ MediaType.APPLICATION_JSON })
     public String generateCollectionSheet(@QueryParam("command") final String commandParam, final String apiRequestBodyAsJson,
             @Context final UriInfo uriInfo) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
         final CommandWrapperBuilder builder = new CommandWrapperBuilder().withJson(apiRequestBodyAsJson);
         CommandProcessingResult result = null;
 

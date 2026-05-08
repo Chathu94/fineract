@@ -25,6 +25,7 @@ import java.util.concurrent.*;
 
 import org.apache.fineract.infrastructure.core.domain.FineractPlatformTenant;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
+import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
 import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.jobs.annotation.CronTarget;
 import org.apache.fineract.infrastructure.jobs.exception.JobExecutionException;
@@ -41,6 +42,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.Sort;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -50,16 +52,19 @@ public class SavingsSchedularServiceImpl implements SavingsSchedularService {
     private final SavingsAccountWritePlatformService savingsAccountWritePlatformService;
     private final SavingsAccountRepositoryWrapper savingAccountRepositoryWrapper;
     private final SavingsAccountReadPlatformService savingAccountReadPlatformService;
+    private final JdbcTemplate jdbcTemplate;
 
     @Autowired
     public SavingsSchedularServiceImpl(final SavingsAccountAssembler savingAccountAssembler,
             final SavingsAccountWritePlatformService savingsAccountWritePlatformService,
             final SavingsAccountRepositoryWrapper savingAccountRepositoryWrapper,
-            final SavingsAccountReadPlatformService savingAccountReadPlatformService) {
+            final SavingsAccountReadPlatformService savingAccountReadPlatformService,
+                                       final RoutingDataSource dataSource) {
         this.savingAccountAssembler = savingAccountAssembler;
         this.savingsAccountWritePlatformService = savingsAccountWritePlatformService;
         this.savingAccountRepositoryWrapper = savingAccountRepositoryWrapper;
         this.savingAccountReadPlatformService = savingAccountReadPlatformService;
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
 
@@ -69,6 +74,11 @@ public class SavingsSchedularServiceImpl implements SavingsSchedularService {
     @CronTarget(jobName = JobName.POST_INTEREST_FOR_SAVINGS)
     @Override
     public void postInterestForAccounts() throws JobExecutionException {
+
+        if (ThreadLocalContextUtil.getVTReplicaMode()) {
+            this.jdbcTemplate.execute("SET workload = OLAP");
+            jdbcTemplate.execute("USE @primary");
+        }
 //        final List<SavingsAccount> savingsAccounts = this.savingAccountRepositoryWrapper.findSavingAccountByStatus(SavingsAccountStatusType.ACTIVE
 //                .getValue());
         StringBuffer sb = new StringBuffer();
@@ -111,6 +121,11 @@ public class SavingsSchedularServiceImpl implements SavingsSchedularService {
                         // set tenant context for this worker thread
                         ThreadLocalContextUtil.setTenant(tenant);
                         try {
+
+                            if (ThreadLocalContextUtil.getVTReplicaMode()) {
+                                this.jdbcTemplate.execute("SET workload = OLAP");
+            jdbcTemplate.execute("USE @primary");
+                            }
                             System.out.println("RUNNING - " + id);
                             SavingsAccount savingsAccount = savingAccountRepositoryWrapper.findOneWithNotFoundDetection(id);
 

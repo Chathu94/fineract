@@ -24,6 +24,8 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
+import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
+import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.security.api.UserDetailsApiResource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
@@ -37,17 +39,20 @@ import org.springframework.stereotype.Component;
 public class SelfUserDetailsApiResource {
 
 	private final UserDetailsApiResource userDetailsApiResource;
+	private final RoutingDataSource dataSource;
 
 	@Autowired
 	public SelfUserDetailsApiResource(
-			final UserDetailsApiResource userDetailsApiResource) {
+			final UserDetailsApiResource userDetailsApiResource, final RoutingDataSource dataSource) {
 		this.userDetailsApiResource = userDetailsApiResource;
+		this.dataSource = dataSource;
 	}
 
 	@GET
 	@Produces({ MediaType.APPLICATION_JSON })
 	public String fetchAuthenticatedUserData(
 			@QueryParam("access_token") final String accessToken) {
+		ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 		return this.userDetailsApiResource
 				.fetchAuthenticatedUserData(accessToken);
 	}

@@ -138,12 +138,13 @@ public class TenantAwareBasicAuthenticationFilter extends BasicAuthenticationFil
                     final String baseUrl = request.getRequestURL().toString().replace(request.getPathInfo(), "/");
                     System.setProperty("baseUrl", baseUrl);
 
-                    final boolean ehcacheEnabled = this.configurationDomainService.isEhcacheEnabled();
-                    if (ehcacheEnabled) {
-                        this.cacheWritePlatformService.switchToCache(CacheType.SINGLE_NODE);
-                    } else {
-                        this.cacheWritePlatformService.switchToCache(CacheType.NO_CACHE);
-                    }
+                    // Cache Disabled
+//                    final boolean ehcacheEnabled = this.configurationDomainService.isEhcacheEnabled();
+//                    if (ehcacheEnabled) {
+//                        this.cacheWritePlatformService.switchToCache(CacheType.SINGLE_NODE);
+//                    } else {
+                    this.cacheWritePlatformService.switchToCache(CacheType.NO_CACHE);
+//                    }
                     TenantAwareBasicAuthenticationFilter.firstRequestProcessed = true;
                 }
             }

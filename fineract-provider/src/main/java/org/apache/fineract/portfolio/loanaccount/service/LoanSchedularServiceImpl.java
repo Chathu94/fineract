@@ -29,6 +29,7 @@ import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDoma
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
 import org.apache.fineract.infrastructure.core.exception.AbstractPlatformDomainRuleException;
 import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
+import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
 import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.jobs.annotation.CronTarget;
 import org.apache.fineract.infrastructure.jobs.exception.JobExecutionException;
@@ -38,6 +39,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.CannotAcquireLockException;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 
@@ -48,18 +50,26 @@ public class LoanSchedularServiceImpl implements LoanSchedularService {
     private final ConfigurationDomainService configurationDomainService;
     private final LoanReadPlatformService loanReadPlatformService;
     private final LoanWritePlatformService loanWritePlatformService;
+	private final JdbcTemplate jdbcTemplate;
 
     @Autowired
     public LoanSchedularServiceImpl(final ConfigurationDomainService configurationDomainService,
-            final LoanReadPlatformService loanReadPlatformService, final LoanWritePlatformService loanWritePlatformService) {
+            final LoanReadPlatformService loanReadPlatformService, final LoanWritePlatformService loanWritePlatformService,
+									final RoutingDataSource dataSource) {
         this.configurationDomainService = configurationDomainService;
         this.loanReadPlatformService = loanReadPlatformService;
         this.loanWritePlatformService = loanWritePlatformService;
+		this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
     @Override
     @CronTarget(jobName = JobName.APPLY_CHARGE_TO_OVERDUE_LOAN_INSTALLMENT)
     public void applyChargeForOverdueLoans() throws JobExecutionException {
+
+		if (ThreadLocalContextUtil.getVTReplicaMode()) {
+			this.jdbcTemplate.execute("SET workload = OLAP");
+            jdbcTemplate.execute("USE @primary");
+		}
 
         final Long penaltyWaitPeriodValue = this.configurationDomainService.retrievePenaltyWaitPeriod();
         final Boolean backdatePenalties = this.configurationDomainService.isBackdatePenaltiesEnabled();
@@ -114,6 +124,10 @@ public class LoanSchedularServiceImpl implements LoanSchedularService {
 	@Override
 	@CronTarget(jobName = JobName.RECALCULATE_INTEREST_FOR_LOAN)
 	public void recalculateInterest() throws JobExecutionException {
+		if (ThreadLocalContextUtil.getVTReplicaMode()) {
+			jdbcTemplate.execute("SET workload = OLAP");
+		}
+
 		Integer maxNumberOfRetries = ThreadLocalContextUtil.getTenant()
 				.getConnection().getMaxRetriesOnDeadlock();
 		Integer maxIntervalBetweenRetries = ThreadLocalContextUtil.getTenant()

@@ -48,6 +48,8 @@ import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.exception.UnrecognizedQueryParamException;
 import org.apache.fineract.infrastructure.core.serialization.ApiRequestJsonSerializationSettings;
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
+import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
+import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.portfolio.charge.data.ChargeData;
 import org.apache.fineract.portfolio.charge.service.ChargeReadPlatformService;
@@ -69,6 +71,7 @@ public class SavingsAccountChargesApiResource {
     private final DefaultToApiJsonSerializer<SavingsAccountChargeData> toApiJsonSerializer;
     private final ApiRequestParameterHelper apiRequestParameterHelper;
     private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
+    private final RoutingDataSource dataSource;
 
     @Autowired
     public SavingsAccountChargesApiResource(final PlatformSecurityContext context,
@@ -76,13 +79,15 @@ public class SavingsAccountChargesApiResource {
             final SavingsAccountChargeReadPlatformService savingsAccountChargeReadPlatformService,
             final DefaultToApiJsonSerializer<SavingsAccountChargeData> toApiJsonSerializer,
             final ApiRequestParameterHelper apiRequestParameterHelper,
-            final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService) {
+            final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService,
+                                            final RoutingDataSource dataSource) {
         this.context = context;
         this.chargeReadPlatformService = chargeReadPlatformService;
         this.savingsAccountChargeReadPlatformService = savingsAccountChargeReadPlatformService;
         this.toApiJsonSerializer = toApiJsonSerializer;
         this.apiRequestParameterHelper = apiRequestParameterHelper;
         this.commandsSourceWritePlatformService = commandsSourceWritePlatformService;
+        this.dataSource = dataSource;
     }
 
     private boolean is(final String commandParam, final String commandValue) {
@@ -94,6 +99,7 @@ public class SavingsAccountChargesApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     public String retrieveAllSavingsAccountCharges(@PathParam("savingsAccountId") final Long savingsAccountId,
             @DefaultValue("all") @QueryParam("chargeStatus") final String chargeStatus, @Context final UriInfo uriInfo) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
         this.context.authenticatedUser().validateHasReadPermission(SAVINGS_ACCOUNT_CHARGE_RESOURCE_NAME);
 
@@ -113,6 +119,7 @@ public class SavingsAccountChargesApiResource {
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String retrieveTemplate(@PathParam("savingsAccountId") final Long savingsAccountId, @Context final UriInfo uriInfo) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
         this.context.authenticatedUser().validateHasReadPermission(SAVINGS_ACCOUNT_CHARGE_RESOURCE_NAME);
 
@@ -130,6 +137,7 @@ public class SavingsAccountChargesApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     public String retrieveSavingsAccountCharge(@PathParam("savingsAccountId") final Long savingsAccountId,
             @PathParam("savingsAccountChargeId") final Long savingsAccountChargeId, @Context final UriInfo uriInfo) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
         this.context.authenticatedUser().validateHasReadPermission(SAVINGS_ACCOUNT_CHARGE_RESOURCE_NAME);
 
@@ -145,6 +153,7 @@ public class SavingsAccountChargesApiResource {
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String addSavingsAccountCharge(@PathParam("savingsAccountId") final Long savingsAccountId, final String apiRequestBodyAsJson) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
 
         final CommandWrapper commandRequest = new CommandWrapperBuilder().createSavingsAccountCharge(savingsAccountId)
                 .withJson(apiRequestBodyAsJson).build();
@@ -160,6 +169,7 @@ public class SavingsAccountChargesApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     public String updateSavingsAccountCharge(@PathParam("savingsAccountId") final Long savingsAccountId,
             @PathParam("savingsAccountChargeId") final Long savingsAccountChargeId, final String apiRequestBodyAsJson) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
 
         final CommandWrapper commandRequest = new CommandWrapperBuilder()
                 .updateSavingsAccountCharge(savingsAccountId, savingsAccountChargeId).withJson(apiRequestBodyAsJson).build();
@@ -176,6 +186,7 @@ public class SavingsAccountChargesApiResource {
     public String payOrWaiveSavingsAccountCharge(@PathParam("savingsAccountId") final Long savingsAccountId,
             @PathParam("savingsAccountChargeId") final Long savingsAccountChargeId, @QueryParam("command") final String commandParam,
             final String apiRequestBodyAsJson) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
 
         String json = "";
         if (is(commandParam, COMMAND_WAIVE_CHARGE)) {
@@ -213,6 +224,7 @@ public class SavingsAccountChargesApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     public String deleteSavingsAccountCharge(@PathParam("savingsAccountId") final Long savingsAccountId,
             @PathParam("savingsAccountChargeId") final Long savingsAccountChargeId) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
 
         final CommandWrapper commandRequest = new CommandWrapperBuilder().deleteSavingsAccountCharge(savingsAccountId,
                 savingsAccountChargeId).build();

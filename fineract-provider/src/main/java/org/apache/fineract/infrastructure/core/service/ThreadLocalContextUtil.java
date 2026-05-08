@@ -19,6 +19,7 @@
 package org.apache.fineract.infrastructure.core.service;
 
 import org.apache.fineract.infrastructure.core.domain.FineractPlatformTenant;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.util.Assert;
 
 /**
@@ -41,6 +42,30 @@ public class ThreadLocalContextUtil {
 
     public static FineractPlatformTenant getTenant() {
         return tenantcontext.get();
+    }
+
+    public static Boolean getVTReplicaMode() {
+        String replicaMode = System.getenv("EVOKE_VITESS_REPLICA_MODE");
+
+        if (replicaMode != null && !replicaMode.isEmpty()) {
+            try {
+                return Boolean.parseBoolean(replicaMode);
+            } catch (NumberFormatException e) {
+                System.err.println("Invalid EVOKE_VITESS_REPLICA_MODE env value: " + replicaMode + ", falling back to false");
+            }
+        }
+
+        return false;
+    }
+
+    public static void executeReplicaQuery(final RoutingDataSource dataSource, final boolean readOnly) {
+        if (!ThreadLocalContextUtil.getVTReplicaMode()) return;
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        if (readOnly) {
+            jdbcTemplate.execute("USE @replica");
+        } else {
+            jdbcTemplate.execute("USE @primary");
+        }
     }
 
     public static void clearTenant() {

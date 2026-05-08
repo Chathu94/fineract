@@ -90,6 +90,11 @@ public class LoanArrearsAgingServiceImpl implements LoanArrearsAgingService, Bus
     @CronTarget(jobName = JobName.UPDATE_LOAN_ARREARS_AGEING)
     public void updateLoanArrearsAgeingDetails() {
 
+        if (ThreadLocalContextUtil.getVTReplicaMode()) {
+            this.jdbcTemplate.execute("SET workload = OLAP");
+            jdbcTemplate.execute("USE @primary");
+        }
+
         this.jdbcTemplate.execute("truncate table m_loan_arrears_aging");
 
         final StringBuilder updateSqlBuilder = new StringBuilder(900);
@@ -119,6 +124,13 @@ public class LoanArrearsAgingServiceImpl implements LoanArrearsAgingService, Bus
         updateSqlBuilder.append(" and mr.duedate < SUBDATE(CURDATE(),INTERVAL  ifnull(ml.grace_on_arrears_ageing,0) day) ");
         updateSqlBuilder.append(" and (prd.arrears_based_on_original_schedule = 0 or prd.arrears_based_on_original_schedule is null) ");
         updateSqlBuilder.append(" GROUP BY ml.id");
+        updateSqlBuilder.append(" ON DUPLICATE KEY UPDATE");
+        updateSqlBuilder.append(" principal_overdue_derived = VALUES(principal_overdue_derived),");
+        updateSqlBuilder.append(" interest_overdue_derived = VALUES(interest_overdue_derived),");
+        updateSqlBuilder.append(" fee_charges_overdue_derived = VALUES(fee_charges_overdue_derived),");
+        updateSqlBuilder.append(" penalty_charges_overdue_derived = VALUES(penalty_charges_overdue_derived),");
+        updateSqlBuilder.append(" total_overdue_derived = VALUES(total_overdue_derived),");
+        updateSqlBuilder.append(" overdue_since_date_derived = VALUES(overdue_since_date_derived);");
 
         List<String> insertStatements = updateLoanArrearsAgeingDetailsWithOriginalSchedule();
         insertStatements.add(0, updateSqlBuilder.toString());

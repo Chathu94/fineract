@@ -50,6 +50,8 @@ import org.apache.fineract.infrastructure.core.api.ApiRequestParameterHelper;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.serialization.ApiRequestJsonSerializationSettings;
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
+import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
+import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.template.data.TemplateData;
 import org.apache.fineract.template.domain.Template;
@@ -80,13 +82,15 @@ public class TemplatesApiResource {
     private final TemplateDomainService templateService;
     private final TemplateMergeService templateMergeService;
     private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
+    private final RoutingDataSource dataSource;
 
     @Autowired
     public TemplatesApiResource(final PlatformSecurityContext context, final DefaultToApiJsonSerializer<Template> toApiJsonSerializer,
             final DefaultToApiJsonSerializer<TemplateData> templateDataApiJsonSerializer,
             final ApiRequestParameterHelper apiRequestParameterHelper, final TemplateDomainService templateService,
             final TemplateMergeService templateMergeService,
-            final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService) {
+            final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService,
+                                final RoutingDataSource dataSource) {
 
         this.context = context;
         this.toApiJsonSerializer = toApiJsonSerializer;
@@ -95,11 +99,13 @@ public class TemplatesApiResource {
         this.templateService = templateService;
         this.templateMergeService = templateMergeService;
         this.commandsSourceWritePlatformService = commandsSourceWritePlatformService;
+        this.dataSource = dataSource;
     }
 
     @GET
     public String retrieveAll(@DefaultValue("-1") @QueryParam("typeId") final int typeId,
             @DefaultValue("-1") @QueryParam("entityId") final int entityId, @Context final UriInfo uriInfo) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
         this.context.authenticatedUser().validateHasReadPermission(this.RESOURCE_NAME_FOR_PERMISSION);
 
@@ -120,6 +126,7 @@ public class TemplatesApiResource {
     @GET
     @Path("template")
     public String template(@Context final UriInfo uriInfo) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
         this.context.authenticatedUser().validateHasReadPermission(this.RESOURCE_NAME_FOR_PERMISSION);
 
@@ -131,6 +138,7 @@ public class TemplatesApiResource {
 
     @POST
     public String createTemplate(final String apiRequestBodyAsJson) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
         final CommandWrapper commandRequest = new CommandWrapperBuilder().createTemplate().withJson(apiRequestBodyAsJson).build();
 
         final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
@@ -141,6 +149,7 @@ public class TemplatesApiResource {
     @GET
     @Path("{templateId}")
     public String retrieveOne(@PathParam("templateId") final Long templateId, @Context final UriInfo uriInfo) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
         this.context.authenticatedUser().validateHasReadPermission(this.RESOURCE_NAME_FOR_PERMISSION);
 
@@ -153,6 +162,7 @@ public class TemplatesApiResource {
     @GET
     @Path("{templateId}/template")
     public String getTemplateByTemplate(@PathParam("templateId") final Long templateId, @Context final UriInfo uriInfo) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
         this.context.authenticatedUser().validateHasReadPermission(this.RESOURCE_NAME_FOR_PERMISSION);
 
@@ -165,6 +175,7 @@ public class TemplatesApiResource {
     @PUT
     @Path("{templateId}")
     public String saveTemplate(@PathParam("templateId") final Long templateId, final String apiRequestBodyAsJson) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
 
         final CommandWrapper commandRequest = new CommandWrapperBuilder().updateTemplate(templateId).withJson(apiRequestBodyAsJson).build();
 
@@ -176,6 +187,7 @@ public class TemplatesApiResource {
     @DELETE
     @Path("{templateId}")
     public String deleteTemplate(@PathParam("templateId") final Long templateId) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
 
         final CommandWrapper commandRequest = new CommandWrapperBuilder().deleteTemplate(templateId).build();
 
@@ -189,6 +201,7 @@ public class TemplatesApiResource {
     @Produces({ MediaType.TEXT_HTML })
     public String mergeTemplate(@PathParam("templateId") final Long templateId, @Context final UriInfo uriInfo,
             final String apiRequestBodyAsJson) throws MalformedURLException, IOException {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
 
         final Template template = this.templateService.findOneById(templateId);
 

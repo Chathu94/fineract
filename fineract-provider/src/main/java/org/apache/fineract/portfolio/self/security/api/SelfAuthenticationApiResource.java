@@ -24,6 +24,8 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
+import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
+import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.security.api.AuthenticationApiResource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
@@ -37,17 +39,20 @@ import org.springframework.stereotype.Component;
 public class SelfAuthenticationApiResource {
 
 	private final AuthenticationApiResource authenticationApiResource;
+	private final RoutingDataSource dataSource;
 
 	@Autowired
 	public SelfAuthenticationApiResource(
-			final AuthenticationApiResource authenticationApiResource) {
+			final AuthenticationApiResource authenticationApiResource, final RoutingDataSource dataSource) {
 		this.authenticationApiResource = authenticationApiResource;
+		this.dataSource = dataSource;
 	}
 
 	@POST
 	@Produces({ MediaType.APPLICATION_JSON })
 	public String authenticate(@QueryParam("username") final String username,
 			@QueryParam("password") final String password) {
+		ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
 		return this.authenticationApiResource.authenticate(username, password);
 	}
 

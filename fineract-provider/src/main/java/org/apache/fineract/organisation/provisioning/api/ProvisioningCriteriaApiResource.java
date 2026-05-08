@@ -42,6 +42,8 @@ import org.apache.fineract.infrastructure.core.api.ApiRequestParameterHelper;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.serialization.ApiRequestJsonSerializationSettings;
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
+import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
+import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.organisation.provisioning.constants.ProvisioningCriteriaConstants;
 import org.apache.fineract.organisation.provisioning.data.ProvisioningCriteriaData;
@@ -60,6 +62,7 @@ public class ProvisioningCriteriaApiResource {
     private final ProvisioningCriteriaReadPlatformService provisioningCriteriaReadPlatformService;
     private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
     private final DefaultToApiJsonSerializer<ProvisioningCriteriaData> toApiJsonSerializer;
+    private final RoutingDataSource dataSource;
 
 	private static final Set<String> PROVISIONING_CRITERIA_TEMPLATE_PARAMETER = new HashSet<>(
 			Arrays.asList(ProvisioningCriteriaConstants.DEFINITIONS_PARAM,
@@ -78,12 +81,14 @@ public class ProvisioningCriteriaApiResource {
             final ApiRequestParameterHelper apiRequestParameterHelper,
             final ProvisioningCriteriaReadPlatformService provisioningCriteriaReadPlatformService,
             final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService,
-            final DefaultToApiJsonSerializer<ProvisioningCriteriaData> toApiJsonSerializer) {
+            final DefaultToApiJsonSerializer<ProvisioningCriteriaData> toApiJsonSerializer,
+                                           final RoutingDataSource dataSource) {
         this.platformSecurityContext = platformSecurityContext;
         this.apiRequestParameterHelper = apiRequestParameterHelper;
         this.provisioningCriteriaReadPlatformService = provisioningCriteriaReadPlatformService;
         this.commandsSourceWritePlatformService = commandsSourceWritePlatformService ;
         this.toApiJsonSerializer = toApiJsonSerializer ;
+        this.dataSource = dataSource;
     }
 
     @GET
@@ -91,6 +96,7 @@ public class ProvisioningCriteriaApiResource {
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String retrieveTemplate(@Context final UriInfo uriInfo) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
         this.platformSecurityContext.authenticatedUser();
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
         ProvisioningCriteriaData data = this.provisioningCriteriaReadPlatformService.retrievePrivisiongCriteriaTemplate();
@@ -102,6 +108,7 @@ public class ProvisioningCriteriaApiResource {
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String retrieveProvisioningCriteria(@PathParam("criteriaId") final Long criteriaId, @Context final UriInfo uriInfo) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
         platformSecurityContext.authenticatedUser() ;
         ProvisioningCriteriaData criteria = this.provisioningCriteriaReadPlatformService.retrieveProvisioningCriteria(criteriaId) ;
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
@@ -115,6 +122,7 @@ public class ProvisioningCriteriaApiResource {
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String retrieveAllProvisioningCriterias(@Context final UriInfo uriInfo) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
         platformSecurityContext.authenticatedUser() ;
         Collection<ProvisioningCriteriaData> data = this.provisioningCriteriaReadPlatformService.retrieveAllProvisioningCriterias() ;
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
@@ -125,6 +133,7 @@ public class ProvisioningCriteriaApiResource {
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String createProvisioningCriteria(final String apiRequestBodyAsJson) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
         CommandWrapper commandWrapper = null;
         this.platformSecurityContext.authenticatedUser();
         commandWrapper = new CommandWrapperBuilder().createProvisioningCriteria().withJson(apiRequestBodyAsJson).build();
@@ -137,6 +146,7 @@ public class ProvisioningCriteriaApiResource {
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String updateProvisioningCriteria(@PathParam("criteriaId") final Long criteriaId, final String apiRequestBodyAsJson) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
         this.platformSecurityContext.authenticatedUser();
         final CommandWrapper commandRequest = new CommandWrapperBuilder().updateProvisioningCriteria(criteriaId)
                 .withJson(apiRequestBodyAsJson).build();
@@ -149,6 +159,7 @@ public class ProvisioningCriteriaApiResource {
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String deleteProvisioningCriteria(@PathParam("criteriaId") final Long criteriaId) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
         this.platformSecurityContext.authenticatedUser();
         final CommandWrapper commandRequest = new CommandWrapperBuilder().deleteProvisioningCriteria(criteriaId).build();
         final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);

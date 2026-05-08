@@ -502,7 +502,7 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
                     if (applyWithHoldTax) {
                         createWithHoldTransaction(interestEarnedToBePostedForPeriod.getAmount(), interestPostingTransactionDate);
                     }
-                    recalucateDailyBalanceDetails = true;
+                    recalucateDailyBalanceDetails = false;
                 } else {
                     boolean correctionRequired = false;
                     if (postingTransaction.isInterestPostingAndNotReversed()) {

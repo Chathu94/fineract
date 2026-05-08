@@ -34,6 +34,8 @@ import javax.ws.rs.core.UriInfo;
 import org.apache.fineract.infrastructure.core.api.ApiRequestParameterHelper;
 import org.apache.fineract.infrastructure.core.serialization.ApiRequestJsonSerializationSettings;
 import org.apache.fineract.infrastructure.core.serialization.ToApiJsonSerializer;
+import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
+import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.mix.data.MixTaxonomyData;
 import org.apache.fineract.mix.service.MixTaxonomyReadPlatformService;
@@ -53,20 +55,24 @@ public class MixTaxonomyApiResource {
     private final ToApiJsonSerializer<MixTaxonomyData> toApiJsonSerializer;
     private final MixTaxonomyReadPlatformService readTaxonomyService;
     private final ApiRequestParameterHelper apiRequestParameterHelper;
+    private final RoutingDataSource dataSource;
 
     @Autowired
     public MixTaxonomyApiResource(final PlatformSecurityContext context, final ToApiJsonSerializer<MixTaxonomyData> toApiJsonSerializer,
-            final MixTaxonomyReadPlatformService readTaxonomyService, final ApiRequestParameterHelper apiRequestParameterHelper) {
+            final MixTaxonomyReadPlatformService readTaxonomyService, final ApiRequestParameterHelper apiRequestParameterHelper,
+                                  final RoutingDataSource dataSource) {
         this.context = context;
         this.toApiJsonSerializer = toApiJsonSerializer;
         this.readTaxonomyService = readTaxonomyService;
         this.apiRequestParameterHelper = apiRequestParameterHelper;
+        this.dataSource = dataSource;
     }
 
     @GET
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String retrieveAll(@Context final UriInfo uriInfo) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
         // FIXME - KW - no check for permission to read mix taxonomy data.
         this.context.authenticatedUser();

@@ -45,7 +45,9 @@ import org.apache.fineract.infrastructure.core.exception.UnrecognizedQueryParamE
 import org.apache.fineract.infrastructure.core.serialization.ApiRequestJsonSerializationSettings;
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
 import org.apache.fineract.infrastructure.core.service.Page;
+import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
 import org.apache.fineract.infrastructure.core.service.SearchParameters;
+import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.portfolio.account.data.AccountTransferData;
 import org.apache.fineract.portfolio.account.data.StandingInstructionDTO;
@@ -67,6 +69,7 @@ public class StandingInstructionApiResource {
     private final ApiRequestParameterHelper apiRequestParameterHelper;
     private final StandingInstructionReadPlatformService standingInstructionReadPlatformService;
     private final AccountTransfersReadPlatformService accountTransfersReadPlatformService;
+    private final RoutingDataSource dataSource;
 
     @Autowired
     public StandingInstructionApiResource(final PlatformSecurityContext context,
@@ -74,13 +77,15 @@ public class StandingInstructionApiResource {
             final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService,
             final ApiRequestParameterHelper apiRequestParameterHelper,
             final StandingInstructionReadPlatformService standingInstructionReadPlatformService,
-            final AccountTransfersReadPlatformService accountTransfersReadPlatformService) {
+            final AccountTransfersReadPlatformService accountTransfersReadPlatformService,
+                                          final RoutingDataSource dataSource) {
         this.context = context;
         this.toApiJsonSerializer = toApiJsonSerializer;
         this.commandsSourceWritePlatformService = commandsSourceWritePlatformService;
         this.apiRequestParameterHelper = apiRequestParameterHelper;
         this.standingInstructionReadPlatformService = standingInstructionReadPlatformService;
         this.accountTransfersReadPlatformService = accountTransfersReadPlatformService;
+        this.dataSource = dataSource;
     }
 
     @GET
@@ -92,6 +97,7 @@ public class StandingInstructionApiResource {
             @QueryParam("toOfficeId") final Long toOfficeId, @QueryParam("toClientId") final Long toClientId,
             @QueryParam("toAccountId") final Long toAccountId, @QueryParam("toAccountType") final Integer toAccountType,
             @QueryParam("transferType") final Integer transferType, @Context final UriInfo uriInfo) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
         this.context.authenticatedUser().validateHasReadPermission(StandingInstructionApiConstants.STANDING_INSTRUCTION_RESOURCE_NAME);
 
@@ -107,6 +113,7 @@ public class StandingInstructionApiResource {
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String create(final String apiRequestBodyAsJson) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
 
         final CommandWrapper commandRequest = new CommandWrapperBuilder().createStandingInstruction().withJson(apiRequestBodyAsJson)
                 .build();
@@ -122,6 +129,7 @@ public class StandingInstructionApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     public String update(@PathParam("standingInstructionId") final Long standingInstructionId, final String apiRequestBodyAsJson,
             @QueryParam("command") final String commandParam) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
 
         CommandWrapper commandRequest = null;
         if (is(commandParam, "update")) {
@@ -152,6 +160,7 @@ public class StandingInstructionApiResource {
             @QueryParam("sortOrder") final String sortOrder, @QueryParam("transferType") final Integer transferType,
             @QueryParam("clientName") final String clientName, @QueryParam("clientId") final Long clientId,
             @QueryParam("fromAccountId") final Long fromAccount, @QueryParam("fromAccountType") final Integer fromAccountType) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
         this.context.authenticatedUser().validateHasReadPermission(StandingInstructionApiConstants.STANDING_INSTRUCTION_RESOURCE_NAME);
 
@@ -177,6 +186,7 @@ public class StandingInstructionApiResource {
             @QueryParam("sqlSearch") final String sqlSearch, @QueryParam("externalId") final String externalId,
             @QueryParam("offset") final Integer offset, @QueryParam("limit") final Integer limit,
             @QueryParam("orderBy") final String orderBy, @QueryParam("sortOrder") final String sortOrder) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
         this.context.authenticatedUser().validateHasReadPermission(StandingInstructionApiConstants.STANDING_INSTRUCTION_RESOURCE_NAME);
 
