@@ -23,6 +23,7 @@ import static org.apache.fineract.portfolio.loanproduct.service.LoanEnumerations
 import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -113,6 +114,7 @@ import org.apache.fineract.portfolio.paymenttype.data.PaymentTypeData;
 import org.apache.fineract.portfolio.paymenttype.service.PaymentTypeReadPlatformService;
 import org.apache.fineract.useradministration.data.AppUserData;
 import org.apache.fineract.useradministration.domain.AppUser;
+import org.joda.time.DateTime;
 import org.joda.time.Days;
 import org.joda.time.LocalDate;
 import org.joda.time.format.DateTimeFormat;
@@ -1276,7 +1278,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                     + " totran.transaction_date as toTransferDate, totran.amount as toTransferAmount, "
                     + " totran.description as toTransferDescription, "
                     + " au.id as appUserId, "
-                    + " au.username as appUserUsername "
+                    + " au.username as appUserUsername, "
+                    + " tr.created_date as createdDateTime "
                     + " from m_loan l "
                     + " join m_loan_transaction tr on tr.loan_id = l.id "
                     + " join m_currency rc on rc.`code` = l.currency_code "
@@ -1328,6 +1331,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
             }
             final LocalDate date = JdbcSupport.getLocalDate(rs, "date");
             final LocalDate submittedOnDate = JdbcSupport.getLocalDate(rs, "submittedOnDate");
+            final DateTime createdDateTime = JdbcSupport.getDateTime(rs, "createdDateTime");
             final BigDecimal totalAmount = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "total");
             final BigDecimal principalPortion = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "principal");
             final BigDecimal interestPortion = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "interest");
@@ -1360,7 +1364,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
             }
             return new LoanTransactionData(id, officeId, officeName, transactionType, paymentDetailData, currencyData, date, totalAmount,
                     principalPortion, interestPortion, feeChargesPortion, penaltyChargesPortion, overPaymentPortion,
-                    unrecognizedIncomePortion, externalId, transfer, null, outstandingLoanBalance, submittedOnDate, manuallyReversed, appUserUsername,appUserId);
+                    unrecognizedIncomePortion, externalId, transfer, null, outstandingLoanBalance, submittedOnDate, manuallyReversed, appUserUsername,appUserId, createdDateTime);
         }
     }
 
