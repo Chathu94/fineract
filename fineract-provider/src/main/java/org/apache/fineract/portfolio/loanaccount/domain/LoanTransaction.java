@@ -35,6 +35,7 @@ import javax.persistence.FetchType;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
@@ -134,6 +135,10 @@ public class LoanTransaction extends AbstractPersistableCustom<Long> {
     @OneToMany(cascade = CascadeType.ALL,  orphanRemoval = true, fetch=FetchType.EAGER)
     @JoinColumn(name = "loan_transaction_id", referencedColumnName= "id" , nullable = false)
     private Set<LoanTransactionToRepaymentScheduleMapping> loanTransactionToRepaymentScheduleMappings = new HashSet<>();
+
+    @OneToOne(mappedBy = "loanTransaction", cascade = CascadeType.ALL,
+              fetch = FetchType.LAZY, optional = true, orphanRemoval = true)
+    private LoanTransactionWaiveFlag waiveFutureInterestFlag;
 
     protected LoanTransaction() {
        /* this.loan = null;
@@ -264,11 +269,15 @@ public class LoanTransaction extends AbstractPersistableCustom<Long> {
     }
 
     public static LoanTransaction copyTransactionProperties(final LoanTransaction loanTransaction) {
-        return new LoanTransaction(loanTransaction.loan, loanTransaction.office, loanTransaction.typeOf, loanTransaction.dateOf,
-                loanTransaction.amount, loanTransaction.principalPortion, loanTransaction.interestPortion,
+        final LoanTransaction copy = new LoanTransaction(loanTransaction.loan, loanTransaction.office, loanTransaction.typeOf,
+                loanTransaction.dateOf, loanTransaction.amount, loanTransaction.principalPortion, loanTransaction.interestPortion,
                 loanTransaction.feeChargesPortion, loanTransaction.penaltyChargesPortion, loanTransaction.overPaymentPortion,
-                loanTransaction.reversed, loanTransaction.paymentDetail, loanTransaction.externalId, new LocalDateTime(
-                        loanTransaction.createdDate), loanTransaction.appUser);
+                loanTransaction.reversed, loanTransaction.paymentDetail, loanTransaction.externalId,
+                new LocalDateTime(loanTransaction.createdDate), loanTransaction.appUser);
+        if (loanTransaction.waiveFutureInterestFlag != null) {
+            copy.waiveFutureInterestFlag = loanTransaction.waiveFutureInterestFlag.copyFor(copy);
+        }
+        return copy;
     }
 
     public static LoanTransaction accrueLoanCharge(final Loan loan, final Office office, final Money amount, final LocalDate applyDate,
@@ -795,5 +804,22 @@ public class LoanTransaction extends AbstractPersistableCustom<Long> {
         return this.isNotReversed()
                 && !(this.isDisbursement() || this.isAccrual() || this.isRepaymentAtDisbursement() || this.isNonMonetaryTransaction() || this
                         .isIncomePosting());
+    }
+
+    public boolean isWaiveFutureInterestOnly() {
+        return this.waiveFutureInterestFlag != null
+                && this.waiveFutureInterestFlag.isWaiveFutureInterestOnly();
+    }
+
+    public void setWaiveFutureInterestOnly(final boolean waiveFutureInterestOnly) {
+        if (waiveFutureInterestOnly) {
+            if (this.waiveFutureInterestFlag == null) {
+                this.waiveFutureInterestFlag = new LoanTransactionWaiveFlag(this, true);
+            } else {
+                this.waiveFutureInterestFlag.setWaiveFutureInterestOnly(true);
+            }
+        } else {
+            this.waiveFutureInterestFlag = null;
+        }
     }
 }
