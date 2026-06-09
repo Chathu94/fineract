@@ -30,6 +30,7 @@ import org.apache.fineract.infrastructure.core.service.Page;
 import org.apache.fineract.infrastructure.core.service.PaginationHelper;
 import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
 import org.apache.fineract.infrastructure.core.service.SearchParameters;
+import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.infrastructure.security.utils.ColumnValidator;
 import org.apache.fineract.infrastructure.security.utils.SQLInjectionValidator;
@@ -1641,8 +1642,11 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
 
         LoanSchedulePeriodicAccrualMapper mapper = new LoanSchedulePeriodicAccrualMapper();
         Date organisationStartDate = this.configurationDomainService.retrieveOrganisationStartDate();
-        this.jdbcTemplate.execute("SET workload = OLAP");
+
+        if (ThreadLocalContextUtil.getVTReplicaMode()) {
+            this.jdbcTemplate.execute("SET workload = OLAP");
             jdbcTemplate.execute("USE @primary");
+        }
         final StringBuilder sqlBuilder = new StringBuilder(400);
         sqlBuilder
                 .append("select ")
