@@ -18,29 +18,18 @@
  */
 package org.apache.fineract.portfolio.loanaccount.service;
 
-import static org.apache.fineract.portfolio.loanproduct.service.LoanEnumerations.interestType;
-
-import java.math.BigDecimal;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.fineract.accounting.common.AccountingRuleType;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
 import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
-import org.apache.fineract.infrastructure.core.domain.FineractPlatformTenantConnection;
 import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
-import org.apache.fineract.infrastructure.core.service.*;
+import org.apache.fineract.infrastructure.core.service.DateUtils;
+import org.apache.fineract.infrastructure.core.service.Page;
+import org.apache.fineract.infrastructure.core.service.PaginationHelper;
+import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
+import org.apache.fineract.infrastructure.core.service.SearchParameters;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.infrastructure.security.utils.ColumnValidator;
 import org.apache.fineract.infrastructure.security.utils.SQLInjectionValidator;
@@ -112,7 +101,6 @@ import org.apache.fineract.portfolio.loanproduct.service.LoanProductReadPlatform
 import org.apache.fineract.portfolio.paymentdetail.data.PaymentDetailData;
 import org.apache.fineract.portfolio.paymenttype.data.PaymentTypeData;
 import org.apache.fineract.portfolio.paymenttype.service.PaymentTypeReadPlatformService;
-import org.apache.fineract.useradministration.data.AppUserData;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.joda.time.DateTime;
 import org.joda.time.Days;
@@ -128,6 +116,19 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
+
+import java.math.BigDecimal;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static org.apache.fineract.portfolio.loanproduct.service.LoanEnumerations.interestType;
 
 @Service
 public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
@@ -1632,6 +1633,11 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
 
     @Override
     public Collection<LoanScheduleAccrualData> retrivePeriodicAccrualData(final LocalDate tillDate) {
+        return retrivePeriodicAccrualData(tillDate, null);
+    }
+
+    @Override
+    public Collection<LoanScheduleAccrualData> retrivePeriodicAccrualData(final LocalDate tillDate, Long loanId) {
 
         LoanSchedulePeriodicAccrualMapper mapper = new LoanSchedulePeriodicAccrualMapper();
         Date organisationStartDate = this.configurationDomainService.retrieveOrganisationStartDate();
@@ -1651,13 +1657,18 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
         if(organisationStartDate != null){
             sqlBuilder.append(" and ls.duedate > :organisationstartdate ");
         }
-//            sqlBuilder.append(" and loan.id = 1835246");
-            sqlBuilder.append(" order by loan.id,ls.duedate ");
-        Map<String, Object> paramMap = new HashMap<>(4);
+        if (loanId != null) {
+            sqlBuilder.append(" and loan.id = :loanId ");
+        }
+        sqlBuilder.append(" order by loan.id,ls.duedate ");
+        Map<String, Object> paramMap = new HashMap<>(5);
         paramMap.put("active", LoanStatus.ACTIVE.getValue());
         paramMap.put("type", AccountingRuleType.ACCRUAL_PERIODIC.getValue());
         paramMap.put("tilldate", formatter.print(tillDate));
         paramMap.put("organisationstartdate", formatter.print(new LocalDate(organisationStartDate)));
+        if (loanId != null) {
+            paramMap.put("loanId", loanId);
+        }
 
         return this.namedParameterJdbcTemplate.query(sqlBuilder.toString(), paramMap, mapper);
     }

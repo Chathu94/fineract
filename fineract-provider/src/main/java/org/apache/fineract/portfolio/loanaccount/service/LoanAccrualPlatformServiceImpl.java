@@ -18,14 +18,6 @@
  */
 package org.apache.fineract.portfolio.loanaccount.service;
 
-import java.util.*;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
-
 import org.apache.fineract.infrastructure.core.domain.FineractPlatformTenant;
 import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
 import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
@@ -33,11 +25,21 @@ import org.apache.fineract.infrastructure.jobs.annotation.CronTarget;
 import org.apache.fineract.infrastructure.jobs.exception.JobExecutionException;
 import org.apache.fineract.infrastructure.jobs.service.JobName;
 import org.apache.fineract.portfolio.loanaccount.data.LoanScheduleAccrualData;
-import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
 public class LoanAccrualPlatformServiceImpl implements LoanAccrualPlatformService {
@@ -104,6 +106,18 @@ public class LoanAccrualPlatformServiceImpl implements LoanAccrualPlatformServic
         }
 
         Collection<LoanScheduleAccrualData> loanScheduleAccrualDatas = this.loanReadPlatformService.retrivePeriodicAccrualData(tilldate);
+        return addPeriodicAccruals(tilldate, loanScheduleAccrualDatas);
+    }
+
+    @Override
+    public String addPeriodicAccruals(final LocalDate tilldate, final Long loanId) {
+
+        if (ThreadLocalContextUtil.getVTReplicaMode()) {
+            this.jdbcTemplate.execute("SET workload = OLAP");
+            jdbcTemplate.execute("USE @primary");
+        }
+
+        Collection<LoanScheduleAccrualData> loanScheduleAccrualDatas = this.loanReadPlatformService.retrivePeriodicAccrualData(tilldate, loanId);
         return addPeriodicAccruals(tilldate, loanScheduleAccrualDatas);
     }
 
