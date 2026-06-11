@@ -1001,6 +1001,12 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         }
         final LoanTransaction waiveInterestTransaction = LoanTransaction.waiver(loan.getOffice(), loan, transactionAmountAsMoney,
                 transactionDate, interestComponent, unrecognizedIncome, DateUtils.getLocalDateTimeOfTenant(), currentUser);
+        
+        boolean waiveFutureInterestOnly = false;
+        if (command.parameterExists("waiveFutureInterestOnly")) {
+            waiveFutureInterestOnly = command.booleanPrimitiveValueOfParameterNamed("waiveFutureInterestOnly");
+        }
+        waiveInterestTransaction.setWaiveFutureInterestOnly(waiveFutureInterestOnly);
         this.businessEventNotifierService.notifyBusinessEventToBeExecuted(BUSINESS_EVENTS.LOAN_WAIVE_INTEREST,
                 constructEntityMap(BUSINESS_ENTITY.LOAN_TRANSACTION, waiveInterestTransaction));
         LocalDate recalculateFrom = null;

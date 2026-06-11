@@ -18,14 +18,9 @@
  */
 package org.apache.fineract.portfolio.loanaccount.domain.transactionprocessor;
 
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
+import org.apache.fineract.infrastructure.core.data.ApiParameterError;
+import org.apache.fineract.infrastructure.core.data.DataValidatorBuilder;
+import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
 import org.apache.fineract.organisation.monetary.domain.Money;
 import org.apache.fineract.portfolio.loanaccount.data.LoanChargePaidDetail;
@@ -41,7 +36,16 @@ import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionType;
 import org.apache.fineract.portfolio.loanaccount.domain.transactionprocessor.impl.CreocoreLoanRepaymentScheduleTransactionProcessor;
 import org.apache.fineract.portfolio.loanaccount.domain.transactionprocessor.impl.HeavensFamilyLoanRepaymentScheduleTransactionProcessor;
 import org.apache.fineract.portfolio.loanaccount.domain.transactionprocessor.impl.InterestPrincipalPenaltyFeesOrderLoanRepaymentScheduleTransactionProcessor;
+import org.joda.time.Days;
 import org.joda.time.LocalDate;
+
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Abstract implementation of {@link LoanRepaymentScheduleTransactionProcessor}
@@ -278,6 +282,10 @@ public abstract class AbstractLoanRepaymentScheduleTransactionProcessor implemen
         }
         List<LoanTransactionToRepaymentScheduleMapping> transactionMappings = new ArrayList<>();
 
+        if (loanTransaction.isInterestWaiver() && loanTransaction.isWaiveFutureInterestOnly()) {
+            return processWaiveFutureInterestOnly(loanTransaction, currency, installments, transactionAmountUnprocessed, transactionMappings);
+        }
+
         for (final LoanRepaymentScheduleInstallment currentInstallment : installments) {
             if (transactionAmountUnprocessed.isGreaterThanZero()) {
                 if (currentInstallment.isNotFullyPaidOff()) {
@@ -303,6 +311,93 @@ public abstract class AbstractLoanRepaymentScheduleTransactionProcessor implemen
             }
 
             installmentIndex++;
+        }
+        loanTransaction.updateLoanTransactionToRepaymentScheduleMappings(transactionMappings);
+        return transactionAmountUnprocessed;
+    }
+
+    private Money processWaiveFutureInterestOnly(final LoanTransaction loanTransaction, final MonetaryCurrency currency,
+            final List<LoanRepaymentScheduleInstallment> installments, Money transactionAmountUnprocessed,
+            List<LoanTransactionToRepaymentScheduleMapping> transactionMappings) {
+
+        final LocalDate transactionDate = loanTransaction.getTransactionDate();
+        Money totalFutureInterest = Money.zero(currency);
+
+        for (final LoanRepaymentScheduleInstallment installment : installments) {
+            if (installment.isNotFullyPaidOff()) {
+                LocalDate fromDate = installment.getFromDate();
+                LocalDate dueDate = installment.getDueDate();
+                if (dueDate.isBefore(transactionDate) || dueDate.isEqual(transactionDate)) {
+                    continue;
+                } else if (fromDate != null && (fromDate.isBefore(transactionDate) || fromDate.isEqual(transactionDate))) {
+                    int totalDays = Days.daysBetween(fromDate, dueDate).getDays();
+                    int futureDays = Days.daysBetween(transactionDate, dueDate).getDays();
+                    if (totalDays > 0 && futureDays > 0) {
+                        Money future = installment.getInterestCharged(currency).multipliedBy(futureDays).dividedBy(totalDays, java.math.RoundingMode.HALF_UP);
+                        Money waived = installment.getInterestWaived(currency);
+                        totalFutureInterest = totalFutureInterest.plus(future.minus(waived));
+                    }
+                } else {
+                    totalFutureInterest = totalFutureInterest.plus(installment.getInterestOutstanding(currency));
+                }
+            }
+        }
+
+        if (transactionAmountUnprocessed.isGreaterThan(totalFutureInterest)) {
+
+            final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
+
+            final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors).resource("loan.waive.interest");
+
+            baseDataValidator.reset().parameter("transactionAmount")
+                    .value(transactionAmountUnprocessed.getAmount())
+                    .failWithCode("amount.exceeds.total.future.interest",
+                            "Waiver amount of " + transactionAmountUnprocessed.getAmount()
+                                    + " exceeds the total available future interest of " + totalFutureInterest.getAmount() + ".");
+
+            if (!dataValidationErrors.isEmpty()) { throw new PlatformApiDataValidationException("validation.msg.validation.errors.exist",
+                    "Validation errors exist.", dataValidationErrors); }
+        }
+
+        for (final LoanRepaymentScheduleInstallment installment : installments) {
+            if (transactionAmountUnprocessed.isGreaterThanZero() && installment.isNotFullyPaidOff()) {
+                LocalDate fromDate = installment.getFromDate();
+                LocalDate dueDate = installment.getDueDate();
+
+                if (dueDate.isBefore(transactionDate) || dueDate.isEqual(transactionDate)) {
+                    continue;
+                }
+
+                Money amountToWaiveInThisInstallment = transactionAmountUnprocessed;
+
+                if (fromDate != null && (fromDate.isBefore(transactionDate) || fromDate.isEqual(transactionDate))) {
+                    int totalDays = Days.daysBetween(fromDate, dueDate).getDays();
+                    int futureDays = Days.daysBetween(transactionDate, dueDate).getDays();
+                    if (totalDays > 0 && futureDays > 0) {
+                        Money future = installment.getInterestCharged(currency).multipliedBy(futureDays).dividedBy(totalDays, java.math.RoundingMode.HALF_UP);
+                        Money waived = installment.getInterestWaived(currency);
+                        Money maxWaivable = future.minus(waived);
+                        if (amountToWaiveInThisInstallment.isGreaterThan(maxWaivable)) {
+                            amountToWaiveInThisInstallment = maxWaivable;
+                        }
+                    } else {
+                        amountToWaiveInThisInstallment = Money.zero(currency);
+                    }
+                }
+
+                if (amountToWaiveInThisInstallment.isGreaterThanZero()) {
+                    Money waived = installment.waiveInterestComponent(transactionDate, amountToWaiveInThisInstallment);
+                    transactionAmountUnprocessed = transactionAmountUnprocessed.minus(waived);
+
+                    Money principalPortion = Money.zero(currency);
+                    Money feeChargesPortion = Money.zero(currency);
+                    Money penaltyChargesPortion = Money.zero(currency);
+                    loanTransaction.updateComponents(principalPortion, waived, feeChargesPortion, penaltyChargesPortion);
+                    if (waived.isGreaterThanZero()) {
+                        transactionMappings.add(LoanTransactionToRepaymentScheduleMapping.createFrom(installment, principalPortion, waived, feeChargesPortion, penaltyChargesPortion));
+                    }
+                }
+            }
         }
         loanTransaction.updateLoanTransactionToRepaymentScheduleMappings(transactionMappings);
         return transactionAmountUnprocessed;
