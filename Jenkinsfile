@@ -10,7 +10,7 @@ pipeline {
 
         stage('Stop') {
             steps {
-                sh 'systemctl stop fineract || true'
+                sh 'sudo systemctl stop fineract || true'
             }
         }
 
@@ -24,7 +24,7 @@ pipeline {
 
         stage('Deploy') {
             steps {
-                sh 'systemctl restart fineract'
+                sh 'sudo systemctl restart fineract'
             }
         }
     }
