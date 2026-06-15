@@ -25,8 +25,8 @@ buildscript {
 //  	 jcenter()
   	 mavenCentral()
   	 maven { url "https://plugins.gradle.org/m2/" }
-      google()
-      gradlePluginPortal()
+    //   google()
+    //   gradlePluginPortal()
       flatDir { dirs("lib") }
   }
 
