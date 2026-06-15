@@ -97,15 +97,15 @@ task fatJar(type: Jar, dependsOn: classes) {
         configurations.runtime.collect { it.isDirectory() ? it : zipTree(it) }
     }
     exclude 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA'
-
-    // Merge Spring handler/schema files instead of excluding duplicates
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 
-    doFirst {
+    // Manually inject merged spring.handlers and spring.schemas
+    from {
         def handlersContent = new StringBuilder()
         def schemasContent = new StringBuilder()
 
-        configurations.runtime.each { file ->
+        configurations.runtime.resolvedConfiguration.resolvedArtifacts.each { artifact ->
+            def file = artifact.file
             if (file.name.endsWith('.jar')) {
                 def zip = new java.util.zip.ZipFile(file)
                 def handlers = zip.getEntry('META-INF/spring.handlers')
@@ -120,9 +120,8 @@ task fatJar(type: Jar, dependsOn: classes) {
         tmpDir.mkdirs()
         new File(tmpDir, 'spring.handlers').text = handlersContent.toString()
         new File(tmpDir, 'spring.schemas').text = schemasContent.toString()
-
-        from(tmpDir) { into 'META-INF' }
-    }
+        tmpDir
+    } into 'META-INF'
 }
 
 //rat {
