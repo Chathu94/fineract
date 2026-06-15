@@ -28,6 +28,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
+import org.apache.fineract.evoke.service.CountHelper;
 import org.apache.commons.lang.StringUtils;
 import org.apache.fineract.accounting.common.AccountingEnumerations;
 import org.apache.fineract.accounting.financialactivityaccount.domain.FinancialActivityAccount;
@@ -102,44 +103,62 @@ public class JournalEntryReadPlatformServiceImpl implements JournalEntryReadPlat
 
         public String schema() {
             StringBuilder sb = new StringBuilder();
-            sb.append(" journalEntry.id as id, glAccount.classification_enum as classification ,")
-                    .append("journalEntry.transaction_id,")
-                    .append(" glAccount.name as glAccountName, glAccount.gl_code as glAccountCode,glAccount.id as glAccountId, ")
+
+            sb.append(" journalEntry.id as id, glAccount.classification_enum as classification, ")
+                    .append(" journalEntry.transaction_id, ")
+                    .append(" glAccount.name as glAccountName, glAccount.gl_code as glAccountCode, glAccount.id as glAccountId, ")
                     .append(" journalEntry.office_id as officeId, office.name as officeName, journalEntry.ref_num as referenceNumber, ")
-                    .append(" journalEntry.manual_entry as manualEntry,journalEntry.entry_date as transactionDate, ")
-                    .append(" journalEntry.type_enum as entryType,journalEntry.amount as amount, journalEntry.transaction_id as transactionId,")
+                    .append(" journalEntry.manual_entry as manualEntry, journalEntry.entry_date as transactionDate, ")
+                    .append(" journalEntry.type_enum as entryType, journalEntry.amount as amount, journalEntry.transaction_id as transactionId, ")
                     .append(" journalEntry.entity_type_enum as entityType, journalEntry.entity_id as entityId, creatingUser.id as createdByUserId, ")
                     .append(" creatingUser.username as createdByUserName, journalEntry.description as comments, ")
                     .append(" journalEntry.created_date as createdDate, journalEntry.reversed as reversed, ")
                     .append(" journalEntry.currency_code as currencyCode, curr.name as currencyName, curr.internationalized_name_code as currencyNameCode, ")
                     .append(" curr.display_symbol as currencyDisplaySymbol, curr.decimal_places as currencyDigits, curr.currency_multiplesof as inMultiplesOf ");
+
             if (associationParametersData.isRunningBalanceRequired()) {
                 sb.append(" ,journalEntry.is_running_balance_calculated as runningBalanceComputed, ")
                         .append(" journalEntry.office_running_balance as officeRunningBalance, ")
                         .append(" journalEntry.organization_running_balance as organizationRunningBalance ");
             }
+
             if (associationParametersData.isTransactionDetailsRequired()) {
-                sb.append(" ,pd.receipt_number as receiptNumber, ").append(" pd.check_number as checkNumber, ")
-                        .append(" pd.account_number as accountNumber, ").append(" pt.value as paymentTypeName, ")
-                        .append(" pd.payment_type_id as paymentTypeId,").append(" pd.bank_number as bankNumber, ")
-                        .append(" pd.routing_code as routingCode, ").append(" note.id as noteId, ")
-                        .append(" note.note as transactionNote, ").append(" lt.transaction_type_enum as loanTransactionType, ")
+                sb.append(" ,COALESCE(pdJournal.receipt_number, pdLoan.receipt_number, pdSavings.receipt_number) as receiptNumber, ")
+                        .append(" COALESCE(pdJournal.check_number, pdLoan.check_number, pdSavings.check_number) as checkNumber, ")
+                        .append(" COALESCE(pdJournal.account_number, pdLoan.account_number, pdSavings.account_number) as accountNumber, ")
+                        .append(" COALESCE(ptJournal.value, ptLoan.value, ptSavings.value) as paymentTypeName, ")
+                        .append(" COALESCE(pdJournal.payment_type_id, pdLoan.payment_type_id, pdSavings.payment_type_id) as paymentTypeId, ")
+                        .append(" COALESCE(pdJournal.bank_number, pdLoan.bank_number, pdSavings.bank_number) as bankNumber, ")
+                        .append(" COALESCE(pdJournal.routing_code, pdLoan.routing_code, pdSavings.routing_code) as routingCode, ")
+                        .append(" COALESCE(noteLoan.id, noteSavings.id) as noteId, ")
+                        .append(" COALESCE(noteLoan.note, noteSavings.note) as transactionNote, ")
+                        .append(" lt.transaction_type_enum as loanTransactionType, ")
                         .append(" st.transaction_type_enum as savingsTransactionType ");
             }
+
             sb.append(" from acc_gl_journal_entry as journalEntry ")
-                    .append(" left join acc_gl_account as glAccount on glAccount.id = journalEntry.account_id")
-                    .append(" left join m_office as office on office.id = journalEntry.office_id")
+                    .append(" left join acc_gl_account as glAccount on glAccount.id = journalEntry.account_id ")
+                    .append(" left join m_office as office on office.id = journalEntry.office_id ")
                     .append(" left join m_appuser as creatingUser on creatingUser.id = journalEntry.createdby_id ")
                     .append(" join m_currency curr on curr.code = journalEntry.currency_code ");
+
             if (associationParametersData.isTransactionDetailsRequired()) {
                 sb.append(" left join m_loan_transaction as lt on journalEntry.loan_transaction_id = lt.id ")
                         .append(" left join m_savings_account_transaction as st on journalEntry.savings_transaction_id = st.id ")
-                        .append(" left join m_payment_detail as pd on lt.payment_detail_id = pd.id or st.payment_detail_id = pd.id or journalEntry.payment_details_id = pd.id")
-                        .append(" left join m_payment_type as pt on pt.id = pd.payment_type_id ")
-                        .append(" left join m_note as note on lt.id = note.loan_transaction_id or st.id = note.savings_account_transaction_id ");
-            }
-            return sb.toString();
 
+                        .append(" left join m_payment_detail as pdJournal on pdJournal.id = journalEntry.payment_details_id ")
+                        .append(" left join m_payment_detail as pdLoan on pdLoan.id = lt.payment_detail_id ")
+                        .append(" left join m_payment_detail as pdSavings on pdSavings.id = st.payment_detail_id ")
+
+                        .append(" left join m_payment_type as ptJournal on ptJournal.id = pdJournal.payment_type_id ")
+                        .append(" left join m_payment_type as ptLoan on ptLoan.id = pdLoan.payment_type_id ")
+                        .append(" left join m_payment_type as ptSavings on ptSavings.id = pdSavings.payment_type_id ")
+
+                        .append(" left join m_note as noteLoan on lt.id = noteLoan.loan_transaction_id ")
+                        .append(" left join m_note as noteSavings on st.id = noteSavings.savings_account_transaction_id ");
+            }
+
+            return sb.toString();
         }
 
         @Override
@@ -243,114 +262,102 @@ public class JournalEntryReadPlatformServiceImpl implements JournalEntryReadPlat
 
     @Override
     public Page<JournalEntryData> retrieveAll(final SearchParameters searchParameters, final Long glAccountId,
-            final Boolean onlyManualEntries, final Date fromDate, final Date toDate, final String transactionId, final Integer entityType,
-            final JournalEntryAssociationParametersData associationParametersData) {
+                                              final Boolean onlyManualEntries, final Date fromDate, final Date toDate, final String transactionId, final Integer entityType,
+                                              final JournalEntryAssociationParametersData associationParametersData) {
 
         GLJournalEntryMapper rm = new GLJournalEntryMapper(associationParametersData);
-        final StringBuilder sqlBuilder = new StringBuilder(200);
-        sqlBuilder.append("select SQL_CALC_FOUND_ROWS ");
+
+        final StringBuilder sqlBuilder = new StringBuilder(500);
+        final StringBuilder countBuilder = new StringBuilder(300);
+
+        sqlBuilder.append("select ");
         sqlBuilder.append(rm.schema());
+
+        countBuilder.append("select count(*) ");
+        countBuilder.append(" from acc_gl_journal_entry as journalEntry ");
 
         final Object[] objectArray = new Object[15];
         int arrayPos = 0;
         String whereClose = " where ";
 
         if (StringUtils.isNotBlank(transactionId)) {
-            sqlBuilder.append(whereClose + " journalEntry.transaction_id = ?");
-            objectArray[arrayPos] = transactionId;
-            arrayPos = arrayPos + 1;
-
+            sqlBuilder.append(whereClose).append(" journalEntry.transaction_id = ?");
+            countBuilder.append(whereClose).append(" journalEntry.transaction_id = ?");
+            objectArray[arrayPos++] = transactionId;
             whereClose = " and ";
         }
 
-        if (entityType != null && entityType != 0 && (onlyManualEntries == null)) {
-
-            sqlBuilder.append(whereClose + " journalEntry.entity_type_enum = ?");
-
-            objectArray[arrayPos] = entityType;
-            arrayPos = arrayPos + 1;
-
+        if (entityType != null && entityType != 0 && onlyManualEntries == null) {
+            sqlBuilder.append(whereClose).append(" journalEntry.entity_type_enum = ?");
+            countBuilder.append(whereClose).append(" journalEntry.entity_type_enum = ?");
+            objectArray[arrayPos++] = entityType;
             whereClose = " and ";
         }
 
         if (searchParameters.isOfficeIdPassed()) {
-            sqlBuilder.append(whereClose + " journalEntry.office_id = ?");
-            objectArray[arrayPos] = searchParameters.getOfficeId();
-            arrayPos = arrayPos + 1;
-
+            sqlBuilder.append(whereClose).append(" journalEntry.office_id = ?");
+            countBuilder.append(whereClose).append(" journalEntry.office_id = ?");
+            objectArray[arrayPos++] = searchParameters.getOfficeId();
             whereClose = " and ";
         }
 
         if (searchParameters.isCurrencyCodePassed()) {
-            sqlBuilder.append(whereClose + " journalEntry.currency_code = ?");
-            objectArray[arrayPos] = searchParameters.getCurrencyCode();
-            arrayPos = arrayPos + 1;
-
+            sqlBuilder.append(whereClose).append(" journalEntry.currency_code = ?");
+            countBuilder.append(whereClose).append(" journalEntry.currency_code = ?");
+            objectArray[arrayPos++] = searchParameters.getCurrencyCode();
             whereClose = " and ";
         }
 
         if (glAccountId != null && glAccountId != 0) {
-            sqlBuilder.append(whereClose + " journalEntry.account_id = ?");
-            objectArray[arrayPos] = glAccountId;
-            arrayPos = arrayPos + 1;
-
+            sqlBuilder.append(whereClose).append(" journalEntry.account_id = ?");
+            countBuilder.append(whereClose).append(" journalEntry.account_id = ?");
+            objectArray[arrayPos++] = glAccountId;
             whereClose = " and ";
         }
 
         if (fromDate != null || toDate != null) {
             final DateFormat df = new SimpleDateFormat("yyyy-MM-dd");
-            String fromDateString = null;
-            String toDateString = null;
+
             if (fromDate != null && toDate != null) {
-                sqlBuilder.append(whereClose + " journalEntry.entry_date between ? and ? ");
-
+                sqlBuilder.append(whereClose).append(" journalEntry.entry_date between ? and ? ");
+                countBuilder.append(whereClose).append(" journalEntry.entry_date between ? and ? ");
+                objectArray[arrayPos++] = df.format(fromDate);
+                objectArray[arrayPos++] = df.format(toDate);
                 whereClose = " and ";
-
-                fromDateString = df.format(fromDate);
-                toDateString = df.format(toDate);
-                objectArray[arrayPos] = fromDateString;
-                arrayPos = arrayPos + 1;
-                objectArray[arrayPos] = toDateString;
-                arrayPos = arrayPos + 1;
             } else if (fromDate != null) {
-                sqlBuilder.append(whereClose + " journalEntry.entry_date >= ? ");
-                fromDateString = df.format(fromDate);
-                objectArray[arrayPos] = fromDateString;
-                arrayPos = arrayPos + 1;
+                sqlBuilder.append(whereClose).append(" journalEntry.entry_date >= ? ");
+                countBuilder.append(whereClose).append(" journalEntry.entry_date >= ? ");
+                objectArray[arrayPos++] = df.format(fromDate);
                 whereClose = " and ";
-
-            } else if (toDate != null) {
-                sqlBuilder.append(whereClose + " journalEntry.entry_date <= ? ");
-                toDateString = df.format(toDate);
-                objectArray[arrayPos] = toDateString;
-                arrayPos = arrayPos + 1;
-
+            } else {
+                sqlBuilder.append(whereClose).append(" journalEntry.entry_date <= ? ");
+                countBuilder.append(whereClose).append(" journalEntry.entry_date <= ? ");
+                objectArray[arrayPos++] = df.format(toDate);
                 whereClose = " and ";
             }
         }
 
-        if (onlyManualEntries != null) {
-            if (onlyManualEntries) {
-                sqlBuilder.append(whereClose + " journalEntry.manual_entry = 1");
-
-                whereClose = " and ";
-            }
+        if (onlyManualEntries != null && onlyManualEntries) {
+            sqlBuilder.append(whereClose).append(" journalEntry.manual_entry = 1");
+            countBuilder.append(whereClose).append(" journalEntry.manual_entry = 1");
+            whereClose = " and ";
         }
 
         if (searchParameters.isLoanIdPassed()) {
-            sqlBuilder.append(whereClose + " journalEntry.loan_transaction_id  in (select id from m_loan_transaction where loan_id = ?)");
-            objectArray[arrayPos] = searchParameters.getLoanId();
-            arrayPos = arrayPos + 1;
-
+            sqlBuilder.append(whereClose)
+                    .append(" journalEntry.loan_transaction_id in (select id from m_loan_transaction where loan_id = ?)");
+            countBuilder.append(whereClose)
+                    .append(" journalEntry.loan_transaction_id in (select id from m_loan_transaction where loan_id = ?)");
+            objectArray[arrayPos++] = searchParameters.getLoanId();
             whereClose = " and ";
         }
-        if (searchParameters.isSavingsIdPassed()) {
-            sqlBuilder
-                    .append(whereClose
-                            + " journalEntry.savings_transaction_id in (select id from m_savings_account_transaction where savings_account_id = ?)");
-            objectArray[arrayPos] = searchParameters.getSavingsId();
-            arrayPos = arrayPos + 1;
 
+        if (searchParameters.isSavingsIdPassed()) {
+            sqlBuilder.append(whereClose)
+                    .append(" journalEntry.savings_transaction_id in (select id from m_savings_account_transaction where savings_account_id = ?)");
+            countBuilder.append(whereClose)
+                    .append(" journalEntry.savings_transaction_id in (select id from m_savings_account_transaction where savings_account_id = ?)");
+            objectArray[arrayPos++] = searchParameters.getSavingsId();
             whereClose = " and ";
         }
 
@@ -366,27 +373,33 @@ public class JournalEntryReadPlatformServiceImpl implements JournalEntryReadPlat
 
         if (searchParameters.isLimited()) {
             sqlBuilder.append(" limit ").append(searchParameters.getLimit());
+
             if (searchParameters.isOffset()) {
                 sqlBuilder.append(" offset ").append(searchParameters.getOffset());
             }
         }
 
         final Object[] finalObjectArray = Arrays.copyOf(objectArray, arrayPos);
-        final String sqlCountRows = "SELECT FOUND_ROWS()";
-        return this.paginationHelper.fetchPage(this.jdbcTemplate, sqlCountRows, sqlBuilder.toString(), finalObjectArray, rm);
+
+        final String sqlCountRows = CountHelper.countQueryResult(sqlBuilder.toString());
+
+        return this.paginationHelper.fetchPageVitess(
+                this.jdbcTemplate,
+                sqlCountRows,
+                sqlBuilder.toString(),
+                finalObjectArray,
+                rm
+        );
     }
 
     @Override
     public JournalEntryData retrieveGLJournalEntryById(final long glJournalEntryId,
-            JournalEntryAssociationParametersData associationParametersData) {
+                                                       JournalEntryAssociationParametersData associationParametersData) {
         try {
-
             final GLJournalEntryMapper rm = new GLJournalEntryMapper(associationParametersData);
             final String sql = "select " + rm.schema() + " where journalEntry.id = ?";
 
-            final JournalEntryData glJournalEntryData = this.jdbcTemplate.queryForObject(sql, rm, new Object[] { glJournalEntryId });
-
-            return glJournalEntryData;
+            return this.jdbcTemplate.queryForObject(sql, rm, new Object[] { glJournalEntryId });
         } catch (final EmptyResultDataAccessException e) {
             throw new JournalEntriesNotFoundException(glJournalEntryId);
         }
@@ -518,13 +531,25 @@ public class JournalEntryReadPlatformServiceImpl implements JournalEntryReadPlat
 
     @Override
     public Page<JournalEntryData> retrieveJournalEntriesByEntityId(String transactionId, Long entityId, Integer entityType) {
-        JournalEntryAssociationParametersData associationParametersData = new JournalEntryAssociationParametersData(true,
-                true);
+        JournalEntryAssociationParametersData associationParametersData = new JournalEntryAssociationParametersData(true, true);
+
         try {
             final GLJournalEntryMapper rm = new GLJournalEntryMapper(associationParametersData);
-            final String sql = "select " + rm.schema() + " where journalEntry.transaction_id = ? and journalEntry.entity_id = ? and journalEntry.entity_type_enum = ?";
-            final String sqlCountRows = "SELECT FOUND_ROWS()";
-            Object[] data = {transactionId, entityId, entityType} ;
+
+            final String sql = "select " + rm.schema()
+                    + " where journalEntry.transaction_id = ? "
+                    + " and journalEntry.entity_id = ? "
+                    + " and journalEntry.entity_type_enum = ? "
+                    + " order by journalEntry.entry_date, journalEntry.id ";
+
+            final String sqlCountRows = "select count(*) "
+                    + " from acc_gl_journal_entry journalEntry "
+                    + " where journalEntry.transaction_id = ? "
+                    + " and journalEntry.entity_id = ? "
+                    + " and journalEntry.entity_type_enum = ? ";
+
+            Object[] data = { transactionId, entityId, entityType };
+
             return this.paginationHelper.fetchPage(this.jdbcTemplate, sqlCountRows, sql, data, rm);
         } catch (final EmptyResultDataAccessException e) {
             throw new JournalEntriesNotFoundException(entityId);

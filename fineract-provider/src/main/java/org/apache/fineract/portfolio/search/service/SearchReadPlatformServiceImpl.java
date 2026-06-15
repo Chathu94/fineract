@@ -79,7 +79,142 @@ public class SearchReadPlatformServiceImpl implements SearchReadPlatformService 
        	 params.addValue("search", searchConditions.getSearchQuery());
        	}else{
        	 params.addValue("search", "%" + searchConditions.getSearchQuery() + "%");
-       	}  
+       	}
+        if (null == searchConditions.getSearchResource()) {
+            return this.namedParameterjdbcTemplate.query("WITH offices AS ( " +
+                    "    SELECT id, name " +
+                    "    FROM m_office " +
+                    "    WHERE hierarchy LIKE :hierarchy " +
+                    "), " +
+                    "clients_in_office AS ( " +
+                    "    SELECT c.* " +
+                    "    FROM m_client c " +
+                    "    WHERE c.office_id IS NULL " +
+                    "       OR EXISTS ( " +
+                    "           SELECT 1 " +
+                    "           FROM offices o " +
+                    "           WHERE o.id = c.office_id " +
+                    "       ) " +
+                    "), " +
+                    "clients AS ( " +
+                    "    SELECT " +
+                    "        'CLIENT' AS entityType, " +
+                    "        c.id AS entityId, " +
+                    "        c.display_name AS entityName, " +
+                    "        c.external_id AS entityExternalId, " +
+                    "        c.account_no AS entityAccountNo, " +
+                    "        c.office_id AS parentId, " +
+                    "        o.name AS parentName, " +
+                    "        c.mobile_no AS entityMobileNo, " +
+                    "        c.status_enum AS entityStatusEnum, " +
+                    "        NULL AS parentType " +
+                    "    FROM clients_in_office c " +
+                    "    LEFT JOIN offices o ON o.id = c.office_id " +
+                    "    WHERE c.account_no LIKE :search " +
+                    "       OR c.display_name LIKE :search " +
+                    "       OR c.external_id LIKE :search " +
+                    "       OR c.mobile_no LIKE :search " +
+                    "), " +
+                    "loans AS ( " +
+                    "    SELECT " +
+                    "        'LOAN' AS entityType, " +
+                    "        l.id AS entityId, " +
+                    "        pl.name AS entityName, " +
+                    "        l.external_id AS entityExternalId, " +
+                    "        l.account_no AS entityAccountNo, " +
+                    "        IFNULL(c.id, g.id) AS parentId, " +
+                    "        IFNULL(c.display_name, g.display_name) AS parentName, " +
+                    "        NULL AS entityMobileNo, " +
+                    "        l.loan_status_id AS entityStatusEnum, " +
+                    "        IF(g.id IS NULL, 'client', 'group') AS parentType " +
+                    "    FROM m_loan l " +
+                    "    LEFT JOIN clients_in_office c ON l.client_id = c.id " +
+                    "    LEFT JOIN m_group g ON l.group_id = g.id " +
+                    "    LEFT JOIN m_product_loan pl ON pl.id = l.product_id " +
+                    "    WHERE l.account_no LIKE :search " +
+                    "       OR l.external_id LIKE :search " +
+                    "), " +
+                    "savings AS ( " +
+                    "    SELECT " +
+                    "        'SAVING' AS entityType, " +
+                    "        s.id AS entityId, " +
+                    "        sp.name AS entityName, " +
+                    "        s.external_id AS entityExternalId, " +
+                    "        s.account_no AS entityAccountNo, " +
+                    "        IFNULL(c.id, g.id) AS parentId, " +
+                    "        IFNULL(c.display_name, g.display_name) AS parentName, " +
+                    "        NULL AS entityMobileNo, " +
+                    "        s.status_enum AS entityStatusEnum, " +
+                    "        IF(g.id IS NULL, 'client', 'group') AS parentType " +
+                    "    FROM m_savings_account s " +
+                    "    LEFT JOIN clients_in_office c ON s.client_id = c.id " +
+                    "    LEFT JOIN m_group g ON s.group_id = g.id " +
+                    "    LEFT JOIN m_savings_product sp ON sp.id = s.product_id " +
+                    "    WHERE s.account_no LIKE :search " +
+                    "       OR s.external_id LIKE :search " +
+                    "), " +
+                    "share AS ( " +
+                    "    SELECT " +
+                    "        'SHARE' AS entityType, " +
+                    "        s.id AS entityId, " +
+                    "        sp.name AS entityName, " +
+                    "        s.external_id AS entityExternalId, " +
+                    "        s.account_no AS entityAccountNo, " +
+                    "        c.id AS parentId, " +
+                    "        c.display_name AS parentName, " +
+                    "        NULL AS entityMobileNo, " +
+                    "        s.status_enum AS entityStatusEnum, " +
+                    "        'client' AS parentType " +
+                    "    FROM m_share_account s " +
+                    "    LEFT JOIN clients_in_office c ON s.client_id = c.id " +
+                    "    LEFT JOIN m_share_product sp ON sp.id = s.product_id " +
+                    "    WHERE s.account_no LIKE :search " +
+                    "       OR s.external_id LIKE :search " +
+                    "), " +
+                    "client_ids AS ( " +
+                    "    SELECT " +
+                    "        'CLIENTIDENTIFIER' AS entityType, " +
+                    "        ci.id AS entityId, " +
+                    "        ci.document_key AS entityName, " +
+                    "        NULL AS entityExternalId, " +
+                    "        NULL AS entityAccountNo, " +
+                    "        c.id AS parentId, " +
+                    "        c.display_name AS parentName, " +
+                    "        NULL AS entityMobileNo, " +
+                    "        c.status_enum AS entityStatusEnum, " +
+                    "        NULL AS parentType " +
+                    "    FROM m_client_identifier ci " +
+                    "    JOIN clients_in_office c ON ci.client_id = c.id " +
+                    "    JOIN offices o ON o.id = c.office_id " +
+                    "    WHERE ci.document_key LIKE :search " +
+                    "), " +
+                    "groups AS ( " +
+                    "    SELECT " +
+                    "        IF(g.level_id = 1, 'CENTER', 'GROUP') AS entityType, " +
+                    "        g.id AS entityId, " +
+                    "        g.display_name AS entityName, " +
+                    "        g.external_id AS entityExternalId, " +
+                    "        g.account_no AS entityAccountNo, " +
+                    "        g.office_id AS parentId, " +
+                    "        o.name AS parentName, " +
+                    "        NULL AS entityMobileNo, " +
+                    "        g.status_enum AS entityStatusEnum, " +
+                    "        NULL AS parentType " +
+                    "    FROM m_group g " +
+                    "    JOIN offices o ON o.id = g.office_id " +
+                    "    WHERE g.account_no LIKE :search " +
+                    "       OR g.display_name LIKE :search " +
+                    "       OR g.external_id LIKE :search " +
+                    "       OR g.id LIKE :search " +
+                    ") " +
+                    "SELECT * FROM clients " +
+                    "UNION ALL SELECT * FROM loans " +
+                    "UNION ALL SELECT * FROM savings " +
+                    "UNION ALL SELECT * FROM share " +
+                    "UNION ALL SELECT * FROM client_ids " +
+                    "UNION ALL SELECT * FROM groups " +
+                    "LIMIT 20", params, rm);
+        }
         return this.namedParameterjdbcTemplate.query(rm.searchSchema(searchConditions), params, rm);
     }
 
@@ -140,11 +275,11 @@ public class SearchReadPlatformServiceImpl implements SearchReadPlatformService 
                 sql.append(groupMatchSql).append(union);
             }
 
-            
-
             sql.replace(sql.lastIndexOf(union), sql.length(), "");
 
-            // remove last occurrence of "union all" string
+            // add limit
+            sql.append(" limit 20");
+
             return sql.toString();
         }
 

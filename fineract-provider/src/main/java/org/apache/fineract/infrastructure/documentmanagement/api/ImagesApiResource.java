@@ -43,6 +43,7 @@ import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.documentmanagement.contentrepository.ContentRepositoryUtils;
 import org.apache.fineract.infrastructure.documentmanagement.contentrepository.ContentRepositoryUtils.IMAGE_FILE_EXTENSION;
 import org.apache.fineract.infrastructure.documentmanagement.data.ImageData;
+import org.apache.fineract.infrastructure.documentmanagement.domain.StorageType;
 import org.apache.fineract.infrastructure.documentmanagement.exception.InvalidEntityTypeForImageManagementException;
 import org.apache.fineract.infrastructure.documentmanagement.service.ImageReadPlatformService;
 import org.apache.fineract.infrastructure.documentmanagement.service.ImageWritePlatformService;
@@ -127,7 +128,7 @@ public class ImagesApiResource {
     @Produces({ MediaType.TEXT_PLAIN })
     public Response retrieveImage(@PathParam("entity") final String entityName, @PathParam("entityId") final Long entityId,
             @QueryParam("maxWidth") final Integer maxWidth, @QueryParam("maxHeight") final Integer maxHeight,
-            @QueryParam("output") final String output) {
+            @QueryParam("output") final String output, @QueryParam("quality") final String quality) {
         ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
         validateEntityTypeforImage(entityName);
         if (ENTITY_TYPE_FOR_IMAGES.CLIENTS.toString().equalsIgnoreCase(entityName)) {
@@ -140,6 +141,18 @@ public class ImagesApiResource {
                 maxWidth, maxHeight, output); }
 
         final ImageData imageData = this.imageReadPlatformService.retrieveImage(entityName, entityId);
+
+        if (output != null && output.equals("fli_resize") && imageData.storageType().equals(StorageType.S3)) {
+            String resizedImageURL = "https://dq4uh6yx8i2sm.cloudfront.net/resize?key=" + imageData.location() + "&format=webp&q=" + (quality != null ? quality : "50");
+            if (maxWidth != null) {
+                resizedImageURL = resizedImageURL + "&w=" + maxWidth;
+            } else if (maxHeight != null) {
+                resizedImageURL = resizedImageURL + "&h=" + maxHeight;
+            } else {
+                resizedImageURL = resizedImageURL + "&w=400";
+            }
+            return Response.ok(resizedImageURL).build();
+        }
 
         // TODO: Need a better way of determining image type
         String imageDataURISuffix = ContentRepositoryUtils.IMAGE_DATA_URI_SUFFIX.JPEG.getValue();

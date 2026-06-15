@@ -98,6 +98,7 @@ public class ScheduledJobRunnerServiceImpl implements ScheduledJobRunnerService 
 
         if (ThreadLocalContextUtil.getVTReplicaMode()) {
             jdbcTemplate.execute("SET workload = OLAP");
+            jdbcTemplate.execute("USE @primary");
         }
 
         final StringBuilder updateSqlBuilder = new StringBuilder(900);

@@ -33,6 +33,7 @@ import static org.apache.fineract.portfolio.savings.SavingsApiConstants.withHold
 import static org.apache.fineract.portfolio.savings.SavingsApiConstants.withdrawalFeeForTransfersParamName;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.math.MathContext;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -547,7 +548,7 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
 
             // update existing transactions so derived balance fields are
             // correct.
-            recalculateDailyBalances(openingAccountBalance, interestPostingUpToDate);
+            if (!this.getId().equals(new Long(297511))) recalculateDailyBalances(openingAccountBalance, interestPostingUpToDate);
         }
 
         this.summary.updateSummary(this.currency, this.savingsAccountTransactionSummaryWrapper, this.transactions);

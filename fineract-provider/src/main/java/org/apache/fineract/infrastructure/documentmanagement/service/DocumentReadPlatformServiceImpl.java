@@ -59,7 +59,7 @@ public class DocumentReadPlatformServiceImpl implements DocumentReadPlatformServ
         // TODO verify if the entities are valid and a user
         // has data
         // scope for the particular entities
-        final DocumentMapper mapper = new DocumentMapper(true, true);
+        final DocumentMapper mapper = new DocumentMapper(false, true);
         final String sql = "select " + mapper.schema() + " order by d.id";
         return this.jdbcTemplate.query(sql, mapper, new Object[] { entityType, entityId });
     }

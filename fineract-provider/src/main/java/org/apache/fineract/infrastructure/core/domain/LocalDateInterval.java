@@ -58,7 +58,7 @@ public class LocalDateInterval {
     }
 
     public boolean contains(final LocalDateInterval interval) {
-        return contains(interval.startDate) && contains(interval.endDate);
+        return interval.startDate != null && contains(interval.startDate) && interval.endDate != null && contains(interval.endDate);
     }
 
     public boolean contains(final LocalDate target) {

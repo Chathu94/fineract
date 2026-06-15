@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.infrastructure.dataqueries.service;
 
+import java.sql.ResultSetMetaData;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -56,35 +57,33 @@ public class GenericDataServiceImpl implements GenericDataService {
     @Override
     public GenericResultsetData fillGenericResultSet(final String sql) {
 
-        final SqlRowSet rs = this.jdbcTemplate.queryForRowSet(sql);
+        return this.jdbcTemplate.query(sql, rs -> {
 
-        final List<ResultsetColumnHeaderData> columnHeaders = new ArrayList<>();
-        final List<ResultsetRowData> resultsetDataRows = new ArrayList<>();
+            final List<ResultsetColumnHeaderData> columnHeaders = new ArrayList<>();
+            final List<ResultsetRowData> resultsetDataRows = new ArrayList<>();
 
-        final SqlRowSetMetaData rsmd = rs.getMetaData();
+            final ResultSetMetaData rsmd = rs.getMetaData();
+            final int columnCount = rsmd.getColumnCount();
 
-        for (int i = 0; i < rsmd.getColumnCount(); i++) {
+            for (int i = 1; i <= columnCount; i++) {
+                final String columnName = rsmd.getColumnLabel(i);
+                final String columnType = rsmd.getColumnTypeName(i);
 
-            final String columnName = rsmd.getColumnName(i + 1);
-            final String columnType = rsmd.getColumnTypeName(i + 1);
-
-            final ResultsetColumnHeaderData columnHeader = ResultsetColumnHeaderData.basic(columnName, columnType);
-            columnHeaders.add(columnHeader);
-        }
-
-        while (rs.next()) {
-            final List<String> columnValues = new ArrayList<>();
-            for (int i = 0; i < rsmd.getColumnCount(); i++) {
-                final String columnName = rsmd.getColumnName(i + 1);
-                final String columnValue = rs.getString(columnName);
-                columnValues.add(columnValue);
+                columnHeaders.add(ResultsetColumnHeaderData.basic(columnName, columnType));
             }
 
-            final ResultsetRowData resultsetDataRow = ResultsetRowData.create(columnValues);
-            resultsetDataRows.add(resultsetDataRow);
-        }
+            while (rs.next()) {
+                final List<String> columnValues = new ArrayList<>();
 
-        return new GenericResultsetData(columnHeaders, resultsetDataRows);
+                for (int i = 1; i <= columnCount; i++) {
+                    columnValues.add(rs.getString(i));
+                }
+
+                resultsetDataRows.add(ResultsetRowData.create(columnValues));
+            }
+
+            return new GenericResultsetData(columnHeaders, resultsetDataRows);
+        });
     }
 
     @Override

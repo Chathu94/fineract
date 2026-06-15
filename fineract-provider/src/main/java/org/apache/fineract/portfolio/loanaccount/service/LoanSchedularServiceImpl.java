@@ -126,6 +126,7 @@ public class LoanSchedularServiceImpl implements LoanSchedularService {
 	public void recalculateInterest() throws JobExecutionException {
 		if (ThreadLocalContextUtil.getVTReplicaMode()) {
 			jdbcTemplate.execute("SET workload = OLAP");
+			jdbcTemplate.execute("USE @primary");
 		}
 
 		Integer maxNumberOfRetries = ThreadLocalContextUtil.getTenant()

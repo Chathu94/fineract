@@ -143,13 +143,14 @@ public class SelfClientsApiResource {
 	public Response retrieveImage(@PathParam("clientId") final Long clientId,
 			@QueryParam("maxWidth") final Integer maxWidth,
 			@QueryParam("maxHeight") final Integer maxHeight,
-			@QueryParam("output") final String output) {
+			@QueryParam("output") final String output,
+			@QueryParam("quality") final String quality) {
 		ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
 
 		validateAppuserClientsMapping(clientId);
 
 		return this.imagesApiResource.retrieveImage("clients", clientId,
-				maxWidth, maxHeight, output);
+				maxWidth, maxHeight, output, quality);
 	}
 
 	@GET
