@@ -90,7 +90,9 @@ task fatJar(type: Jar, dependsOn: classes) {
     baseName = project.name
     classifier = 'all'
     manifest {
-        from jar.manifest
+        attributes(
+            'Main-Class': 'org.apache.fineract.ServerApplication'
+        )
     }
     from sourceSets.main.output
     from {
@@ -99,7 +101,6 @@ task fatJar(type: Jar, dependsOn: classes) {
     exclude 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 
-    // Manually inject merged spring.handlers and spring.schemas
     from {
         def handlersContent = new StringBuilder()
         def schemasContent = new StringBuilder()
