@@ -8,6 +8,12 @@ pipeline {
             }
         }
 
+        stage('Stop') {
+            steps {
+                sh 'systemctl stop fineract || true'
+            }
+        }
+
         stage('Build') {
             steps {
                 dir('fineract-provider') {
