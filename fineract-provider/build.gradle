@@ -86,6 +86,11 @@ openjpa {
     enforcePropertyRestrictions = true
 }
 
+task copyDeps(type: Copy, dependsOn: jar) {
+    from configurations.runtime
+    into "${buildDir}/libs/lib"
+}
+
 task fatJar(type: Jar, dependsOn: classes) {
     baseName = project.name
     classifier = 'all'
