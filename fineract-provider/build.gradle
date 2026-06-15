@@ -439,8 +439,8 @@ buildscript {
             dirs("lib")
         }
         mavenCentral()
-        google()
-        gradlePluginPortal()
+        // google()
+        // gradlePluginPortal()
     }
 
     dependencies {
