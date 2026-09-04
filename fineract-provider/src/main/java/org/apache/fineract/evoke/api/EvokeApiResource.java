@@ -18,21 +18,14 @@
  */
 package org.apache.fineract.evoke.api;
 
-import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
-import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
-import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
-import org.apache.fineract.organisation.teller.data.CashierData;
-import org.apache.fineract.organisation.teller.service.TellerManagementReadPlatformService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.lang.management.ManagementFactory;
+
+import com.sun.management.OperatingSystemMXBean;
 
 @Path("/evoke")
 @Consumes({MediaType.APPLICATION_JSON})
@@ -40,30 +33,27 @@ import java.net.URL;
 @Component
 @Scope("singleton")
 public class EvokeApiResource {
-    private final RoutingDataSource dataSource;
-
-    @Autowired
-    public EvokeApiResource(final RoutingDataSource dataSource) {
-        this.dataSource = dataSource;
-    }
 
     @GET
     @Path("/health")
-    public String health(@QueryParam("checkTablet") final Boolean checkTablet) throws MalformedURLException {
-        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, true);
-        if (checkTablet != null && checkTablet) {
-            URL url = new URL("http://localhost:8080/debug/health");
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream(), "UTF-8"))) {
-                for (String line; (line = reader.readLine()) != null;) {
-                    if (line.contains("ok")) {
-                        return "OK";
-                    }
-                }
-            } catch (Exception e) {
-                throw new RuntimeException("Vitess is not healthy");
+    public String health(@QueryParam("check-cpu") final Boolean checkCpu) {
+
+        if (Boolean.TRUE.equals(checkCpu)) {
+            OperatingSystemMXBean osBean =
+                    (OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean();
+
+            double cpuLoad = osBean.getSystemCpuLoad();
+
+            if (cpuLoad * 100 > 80.0) {
+                throw new RuntimeException(
+                        String.format(
+                                "Instance CPU usage is too high: %.2f%%",
+                                cpuLoad * 100
+                        )
+                );
             }
-            throw new RuntimeException("Vitess is not healthy");
         }
+
         return "OK";
     }
 }
