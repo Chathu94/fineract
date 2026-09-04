@@ -44,7 +44,7 @@ public class EvokeApiResource {
 
             double cpuLoad = osBean.getSystemCpuLoad();
 
-            if (cpuLoad * 100 > 80.0) {
+            if (cpuLoad * 100 > 90.0) {
                 throw new RuntimeException(
                         String.format(
                                 "Instance CPU usage is too high: %.2f%%",
