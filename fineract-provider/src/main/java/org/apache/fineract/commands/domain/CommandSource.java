@@ -276,4 +276,8 @@ public class CommandSource extends AbstractPersistableCustom<Long> {
         this.transactionId = transactionId;
     }
 
+    public AppUser getMaker() {
+        return this.maker;
+    }
+
 }

@@ -96,7 +96,7 @@ public class PortfolioCommandSourceWritePlatformServiceImpl implements Portfolio
                 wrapper.getTransactionId(), wrapper.getHref(), wrapper.getProductId(),wrapper.getCreditBureauId(),wrapper.getOrganisationCreditBureauId());
         while (numberOfRetries <= maxNumberOfRetries) {
             try {
-                result = this.processAndLogCommandService.processAndLogCommand(wrapper, command, isApprovedByChecker);
+                result = this.processAndLogCommandService.processAndLogCommand(wrapper, command, isApprovedByChecker, false);
                 numberOfRetries = maxNumberOfRetries + 1;
             } catch (CannotAcquireLockException | ObjectOptimisticLockingFailureException exception) {
                 logger.info("The following command " + command.json() + " has been retried  " + numberOfRetries + " time(s)");
@@ -131,7 +131,7 @@ public class PortfolioCommandSourceWritePlatformServiceImpl implements Portfolio
     }
 
     @Override
-    public CommandProcessingResult approveEntry(final Long makerCheckerId) {
+    public CommandProcessingResult approveEntry(final Long makerCheckerId, final Boolean makerIsChecker) {
 
         final CommandSource commandSourceInput = validateMakerCheckerTransaction(makerCheckerId);
         validateIsUpdateAllowed();
@@ -150,7 +150,7 @@ public class PortfolioCommandSourceWritePlatformServiceImpl implements Portfolio
                 commandSourceInput.getOrganisationCreditBureauId());
 
         final boolean makerCheckerApproval = true;
-        return this.processAndLogCommandService.processAndLogCommand(wrapper, command, makerCheckerApproval);
+        return this.processAndLogCommandService.processAndLogCommand(wrapper, command, makerCheckerApproval, makerIsChecker);
     }
 
     @Transactional
