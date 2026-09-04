@@ -57,13 +57,17 @@ public class SpringSecurityPlatformSecurityContext implements PlatformSecurityCo
         }
     };
 
+    private static final ThreadLocal<AppUser> MAKER = new ThreadLocal<>();
+
     @Autowired
     SpringSecurityPlatformSecurityContext(final ConfigurationDomainService configurationDomainService) {
         this.configurationDomainService = configurationDomainService;
     }
 
     @Override
-    public AppUser authenticatedUser() {
+    public AppUser authenticatedUser(Boolean overrideMaker) {
+
+        if (!overrideMaker && MAKER.get() != null) return MAKER.get();
 
         AppUser currentUser = null;
         final SecurityContext context = SecurityContextHolder.getContext();
@@ -82,7 +86,28 @@ public class SpringSecurityPlatformSecurityContext implements PlatformSecurityCo
     }
 
     @Override
-    public AppUser getAuthenticatedUserIfPresent() {
+    public AppUser authenticatedUser() {
+        return this.authenticatedUser(false);
+    }
+
+    @Override
+    public AppUser maker() {
+        return MAKER.get();
+    }
+
+    @Override
+    public void setMaker(AppUser maker) {
+        if (maker == null) {
+            MAKER.remove();
+        } else {
+            MAKER.set(maker);
+        }
+    }
+
+    @Override
+    public AppUser getAuthenticatedUserIfPresent(Boolean overrideMaker) {
+
+        if (!overrideMaker && MAKER.get() != null) return MAKER.get();
 
         AppUser currentUser = null;
         final SecurityContext context = SecurityContextHolder.getContext();
@@ -101,7 +126,14 @@ public class SpringSecurityPlatformSecurityContext implements PlatformSecurityCo
     }
 
     @Override
-    public AppUser authenticatedUser(CommandWrapper commandWrapper) {
+    public AppUser getAuthenticatedUserIfPresent() {
+        return this.getAuthenticatedUserIfPresent(false);
+    }
+
+    @Override
+    public AppUser authenticatedUser(CommandWrapper commandWrapper, Boolean overrideMaker) {
+
+        if (!overrideMaker && MAKER.get() != null) return MAKER.get();
 
         AppUser currentUser = null;
         final SecurityContext context = SecurityContextHolder.getContext();
@@ -121,10 +153,17 @@ public class SpringSecurityPlatformSecurityContext implements PlatformSecurityCo
 
     }
 
+
+
+    @Override
+    public AppUser authenticatedUser(CommandWrapper commandWrapper) {
+        return this.authenticatedUser(commandWrapper, false);
+    }
+
     @Override
     public void validateAccessRights(final String resourceOfficeHierarchy) {
 
-        final AppUser user = authenticatedUser();
+        final AppUser user = authenticatedUser(true);
         final String userOfficeHierarchy = user.getOffice().getHierarchy();
 
         if (!resourceOfficeHierarchy.startsWith(userOfficeHierarchy)) { throw new NoAuthorizationException(
@@ -134,7 +173,7 @@ public class SpringSecurityPlatformSecurityContext implements PlatformSecurityCo
 
     @Override
     public String officeHierarchy() {
-        return authenticatedUser().getOffice().getHierarchy();
+        return authenticatedUser(true).getOffice().getHierarchy();
     }
 
     @Override

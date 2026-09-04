@@ -31,6 +31,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriInfo;
@@ -125,12 +126,12 @@ public class MakercheckersApiResource {
     @Path("{auditId}")
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
-    public String approveMakerCheckerEntry(@PathParam("auditId") final Long auditId, @QueryParam("command") final String commandParam) {
+    public String approveMakerCheckerEntry(@PathParam("auditId") final Long auditId, @QueryParam("command") final String commandParam, @DefaultValue("false") @QueryParam("makerIsChecker") final Boolean makerIsChecker) {
         ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
 
         CommandProcessingResult result = null;
         if (is(commandParam, "approve")) {
-            result = this.writePlatformService.approveEntry(auditId);
+            result = this.writePlatformService.approveEntry(auditId, makerIsChecker);
         } else if (is(commandParam, "reject")) {
             final Long id = this.writePlatformService.rejectEntry(auditId);
             result = CommandProcessingResult.commandOnlyResult(id);
