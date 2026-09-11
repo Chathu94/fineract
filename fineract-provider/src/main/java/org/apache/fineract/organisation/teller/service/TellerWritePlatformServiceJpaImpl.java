@@ -18,7 +18,7 @@
  */
 package org.apache.fineract.organisation.teller.service;
 
-import java.util.Date;
+import java.math.BigInteger;
 import java.util.Map;
 import java.util.Set;
 
@@ -434,7 +434,7 @@ public class TellerWritePlatformServiceJpaImpl implements TellerWritePlatformSer
 
             final Long time = System.currentTimeMillis();
             final String uniqueVal = String.valueOf(time) + currentUser.getId() + cashierOffice.getId();
-            final String transactionId = Long.toHexString(Long.parseLong(uniqueVal));
+            final String transactionId = new BigInteger(uniqueVal).toString(16); // Long.toHexString(Long.parseLong(uniqueVal));
             ClientTransaction clientTransaction = null;
             final Long shareTransactionId = null;
 
