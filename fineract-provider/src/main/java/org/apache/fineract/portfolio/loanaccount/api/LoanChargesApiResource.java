@@ -162,6 +162,14 @@ public class LoanChargesApiResource {
             final CommandWrapper commandRequest = new CommandWrapperBuilder().payLoanCharge(loanId, null).withJson(apiRequestBodyAsJson)
                     .build();
             result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
+        } else if (is(commandParam, "waive")) {
+            final CommandWrapper commandRequest = new CommandWrapperBuilder().waiveLoanCharges(loanId).withJson(apiRequestBodyAsJson)
+                    .build();
+            result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
+        } else if (is(commandParam, "undoWaive")) {
+            final CommandWrapper commandRequest = new CommandWrapperBuilder().undoWaiveLoanCharges(loanId, null)
+                    .withJson(apiRequestBodyAsJson).build();
+            result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
         } else {
             final CommandWrapper commandRequest = new CommandWrapperBuilder().createLoanCharge(loanId).withJson(apiRequestBodyAsJson)
                     .build();
@@ -199,6 +207,9 @@ public class LoanChargesApiResource {
         CommandProcessingResult result = null;
         if (is(commandParam, "waive")) {
             final CommandWrapper commandRequest = builder.waiveLoanCharge(loanId, loanChargeId).build();
+            result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
+        } else if (is(commandParam, "undoWaive")) {
+            final CommandWrapper commandRequest = builder.undoWaiveLoanCharges(loanId, loanChargeId).build();
             result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
         } else if (is(commandParam, "pay")) {
             final CommandWrapper commandRequest = builder.payLoanCharge(loanId, loanChargeId).build();

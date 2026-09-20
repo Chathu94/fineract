@@ -1054,6 +1054,51 @@ public class Loan extends AbstractPersistableCustom<Long> {
         return waiveLoanChargeTransaction;
     }
 
+    public ChangedTransactionDetail undoWaiveLoanChargeTransactions(final Collection<LoanTransaction> transactionsToReverse,
+            final LoanLifecycleStateMachine loanLifecycleStateMachine, final List<Long> existingTransactionIds,
+            final List<Long> existingReversedTransactionIds, final ScheduleGeneratorDTO scheduleGeneratorDTO,
+            final AppUser currentUser) {
+
+        existingTransactionIds.addAll(findExistingTransactionIds());
+        existingReversedTransactionIds.addAll(findExistingReversedTransactionIds());
+
+        LocalDate recalculateFrom = null;
+        for (final LoanTransaction transaction : transactionsToReverse) {
+            if (!transaction.isChargesWaiver()) {
+                continue;
+            }
+            for (final LoanChargePaidBy chargePaidBy : transaction.getLoanChargesPaid()) {
+                chargePaidBy.getLoanCharge().undoWaivedAmountBy(Money.of(getCurrency(), chargePaidBy.getAmount()),
+                        chargePaidBy.getInstallmentNumber());
+            }
+            if (recalculateFrom == null || transaction.getTransactionDate().isBefore(recalculateFrom)) {
+                recalculateFrom = transaction.getTransactionDate();
+            }
+            transaction.reverse();
+            transaction.manuallyAdjustedOrReversed();
+        }
+
+        if (isClosedObligationsMet()) {
+            this.loanStatus = LoanStatus.ACTIVE.getValue();
+            this.closedOnDate = null;
+            this.actualMaturityDate = null;
+        }
+
+        scheduleGeneratorDTO.setRecalculateFrom(recalculateFrom);
+        if (this.repaymentScheduleDetail().isInterestRecalculationEnabled()) {
+            regenerateRepaymentScheduleWithInterestRecalculation(scheduleGeneratorDTO, currentUser);
+        }
+
+        final LoanRepaymentScheduleTransactionProcessor loanRepaymentScheduleTransactionProcessor = this.transactionProcessorFactory
+                .determineProcessor(this.transactionProcessingStrategy);
+        final ChangedTransactionDetail changedTransactionDetail = loanRepaymentScheduleTransactionProcessor.handleTransaction(
+                getDisbursementDate(), retreiveListOfTransactionsPostDisbursement(), getCurrency(), getRepaymentScheduleInstallments(),
+                charges());
+        updateLoanSummaryDerivedFields();
+        doPostLoanTransactionChecks(getLastUserTransactionDate(), loanLifecycleStateMachine);
+        return changedTransactionDetail;
+    }
+
     public Client client() {
         return this.client;
     }

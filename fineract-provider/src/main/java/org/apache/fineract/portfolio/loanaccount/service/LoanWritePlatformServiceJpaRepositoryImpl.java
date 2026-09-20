@@ -130,6 +130,7 @@ import org.springframework.util.CollectionUtils;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 
 @Service
 public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatformService {
@@ -1581,6 +1582,154 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 .withLoanId(loanId) //
                 .with(changes) //
                 .build();
+    }
+
+    @Transactional
+    @Override
+    public CommandProcessingResult bulkWaivePenaltyCharges(final Long loanId, final JsonCommand command) {
+        this.loanEventApiJsonValidator.validateBulkPenaltyChargeTransaction(command.json());
+        final List<Long> chargeIds = extractChargeIds(command);
+
+        final Loan loan = this.loanAssembler.assembleFrom(loanId);
+        checkClientOrGroupActive(loan);
+        if (!loan.status().isActive()) {
+            throw new LoanChargeCannotBeWaivedException(LOAN_CHARGE_CANNOT_BE_WAIVED_REASON.LOAN_INACTIVE, chargeIds.get(0));
+        }
+
+        for (final Long chargeId : chargeIds) {
+            final LoanCharge loanCharge = retrieveLoanChargeBy(loanId, chargeId);
+            validatePenaltyCharge(loanCharge);
+            if (loanCharge.isWaived()) {
+                throw new LoanChargeCannotBeWaivedException(LOAN_CHARGE_CANNOT_BE_WAIVED_REASON.ALREADY_WAIVED, chargeId);
+            } else if (loanCharge.isPaid()) {
+                throw new LoanChargeCannotBeWaivedException(LOAN_CHARGE_CANNOT_BE_WAIVED_REASON.ALREADY_PAID, chargeId);
+            }
+        }
+
+        final JsonCommand singleChargeCommand = JsonCommand.fromExistingCommand(command, new JsonObject());
+        for (final Long chargeId : chargeIds) {
+            waiveLoanCharge(loanId, chargeId, singleChargeCommand);
+        }
+
+        final Map<String, Object> changes = new LinkedHashMap<>();
+        changes.put("chargeIds", chargeIds);
+        return new CommandProcessingResultBuilder() //
+                .withCommandId(command.commandId()) //
+                .withOfficeId(loan.getOfficeId()) //
+                .withClientId(loan.getClientId()) //
+                .withGroupId(loan.getGroupId()) //
+                .withLoanId(loanId) //
+                .with(changes) //
+                .build();
+    }
+
+    @Transactional
+    @Override
+    public CommandProcessingResult undoWaivePenaltyCharges(final Long loanId, final Long loanChargeId, final JsonCommand command) {
+        final List<Long> chargeIds;
+        if (loanChargeId == null) {
+            this.loanEventApiJsonValidator.validateBulkPenaltyChargeTransaction(command.json());
+            chargeIds = extractChargeIds(command);
+        } else {
+            chargeIds = Collections.singletonList(loanChargeId);
+        }
+
+        final Loan loan = this.loanAssembler.assembleFrom(loanId);
+        checkClientOrGroupActive(loan);
+        if (!loan.status().isActive() && !loan.status().isClosedObligationsMet()) {
+            throw new GeneralPlatformDomainRuleException("error.msg.loan.penalty.charge.undo.waive.loan.inactive",
+                    "Penalty charge waiver cannot be undone because loan {0} is not active or closed with obligations met", loanId);
+        }
+
+        final Map<Long, LoanCharge> chargesById = new LinkedHashMap<>();
+        for (final Long chargeId : chargeIds) {
+            final LoanCharge loanCharge = retrieveLoanChargeBy(loanId, chargeId);
+            validatePenaltyCharge(loanCharge);
+            if (!loanCharge.getAmountWaived(loan.getCurrency()).isGreaterThanZero()) {
+                throw new GeneralPlatformDomainRuleException("error.msg.loan.penalty.charge.not.waived",
+                        "Penalty charge {0} has no waived amount to undo", chargeId);
+            }
+            chargesById.put(chargeId, loanCharge);
+        }
+
+        final Set<LoanTransaction> transactionsToReverse = new LinkedHashSet<>();
+        final Set<Long> matchedChargeIds = new HashSet<>();
+        for (final LoanTransaction transaction : loan.getLoanTransactions()) {
+            if (transaction.isChargesWaiver()) {
+                for (final LoanChargePaidBy chargePaidBy : transaction.getLoanChargesPaid()) {
+                    final Long chargeId = chargePaidBy.getLoanCharge().getId();
+                    if (chargesById.containsKey(chargeId)) {
+                        transactionsToReverse.add(transaction);
+                        matchedChargeIds.add(chargeId);
+                    }
+                }
+            }
+        }
+        if (!matchedChargeIds.containsAll(chargeIds)) {
+            final List<Long> missingChargeIds = new ArrayList<>(chargeIds);
+            missingChargeIds.removeAll(matchedChargeIds);
+            throw new GeneralPlatformDomainRuleException("error.msg.loan.penalty.charge.waive.transaction.not.found",
+                    "No active waiver transaction was found for penalty charge(s) {0}", missingChargeIds);
+        }
+
+        for (final LoanCharge loanCharge : chargesById.values()) {
+            this.businessEventNotifierService.notifyBusinessEventToBeExecuted(BUSINESS_EVENTS.LOAN_UNDO_WAIVE_CHARGE,
+                    constructEntityMap(BUSINESS_ENTITY.LOAN_CHARGE, loanCharge));
+        }
+
+        final List<Long> existingTransactionIds = new ArrayList<>();
+        final List<Long> existingReversedTransactionIds = new ArrayList<>();
+        final ScheduleGeneratorDTO scheduleGeneratorDTO = this.loanUtilService.buildScheduleGeneratorDTO(loan, null);
+        final ChangedTransactionDetail changedTransactionDetail = loan.undoWaiveLoanChargeTransactions(transactionsToReverse,
+                defaultLoanLifecycleStateMachine(), existingTransactionIds, existingReversedTransactionIds, scheduleGeneratorDTO,
+                getAppUserIfPresent());
+        if (changedTransactionDetail != null) {
+            for (final Map.Entry<Long, LoanTransaction> mapEntry : changedTransactionDetail.getNewTransactionMappings().entrySet()) {
+                this.loanTransactionRepository.save(mapEntry.getValue());
+                this.accountTransfersWritePlatformService.updateLoanTransaction(mapEntry.getKey(), mapEntry.getValue());
+            }
+        }
+
+        saveLoanWithDataIntegrityViolationChecks(loan);
+        postJournalEntries(loan, existingTransactionIds, existingReversedTransactionIds);
+        this.loanAccountDomainService.recalculateAccruals(loan);
+
+        for (final LoanCharge loanCharge : chargesById.values()) {
+            this.businessEventNotifierService.notifyBusinessEventWasExecuted(BUSINESS_EVENTS.LOAN_UNDO_WAIVE_CHARGE,
+                    constructEntityMap(BUSINESS_ENTITY.LOAN_CHARGE, loanCharge));
+        }
+
+        final List<Long> reversedTransactionIds = new ArrayList<>();
+        for (final LoanTransaction transaction : transactionsToReverse) {
+            reversedTransactionIds.add(transaction.getId());
+        }
+        final Map<String, Object> changes = new LinkedHashMap<>();
+        changes.put("chargeIds", chargeIds);
+        changes.put("reversedTransactionIds", reversedTransactionIds);
+        return new CommandProcessingResultBuilder() //
+                .withCommandId(command.commandId()) //
+                .withEntityId(loanChargeId) //
+                .withOfficeId(loan.getOfficeId()) //
+                .withClientId(loan.getClientId()) //
+                .withGroupId(loan.getGroupId()) //
+                .withLoanId(loanId) //
+                .with(changes) //
+                .build();
+    }
+
+    private List<Long> extractChargeIds(final JsonCommand command) {
+        final List<Long> chargeIds = new ArrayList<>();
+        for (final JsonElement chargeId : command.arrayOfParameterNamed("chargeIds")) {
+            chargeIds.add(chargeId.getAsLong());
+        }
+        return chargeIds;
+    }
+
+    private void validatePenaltyCharge(final LoanCharge loanCharge) {
+        if (!loanCharge.isPenaltyCharge()) {
+            throw new GeneralPlatformDomainRuleException("error.msg.loan.charge.is.not.penalty",
+                    "Loan charge {0} is not a penalty charge", loanCharge.getId());
+        }
     }
 
     @Transactional

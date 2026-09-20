@@ -691,6 +691,27 @@ public class CommandWrapperBuilder {
         return this;
     }
 
+    public CommandWrapperBuilder waiveLoanCharges(final Long loanId) {
+        this.actionName = "WAIVE";
+        this.entityName = "LOANCHARGE";
+        this.loanId = loanId;
+        this.href = "/loans/" + loanId + "/charges";
+        return this;
+    }
+
+    public CommandWrapperBuilder undoWaiveLoanCharges(final Long loanId, final Long loanChargeId) {
+        this.actionName = "UNDOWAIVE";
+        this.entityName = "LOANCHARGE";
+        this.entityId = loanChargeId;
+        this.loanId = loanId;
+        if (loanChargeId == null) {
+            this.href = "/loans/" + loanId + "/charges";
+        } else {
+            this.href = "/loans/" + loanId + "/charges/" + loanChargeId;
+        }
+        return this;
+    }
+
     public CommandWrapperBuilder payLoanCharge(final Long loanId, final Long loanChargeId) {
         this.actionName = "PAY";
         this.entityName = "LOANCHARGE";

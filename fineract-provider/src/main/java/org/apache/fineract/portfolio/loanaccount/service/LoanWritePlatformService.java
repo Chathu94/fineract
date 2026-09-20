@@ -66,6 +66,10 @@ public interface LoanWritePlatformService {
 
     CommandProcessingResult waiveLoanCharge(Long loanId, Long loanChargeId, JsonCommand command);
 
+    CommandProcessingResult bulkWaivePenaltyCharges(Long loanId, JsonCommand command);
+
+    CommandProcessingResult undoWaivePenaltyCharges(Long loanId, Long loanChargeId, JsonCommand command);
+
     CommandProcessingResult loanReassignment(Long loanId, JsonCommand command);
 
     CommandProcessingResult bulkLoanReassignment(JsonCommand command);
