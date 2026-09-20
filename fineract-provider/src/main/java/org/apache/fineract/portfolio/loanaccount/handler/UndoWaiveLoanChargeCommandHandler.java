@@ -28,22 +28,19 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@CommandType(entity = "LOANCHARGE", action = "WAIVE")
-public class WaiveLoanChargeCommandHandler implements NewCommandSourceHandler {
+@CommandType(entity = "LOANCHARGE", action = "UNDOWAIVE")
+public class UndoWaiveLoanChargeCommandHandler implements NewCommandSourceHandler {
 
     private final LoanWritePlatformService writePlatformService;
 
     @Autowired
-    public WaiveLoanChargeCommandHandler(final LoanWritePlatformService writePlatformService) {
+    public UndoWaiveLoanChargeCommandHandler(final LoanWritePlatformService writePlatformService) {
         this.writePlatformService = writePlatformService;
     }
 
     @Transactional
     @Override
     public CommandProcessingResult processCommand(final JsonCommand command) {
-        if (command.entityId() == null) {
-            return this.writePlatformService.bulkWaivePenaltyCharges(command.getLoanId(), command);
-        }
-        return this.writePlatformService.waiveLoanCharge(command.getLoanId(), command.entityId(), command);
+        return this.writePlatformService.undoWaivePenaltyCharges(command.getLoanId(), command.entityId(), command);
     }
 }

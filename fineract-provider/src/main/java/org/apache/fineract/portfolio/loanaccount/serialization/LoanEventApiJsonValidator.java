@@ -44,6 +44,7 @@ import org.joda.time.LocalDate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.reflect.TypeToken;
 
@@ -379,6 +380,49 @@ public final class LoanEventApiJsonValidator {
 
         final Integer installmentNumber = this.fromApiJsonHelper.extractIntegerWithLocaleNamed("installmentNumber", element);
         baseDataValidator.reset().parameter("installmentNumber").value(installmentNumber).ignoreIfNull().integerGreaterThanZero();
+        throwExceptionIfValidationWarningsExist(dataValidationErrors);
+    }
+
+    public void validateBulkPenaltyChargeTransaction(final String json) {
+
+        if (StringUtils.isBlank(json)) { throw new InvalidJsonException(); }
+
+        final Set<String> transactionParameters = new HashSet<>(Arrays.asList("chargeIds"));
+        final Type typeOfMap = new TypeToken<Map<String, Object>>() {}.getType();
+        this.fromApiJsonHelper.checkForUnsupportedParameters(typeOfMap, json, transactionParameters);
+
+        final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
+        final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors)
+                .resource("loan.penalty.charge.bulk.transaction");
+        final JsonElement element = this.fromApiJsonHelper.parse(json);
+
+        JsonArray chargeIds = null;
+        if (!this.fromApiJsonHelper.parameterExists("chargeIds", element)) {
+            baseDataValidator.reset().parameter("chargeIds").value(null).notNull();
+        } else if (!element.getAsJsonObject().get("chargeIds").isJsonArray()) {
+            baseDataValidator.reset().parameter("chargeIds").expectedArrayButIsNot();
+        } else {
+            chargeIds = this.fromApiJsonHelper.extractJsonArrayNamed("chargeIds", element);
+            baseDataValidator.reset().parameter("chargeIds").value(chargeIds).jsonArrayNotEmpty();
+        }
+
+        if (chargeIds != null) {
+            final Set<Long> uniqueChargeIds = new HashSet<>();
+            for (final JsonElement chargeIdElement : chargeIds) {
+                if (!chargeIdElement.isJsonPrimitive() || !chargeIdElement.getAsJsonPrimitive().isNumber()) {
+                    baseDataValidator.reset().parameter("chargeIds").failWithCode("elements.must.be.numeric",
+                            "Every chargeIds element must be a number");
+                } else {
+                    final Long chargeId = chargeIdElement.getAsLong();
+                    baseDataValidator.reset().parameter("chargeIds").value(chargeId).longGreaterThanZero();
+                    if (!uniqueChargeIds.add(chargeId)) {
+                        baseDataValidator.reset().parameter("chargeIds").value(chargeId).failWithCode("elements.must.be.unique",
+                                "chargeIds must not contain duplicates");
+                    }
+                }
+            }
+        }
+
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
     }
 

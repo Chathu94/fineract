@@ -91,10 +91,9 @@ public class LoanAccrualPlatformServiceImpl implements LoanAccrualPlatformServic
     @Override
     @CronTarget(jobName = JobName.ADD_PERIODIC_ACCRUAL_ENTRIES)
     public void addPeriodicAccruals() throws JobExecutionException {
-//        run service for 2026-03-31 and then change to LocalDate.now() after testing
-//        LocalDate tillDate = new LocalDate(2026, 3, 31);
-        String errors = addPeriodicAccruals(LocalDate.now());
-        if (errors.length() > 0) { throw new JobExecutionException(errors); }
+//        LocalDate tillDate = new LocalDate(2026, 8, 17);
+        addPeriodicAccruals(LocalDate.now());
+//        if (errors.length() > 0) { throw new JobExecutionException(errors); }
     }
 
     @Override
@@ -169,14 +168,14 @@ public class LoanAccrualPlatformServiceImpl implements LoanAccrualPlatformServic
                     loanAccrualWritePlatformService.addPeriodicAccruals(tilldate, entry.getKey(), entry.getValue());
                 } catch (Exception e) {
                     System.out.print(e);
-                    Throwable real = (e.getCause() != null) ? e.getCause() : e;
-                    synchronized (sb) {
-                        sb.append("failed to add accrual transaction for loan ")
-                                .append(entry.getKey())
-                                .append(" with message ")
-                                .append(real.getMessage())
-                                .append('\n');
-                    }
+//                    Throwable real = (e.getCause() != null) ? e.getCause() : e;
+//                    synchronized (sb) {
+//                        sb.append("failed to add accrual transaction for loan ")
+//                                .append(entry.getKey())
+//                                .append(" with message ")
+//                                .append(real.getMessage())
+//                                .append('\n');
+//                    }
                 } finally {
                     ThreadLocalContextUtil.clearTenant();
                     if (originalTenant != null) {

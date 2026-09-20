@@ -12922,6 +12922,49 @@ Request Body:
 					</code>
 				</div>
 			</div>
+
+			<a id="loans_penalty_charges_bulk_waive" name="loans_penalty_charges_bulk_waive" class="old-syle-anchor">&nbsp;</a>
+			<div class="method-section">
+				<div class="method-description">
+					<h4>Waive Penalty Charges in Bulk</h4>
+					<p>Waives multiple penalty charges belonging to the same active loan. The operation is atomic.</p>
+				</div>
+				<div class="method-example">
+					<code class="method-declaration">
+POST https://DomainName/api/v1/loans/{loanId}/charges?command=waive
+					</code>
+					<code class="method-request">
+POST loans/1/charges?command=waive
+Content-Type: application/json
+Request Body:
+{
+  "chargeIds": [12, 13, 14]
+}
+					</code>
+				</div>
+			</div>
+
+			<a id="loans_penalty_charges_bulk_undo_waive" name="loans_penalty_charges_bulk_undo_waive" class="old-syle-anchor">&nbsp;</a>
+			<div class="method-section">
+				<div class="method-description">
+					<h4>Undo Penalty Charge Waivers in Bulk</h4>
+					<p>Reverses the active waiver transactions for multiple penalty charges on the same loan and recalculates the loan schedule, accruals, accounting entries, and arrears.</p>
+				</div>
+				<div class="method-example">
+					<code class="method-declaration">
+POST https://DomainName/api/v1/loans/{loanId}/charges?command=undoWaive
+					</code>
+					<code class="method-request">
+POST loans/1/charges?command=undoWaive
+Content-Type: application/json
+Request Body:
+{
+  "chargeIds": [12, 13, 14]
+}
+					</code>
+					<p>A single waiver can also be undone with <code>POST /loans/{loanId}/charges/{chargeId}?command=undoWaive</code>.</p>
+				</div>
+			</div>
 			<a id="loans_charges_delete" name="loans_charges_delete" class="old-syle-anchor">&nbsp;</a>
 			<div class="method-section">
 				<div class="method-description">
