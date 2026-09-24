@@ -396,34 +396,56 @@ public final class LoanEventApiJsonValidator {
                 .resource("loan.penalty.charge.bulk.transaction");
         final JsonElement element = this.fromApiJsonHelper.parse(json);
 
-        JsonArray chargeIds = null;
-        if (!this.fromApiJsonHelper.parameterExists("chargeIds", element)) {
-            baseDataValidator.reset().parameter("chargeIds").value(null).notNull();
-        } else if (!element.getAsJsonObject().get("chargeIds").isJsonArray()) {
-            baseDataValidator.reset().parameter("chargeIds").expectedArrayButIsNot();
-        } else {
-            chargeIds = this.fromApiJsonHelper.extractJsonArrayNamed("chargeIds", element);
-            baseDataValidator.reset().parameter("chargeIds").value(chargeIds).jsonArrayNotEmpty();
-        }
+        validateUniqueIdArray(baseDataValidator, element, "chargeIds");
 
-        if (chargeIds != null) {
-            final Set<Long> uniqueChargeIds = new HashSet<>();
-            for (final JsonElement chargeIdElement : chargeIds) {
-                if (!chargeIdElement.isJsonPrimitive() || !chargeIdElement.getAsJsonPrimitive().isNumber()) {
-                    baseDataValidator.reset().parameter("chargeIds").failWithCode("elements.must.be.numeric",
-                            "Every chargeIds element must be a number");
-                } else {
-                    final Long chargeId = chargeIdElement.getAsLong();
-                    baseDataValidator.reset().parameter("chargeIds").value(chargeId).longGreaterThanZero();
-                    if (!uniqueChargeIds.add(chargeId)) {
-                        baseDataValidator.reset().parameter("chargeIds").value(chargeId).failWithCode("elements.must.be.unique",
-                                "chargeIds must not contain duplicates");
-                    }
+        throwExceptionIfValidationWarningsExist(dataValidationErrors);
+    }
+
+    public void validateBulkAddLoanCharge(final String json) {
+
+        if (StringUtils.isBlank(json)) { throw new InvalidJsonException(); }
+
+        final Set<String> supportedParameters = new HashSet<>(Arrays.asList("loanIds", "chargeId", "amount", "dueDate", "locale",
+                "dateFormat"));
+        final Type typeOfMap = new TypeToken<Map<String, Object>>() {}.getType();
+        this.fromApiJsonHelper.checkForUnsupportedParameters(typeOfMap, json, supportedParameters);
+
+        final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
+        final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors).resource("loanCharge.bulk");
+        final JsonElement element = this.fromApiJsonHelper.parse(json);
+
+        validateUniqueIdArray(baseDataValidator, element, "loanIds");
+
+        throwExceptionIfValidationWarningsExist(dataValidationErrors);
+    }
+
+    private void validateUniqueIdArray(final DataValidatorBuilder baseDataValidator, final JsonElement element,
+            final String parameterName) {
+        JsonArray ids = null;
+        if (!this.fromApiJsonHelper.parameterExists(parameterName, element)) {
+            baseDataValidator.reset().parameter(parameterName).value(null).notNull();
+        } else if (!element.getAsJsonObject().get(parameterName).isJsonArray()) {
+            baseDataValidator.reset().parameter(parameterName).expectedArrayButIsNot();
+        } else {
+            ids = this.fromApiJsonHelper.extractJsonArrayNamed(parameterName, element);
+            baseDataValidator.reset().parameter(parameterName).value(ids).jsonArrayNotEmpty();
+        }
+        if (ids == null) { return; }
+
+        final Set<Long> uniqueIds = new HashSet<>();
+        for (final JsonElement idElement : ids) {
+            if (!idElement.isJsonPrimitive() || !idElement.getAsJsonPrimitive().isNumber()) {
+                baseDataValidator.reset().parameter(parameterName).failWithCode("elements.must.be.numeric",
+                        "Every " + parameterName + " element must be a number");
+            } else {
+                final Long id = idElement.getAsLong();
+                baseDataValidator.reset().parameter(parameterName).value(id).longGreaterThanZero();
+                if (!uniqueIds.add(id)) {
+                    baseDataValidator.reset().parameter(parameterName).value(id).failWithCode("elements.must.be.unique",
+                            parameterName + " must not contain duplicates");
                 }
             }
         }
-
-        throwExceptionIfValidationWarningsExist(dataValidationErrors);
     }
 
     public void validateUpdateDisbursementDateAndAmount(final String json, LoanDisbursementDetails loanDisbursementDetails) {

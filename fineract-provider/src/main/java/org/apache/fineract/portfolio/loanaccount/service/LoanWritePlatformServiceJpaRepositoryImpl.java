@@ -1375,6 +1375,30 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 .build();
     }
 
+    @Transactional
+    @Override
+    public CommandProcessingResult bulkAddLoanCharge(final JsonCommand command) {
+        this.loanEventApiJsonValidator.validateBulkAddLoanCharge(command.json());
+
+        // same charge payload for every loan; loanIds is not a valid single-loan parameter
+        final JsonObject chargeJson = this.fromApiJsonHelper.parse(command.json()).getAsJsonObject();
+        chargeJson.remove("loanIds");
+        final JsonCommand chargeCommand = JsonCommand.fromExistingCommand(command, chargeJson);
+
+        final Map<Long, Long> loanChargeIdByLoanId = new LinkedHashMap<>();
+        for (final JsonElement loanIdElement : command.arrayOfParameterNamed("loanIds")) {
+            final Long loanId = loanIdElement.getAsLong();
+            loanChargeIdByLoanId.put(loanId, addLoanCharge(loanId, chargeCommand).resourceId());
+        }
+
+        final Map<String, Object> changes = new LinkedHashMap<>();
+        changes.put("loanChargeIds", loanChargeIdByLoanId);
+        return new CommandProcessingResultBuilder() //
+                .withCommandId(command.commandId()) //
+                .with(changes) //
+                .build();
+    }
+
     private void validateAddLoanCharge(final Loan loan, final Charge chargeDefinition, final LoanCharge loanCharge) {
         if (chargeDefinition.isOverdueInstallment()) {
             final String defaultUserMessage = "Installment charge cannot be added to the loan.";
