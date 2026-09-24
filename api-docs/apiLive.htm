@@ -12848,38 +12848,62 @@ Request Body:
             <a id="loans_charges_bulk_create" name="loans_charges_bulk_create" class="old-syle-anchor">&nbsp;</a>
             <div class="method-section">
                 <div class="method-description">
-                    <h4>Create a Loan Charge on Multiple Loans</h4>
-                    <p>Adds the same charge to every loan in <code>loanIds</code>. The operation is atomic and uses the CREATE_LOANCHARGE permission.</p>
+                    <h4>Create Loan Charges on Multiple Loans</h4>
+                    <p>Adds one charge per <code>charges</code> item; each item names its own loan, charge, amount and due date. Uses the CREATE_LOANCHARGE permission.</p>
+                    <p>By default the batch is atomic: any failure rolls back every item. With <code>?continueOnFailure=true</code> each item is committed on its own, and failed items are returned under <code>failed</code> with the error body the single-loan call would have produced.</p>
                     <table class=matrixHeading>
 						<tr class="matrixHeadingBG">
 							<td><div class="fineractHeading2">Mandatory Fields</div></td>
 						</tr>
 						<tr class=alt>
-							<td>loanIds, chargeId, amount, dueDate</td>
+							<td>charges (each with loanId, chargeId, amount, dueDate)</td>
+						</tr>
+						<tr class="matrixHeadingBG">
+							<td><div class="fineractHeading2">Optional Query Parameters</div></td>
+						</tr>
+						<tr class=alt>
+							<td>continueOnFailure (default false)</td>
 						</tr>
                     </table>
                 </div>
                 <div class="method-example">
                     <code class="method-declaration">
-POST https://DomainName/api/v1/loans/charges
+POST https://DomainName/api/v1/loans/charges?continueOnFailure=true
                     </code>
                     <code class="method-request">
-POST /loans/charges
+POST /loans/charges?continueOnFailure=true
 Content-Type: application/json
 Request Body:
 {
-  "loanIds": [1, 2, 3],
-  "chargeId": "2",
   "locale": "en",
-  "amount": "100",
   "dateFormat": "dd MMMM yyyy",
-  "dueDate": "29 April 2013"
+  "charges": [
+    { "loanId": 1, "chargeId": 2, "amount": "100", "dueDate": "29 April 2013" },
+    { "loanId": 2, "chargeId": 2, "amount": "250", "dueDate": "30 April 2013" },
+    { "loanId": 999, "chargeId": 2, "amount": "100", "dueDate": "29 April 2013" }
+  ]
 }
                     </code>
                     <code class="method-response">
 {
   "changes": {
-    "loanChargeIds": { "1": 31, "2": 32, "3": 33 }
+    "created": [
+      { "loanId": 1, "chargeId": 2, "loanChargeId": 31 },
+      { "loanId": 2, "chargeId": 2, "loanChargeId": 32 }
+    ],
+    "failed": [
+      {
+        "loanId": 999,
+        "chargeId": 2,
+        "error": {
+          "developerMessage": "The requested resource is not available.",
+          "httpStatusCode": "404",
+          "defaultUserMessage": "Loan with identifier 999 does not exist",
+          "userMessageGlobalisationCode": "error.msg.loan.id.invalid",
+          "errors": [ { "developerMessage": "Loan with identifier 999 does not exist", "userMessageGlobalisationCode": "error.msg.loan.id.invalid", "parameterName": "id", "args": [ { "value": 999 } ] } ]
+        }
+      }
+    ]
   }
 }
 	                </code>

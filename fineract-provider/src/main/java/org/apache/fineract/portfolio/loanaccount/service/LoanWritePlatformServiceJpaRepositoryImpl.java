@@ -34,6 +34,7 @@ import org.apache.fineract.infrastructure.core.data.DataValidatorBuilder;
 import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRuleException;
 import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
 import org.apache.fineract.infrastructure.core.exception.PlatformServiceUnavailableException;
+import org.apache.fineract.batch.exception.ErrorHandler;
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
@@ -125,7 +126,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.CollectionUtils;
 
 import com.google.gson.JsonArray;
@@ -161,6 +165,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     private final LoanChargeReadPlatformService loanChargeReadPlatformService;
     private final LoanReadPlatformService loanReadPlatformService;
     private final FromJsonHelper fromApiJsonHelper;
+    private final TransactionTemplate newTransaction;
     private final AccountTransferRepository accountTransferRepository;
     private final CalendarRepository calendarRepository;
     private final LoanRepaymentScheduleInstallmentRepository repaymentScheduleInstallmentRepository;
@@ -209,8 +214,11 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             final CodeValueRepositoryWrapper codeValueRepository,
             final LoanRepositoryWrapper loanRepositoryWrapper,
             final CashierTransactionDataValidator cashierTransactionDataValidator,
-                                                     final RoutingDataSource dataSource) {
+                                                     final RoutingDataSource dataSource,
+                                                     final PlatformTransactionManager transactionManager) {
         this.context = context;
+        this.newTransaction = new TransactionTemplate(transactionManager);
+        this.newTransaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
         this.loanEventApiJsonValidator = loanEventApiJsonValidator;
         this.loanAssembler = loanAssembler;
         this.loanRepositoryWrapper = loanRepositoryWrapper ;
@@ -1379,24 +1387,56 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     @Override
     public CommandProcessingResult bulkAddLoanCharge(final JsonCommand command) {
         this.loanEventApiJsonValidator.validateBulkAddLoanCharge(command.json());
+        final boolean continueOnFailure = command.booleanPrimitiveValueOfParameterNamed("continueOnFailure");
+        final JsonObject body = command.parsedJson().getAsJsonObject();
 
-        // same charge payload for every loan; loanIds is not a valid single-loan parameter
-        final JsonObject chargeJson = this.fromApiJsonHelper.parse(command.json()).getAsJsonObject();
-        chargeJson.remove("loanIds");
-        final JsonCommand chargeCommand = JsonCommand.fromExistingCommand(command, chargeJson);
+        final List<Map<String, Object>> created = new ArrayList<>();
+        final List<Map<String, Object>> failed = new ArrayList<>();
+        for (final JsonElement item : command.arrayOfParameterNamed("charges")) {
+            // reshape each item into the payload the single-loan add accepts
+            final JsonObject chargeJson = this.fromApiJsonHelper.parse(item.toString()).getAsJsonObject();
+            final Long loanId = chargeJson.remove("loanId").getAsLong();
+            for (final String shared : new String[] { "locale", "dateFormat" }) {
+                if (body.has(shared) && !chargeJson.has(shared)) {
+                    chargeJson.add(shared, body.get(shared));
+                }
+            }
+            final JsonCommand chargeCommand = JsonCommand.fromExistingCommand(command, chargeJson);
 
-        final Map<Long, Long> loanChargeIdByLoanId = new LinkedHashMap<>();
-        for (final JsonElement loanIdElement : command.arrayOfParameterNamed("loanIds")) {
-            final Long loanId = loanIdElement.getAsLong();
-            loanChargeIdByLoanId.put(loanId, addLoanCharge(loanId, chargeCommand).resourceId());
+            final Map<String, Object> entry = new LinkedHashMap<>();
+            entry.put("loanId", loanId);
+            entry.put("chargeId", chargeJson.get("chargeId"));
+            try {
+                // continueOnFailure: each loan in its own transaction so one failure cannot roll back the others
+                final CommandProcessingResult result = continueOnFailure
+                        ? this.newTransaction.execute(status -> addLoanCharge(loanId, chargeCommand))
+                        : addLoanCharge(loanId, chargeCommand);
+                entry.put("loanChargeId", result.resourceId());
+                created.add(entry);
+            } catch (final RuntimeException e) {
+                if (!continueOnFailure) { throw e; }
+                entry.put("error", errorBody(e));
+                failed.add(entry);
+            }
         }
 
         final Map<String, Object> changes = new LinkedHashMap<>();
-        changes.put("loanChargeIds", loanChargeIdByLoanId);
+        changes.put("created", created);
+        changes.put("failed", failed);
         return new CommandProcessingResultBuilder() //
                 .withCommandId(command.commandId()) //
                 .with(changes) //
                 .build();
+    }
+
+    /** The same error body the API would have returned for a single-loan call, embedded as JSON where possible. */
+    private Object errorBody(final RuntimeException e) {
+        final String errorJson = ErrorHandler.handler(e).getMessage();
+        try {
+            return this.fromApiJsonHelper.parse(errorJson);
+        } catch (final RuntimeException notJson) {
+            return errorJson;
+        }
     }
 
     private void validateAddLoanCharge(final Loan loan, final Charge chargeDefinition, final LoanCharge loanCharge) {
