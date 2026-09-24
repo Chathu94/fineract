@@ -673,6 +673,13 @@ public class CommandWrapperBuilder {
         return this;
     }
 
+    public CommandWrapperBuilder bulkCreateLoanCharge() {
+        this.actionName = "CREATE";
+        this.entityName = "LOANCHARGE";
+        this.href = "/loans/charges";
+        return this;
+    }
+
     public CommandWrapperBuilder updateLoanCharge(final Long loanId, final Long loanChargeId) {
         this.actionName = "UPDATE";
         this.entityName = "LOANCHARGE";
