@@ -405,8 +405,7 @@ public final class LoanEventApiJsonValidator {
 
         if (StringUtils.isBlank(json)) { throw new InvalidJsonException(); }
 
-        final Set<String> supportedParameters = new HashSet<>(Arrays.asList("loanIds", "chargeId", "amount", "dueDate", "locale",
-                "dateFormat"));
+        final Set<String> supportedParameters = new HashSet<>(Arrays.asList("charges", "locale", "dateFormat", "continueOnFailure"));
         final Type typeOfMap = new TypeToken<Map<String, Object>>() {}.getType();
         this.fromApiJsonHelper.checkForUnsupportedParameters(typeOfMap, json, supportedParameters);
 
@@ -414,7 +413,27 @@ public final class LoanEventApiJsonValidator {
         final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors).resource("loanCharge.bulk");
         final JsonElement element = this.fromApiJsonHelper.parse(json);
 
-        validateUniqueIdArray(baseDataValidator, element, "loanIds");
+        JsonArray charges = null;
+        if (!this.fromApiJsonHelper.parameterExists("charges", element)) {
+            baseDataValidator.reset().parameter("charges").value(null).notNull();
+        } else if (!element.getAsJsonObject().get("charges").isJsonArray()) {
+            baseDataValidator.reset().parameter("charges").expectedArrayButIsNot();
+        } else {
+            charges = this.fromApiJsonHelper.extractJsonArrayNamed("charges", element);
+            baseDataValidator.reset().parameter("charges").value(charges).jsonArrayNotEmpty();
+        }
+        if (charges != null) {
+            for (final JsonElement charge : charges) {
+                if (!charge.isJsonObject()) {
+                    baseDataValidator.reset().parameter("charges").failWithCode("elements.must.be.objects",
+                            "Every charges element must be an object with loanId, chargeId, amount and dueDate");
+                } else {
+                    // chargeId, amount and dueDate are validated per loan by the single-loan add
+                    final Long loanId = this.fromApiJsonHelper.extractLongNamed("loanId", charge);
+                    baseDataValidator.reset().parameter("charges.loanId").value(loanId).notNull().longGreaterThanZero();
+                }
+            }
+        }
 
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
     }

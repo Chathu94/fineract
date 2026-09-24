@@ -31,25 +31,26 @@ public class LoanEventApiJsonValidatorBulkAddLoanChargeTest {
 
     private final LoanEventApiJsonValidator validator = new LoanEventApiJsonValidator(new FromJsonHelper(), null);
 
-    private static final String CHARGE = "\"chargeId\": 4, \"amount\": \"1000\", \"dueDate\": \"23 September 2026\", "
-            + "\"dateFormat\": \"dd MMMM yyyy\", \"locale\": \"en\"";
+    private static final String HEAD = "{\"locale\": \"en\", \"dateFormat\": \"dd MMMM yyyy\", ";
+    private static final String ITEM = "{\"loanId\": 52620, \"chargeId\": 4, \"amount\": \"1000\", \"dueDate\": \"23 September 2026\"}";
 
     @Test
-    public void acceptsUniqueNumericLoanIds() {
-        this.validator.validateBulkAddLoanCharge("{\"loanIds\": [52620, 52621], " + CHARGE + "}");
+    public void acceptsChargeItemsWithLoanIds() {
+        this.validator.validateBulkAddLoanCharge(HEAD + "\"charges\": [" + ITEM + ", " + ITEM + "], \"continueOnFailure\": true}");
     }
 
     @Test
-    public void rejectsMissingEmptyOrDuplicateLoanIds() {
-        assertValidationError("{" + CHARGE + "}", "loanIds");
-        assertValidationError("{\"loanIds\": [], " + CHARGE + "}", "loanIds");
-        assertValidationError("{\"loanIds\": [1, 1], " + CHARGE + "}", "loanIds");
-        assertValidationError("{\"loanIds\": [\"a\"], " + CHARGE + "}", "loanIds");
+    public void rejectsMissingEmptyOrMalformedCharges() {
+        assertValidationError("{\"locale\": \"en\"}", "charges");
+        assertValidationError(HEAD + "\"charges\": []}", "charges");
+        assertValidationError(HEAD + "\"charges\": [1]}", "charges");
+        assertValidationError(HEAD + "\"charges\": [{\"chargeId\": 4}]}", "charges.loanId");
+        assertValidationError(HEAD + "\"charges\": [{\"loanId\": 0, \"chargeId\": 4}]}", "charges.loanId");
     }
 
     @Test(expected = UnsupportedParameterException.class)
-    public void rejectsUnknownParameters() {
-        this.validator.validateBulkAddLoanCharge("{\"loanIds\": [1], \"foo\": 1, " + CHARGE + "}");
+    public void rejectsUnknownTopLevelParameters() {
+        this.validator.validateBulkAddLoanCharge(HEAD + "\"loanIds\": [1], \"charges\": [" + ITEM + "]}");
     }
 
     private void assertValidationError(final String json, final String parameter) {
