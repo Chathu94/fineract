@@ -204,7 +204,7 @@ public class LoanAssembler {
             }
         }
         final Set<LoanCollateral> collateral = this.loanCollateralAssembler.fromParsedJson(element);
-        final Set<LoanCharge> loanCharges = this.loanChargeAssembler.fromParsedJson(element,disbursementDetails);
+        final Set<LoanCharge> loanCharges = this.loanChargeAssembler.fromParsedJson(element,disbursementDetails).getLoanCharges();
         for (final LoanCharge loanCharge : loanCharges) {
             if (!loanProduct.hasCurrencyCodeOf(loanCharge.currencyCode())) {
                 final String errorMessage = "Charge and Loan must have the same currency.";
