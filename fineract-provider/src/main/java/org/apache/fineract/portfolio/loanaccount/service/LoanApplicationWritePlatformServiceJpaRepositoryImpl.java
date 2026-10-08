@@ -565,7 +565,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
              * application
              **/
             final Set<LoanCharge> possiblyModifedLoanCharges = this.loanChargeAssembler.fromParsedJson(command.parsedJson(),
-                    disbursementDetails);
+                    disbursementDetails).getLoanCharges();
             /** Boolean determines if any charge has been modified **/
             boolean isChargeModified = false;
 

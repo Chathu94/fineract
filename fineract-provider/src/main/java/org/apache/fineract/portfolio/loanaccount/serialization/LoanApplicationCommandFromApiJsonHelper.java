@@ -397,7 +397,7 @@ public final class LoanApplicationCommandFromApiJsonHelper {
             if (topLevelJsonElement.get(chargesParameterName).isJsonArray()) {
                 final Type arrayObjectParameterTypeOfMap = new TypeToken<Map<String, Object>>() {}.getType();
                 final Set<String> supportedParameters = new HashSet<>(Arrays.asList("id", "chargeId", "amount", "chargeTimeType",
-                        "chargeCalculationType", "dueDate"));
+                        "chargeCalculationType", "dueDate", LoanApiConstants.chargeCapitalizedParameterName));
 
                 final JsonArray array = topLevelJsonElement.get("charges").getAsJsonArray();
                 for (int i = 1; i <= array.size(); i++) {

@@ -225,7 +225,15 @@ public class LoanScheduleAssembler {
         }
 
         // disbursement details
-        final BigDecimal principal = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed("principal", element);
+        final BigDecimal requestedPrincipal = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed("principal", element);
+        // charges flagged "capitalized" are folded into the principal instead of being charged separately
+        List<LoanDisbursementDetails> disbursementDetailsForCharges = null;
+        if (loanProduct.isMultiDisburseLoan()) {
+            disbursementDetailsForCharges = this.loanUtilService.fetchDisbursementData(element.getAsJsonObject());
+        }
+        final BigDecimal capitalizedChargeAmount = this.loanChargeAssembler.fromParsedJson(element, disbursementDetailsForCharges)
+                .getCapitalizedChargeAmount();
+        final BigDecimal principal = requestedPrincipal.add(capitalizedChargeAmount);
         final Money principalMoney = Money.of(currency, principal);
 
         final LocalDate expectedDisbursementDate = this.fromApiJsonHelper.extractLocalDateNamed("expectedDisbursementDate", element);
@@ -608,7 +616,7 @@ public class LoanScheduleAssembler {
             final List<Holiday> holidays, final WorkingDays workingDays, final JsonElement element,
             List<LoanDisbursementDetails> disbursementDetails) {
 
-        final Set<LoanCharge> loanCharges = this.loanChargeAssembler.fromParsedJson(element, disbursementDetails);
+        final Set<LoanCharge> loanCharges = this.loanChargeAssembler.fromParsedJson(element, disbursementDetails).getLoanCharges();
 
         final LoanScheduleGenerator loanScheduleGenerator = this.loanScheduleFactory.create(loanApplicationTerms.getInterestMethod());
 
