@@ -43,6 +43,10 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 
+import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
+import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
+import org.springframework.transaction.annotation.Transactional;
+
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import java.lang.reflect.Type;
@@ -66,6 +70,7 @@ public class UserPasswordApiResource {
     private final AppUserPreviousPasswordRepository appUserPreviewPasswordRepository;
     private final DefaultToApiJsonSerializer<AppUser> toApiJsonSerializer;
     private final PasswordValidationPolicyRepository passwordValidationPolicyRepository;
+    private final RoutingDataSource dataSource;
 
     @Autowired
     public UserPasswordApiResource(final PlatformSecurityContext context,
@@ -74,7 +79,8 @@ public class UserPasswordApiResource {
             final PlatformPasswordEncoder platformPasswordEncoder,
             final AppUserPreviousPasswordRepository appUserPreviewPasswordRepository,
             final DefaultToApiJsonSerializer<AppUser> toApiJsonSerializer,
-            final PasswordValidationPolicyRepository passwordValidationPolicyRepository) {
+            final PasswordValidationPolicyRepository passwordValidationPolicyRepository,
+            final RoutingDataSource dataSource) {
 
         this.context = context;
         this.fromApiJsonHelper = fromApiJsonHelper;
@@ -83,10 +89,14 @@ public class UserPasswordApiResource {
         this.appUserPreviewPasswordRepository = appUserPreviewPasswordRepository;
         this.toApiJsonSerializer = toApiJsonSerializer;
         this.passwordValidationPolicyRepository = passwordValidationPolicyRepository;
+        this.dataSource = dataSource;
     }
 
     @PUT
+    @Transactional
     public String updatePassword(final String apiRequestBodyAsJson) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
+
         if (StringUtils.isBlank(apiRequestBodyAsJson)) {
             throw new InvalidJsonException();
         }
@@ -131,9 +141,9 @@ public class UserPasswordApiResource {
         }
 
         AppUser userToUpdate = this.appUserRepository.findOne(appUser.getId());
+        final String currentHashedPassword = userToUpdate.getPassword();
 
         if (StringUtils.isNotBlank(currentPassword)) {
-            final String currentHashedPassword = userToUpdate.getPassword();
             userToUpdate.updatePassword(currentPassword);
             final String currentPasswordEncoded = this.platformPasswordEncoder.encode(userToUpdate);
             if (!currentPasswordEncoded.equals(currentHashedPassword)) {
@@ -164,11 +174,12 @@ public class UserPasswordApiResource {
             }
         }
 
-        userToUpdate.updatePassword(passWordEncodedValue);
-        this.appUserRepository.saveAndFlush(userToUpdate);
-
+        userToUpdate.updatePassword(currentHashedPassword);
         AppUserPreviousPassword currentPasswordToSaveAsPreview = new AppUserPreviousPassword(userToUpdate);
         this.appUserPreviewPasswordRepository.save(currentPasswordToSaveAsPreview);
+
+        userToUpdate.updatePassword(passWordEncodedValue);
+        this.appUserRepository.saveAndFlush(userToUpdate);
 
         final CommandProcessingResult result = new CommandProcessingResultBuilder()
                 .withEntityId(userToUpdate.getId())

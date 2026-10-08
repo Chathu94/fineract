@@ -363,7 +363,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
                 amountToDisburse = disburseAmount.minus(loanOutstanding);
 
-                disburseLoanToLoan(loan, command, loanOutstanding);
+                disburseLoanToLoan(loan, command, loanOutstanding, paymentDetail);
             }
 
             if (isAccountTransfer) {
@@ -1903,6 +1903,10 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     }
 
     public void disburseLoanToLoan(final Loan loan, final JsonCommand command, final BigDecimal amount) {
+        disburseLoanToLoan(loan, command, amount, null);
+    }
+
+    public void disburseLoanToLoan(final Loan loan, final JsonCommand command, final BigDecimal amount, final PaymentDetail paymentDetail) {
 
         final LocalDate transactionDate = command.localDateValueOfParameterNamed("actualDisbursementDate");
         final String txnExternalId = command.stringValueOfParameterNamedAllowingNull("externalId");
@@ -1911,7 +1915,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         final DateTimeFormatter fmt = DateTimeFormat.forPattern(command.dateFormat()).withLocale(locale);
         final AccountTransferDTO accountTransferDTO = new AccountTransferDTO(transactionDate, amount,
                 PortfolioAccountType.LOAN, PortfolioAccountType.LOAN, loan.getId(), loan.getTopupLoanDetails().getLoanIdToClose(),
-                "Loan Topup", locale, fmt, LoanTransactionType.DISBURSEMENT.getValue(), LoanTransactionType.REPAYMENT.getValue(),
+                "Loan Topup", locale, fmt, paymentDetail, LoanTransactionType.DISBURSEMENT.getValue(), LoanTransactionType.REPAYMENT.getValue(),
                 txnExternalId, loan, null);
         AccountTransferDetails accountTransferDetails = this.accountTransfersWritePlatformService.repayLoanWithTopup(accountTransferDTO);
         loan.getTopupLoanDetails().setAccountTransferDetails(accountTransferDetails.getId());
