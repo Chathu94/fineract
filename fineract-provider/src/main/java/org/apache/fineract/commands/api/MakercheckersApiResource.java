@@ -25,6 +25,7 @@ import java.util.Set;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -125,14 +126,15 @@ public class MakercheckersApiResource {
     @Path("{auditId}")
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
-    public String approveMakerCheckerEntry(@PathParam("auditId") final Long auditId, @QueryParam("command") final String commandParam) {
+    public String approveMakerCheckerEntry(@PathParam("auditId") final Long auditId, @QueryParam("command") final String commandParam,
+            @DefaultValue("false") @QueryParam("execute") final boolean execute) {
         ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
 
         CommandProcessingResult result = null;
         if (is(commandParam, "approve")) {
-            result = this.writePlatformService.approveEntry(auditId);
+            result = this.writePlatformService.approveEntry(auditId, execute);
         } else if (is(commandParam, "reject")) {
-            final Long id = this.writePlatformService.rejectEntry(auditId);
+            final Long id = this.writePlatformService.rejectEntry(auditId, execute);
             result = CommandProcessingResult.commandOnlyResult(id);
         } else {
             throw new UnrecognizedQueryParamException("command", commandParam);
