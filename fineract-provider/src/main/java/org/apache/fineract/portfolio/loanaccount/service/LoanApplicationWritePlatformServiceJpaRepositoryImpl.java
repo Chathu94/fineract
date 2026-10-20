@@ -309,8 +309,10 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                     }
                     BigDecimal loanOutstanding = this.loanReadPlatformService.retrieveLoanPrePaymentTemplate(loanIdToClose,
                             newLoanApplication.getDisbursementDate()).getAmount();
+                    final BigDecimal outstandingAfterWaiver = command.bigDecimalValueOfParameterNamed(LoanApiConstants.outstandingAfterWaiver);
+                    final BigDecimal outstandingToCompare = (outstandingAfterWaiver != null) ? outstandingAfterWaiver : loanOutstanding;
                     final BigDecimal firstDisbursalAmount = newLoanApplication.getFirstDisbursalAmount();
-                    if(loanOutstanding.compareTo(firstDisbursalAmount) > 0){
+                    if(outstandingToCompare.compareTo(firstDisbursalAmount) > 0){
                         throw new GeneralPlatformDomainRuleException("error.msg.loan.amount.less.than.outstanding.of.loan.to.be.closed",
                                 "Topup loan amount should be greater than outstanding amount of loan to be closed.");
                     }
@@ -718,8 +720,10 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                         }
                         BigDecimal loanOutstanding = this.loanReadPlatformService.retrieveLoanPrePaymentTemplate(loanIdToClose,
                                 existingLoanApplication.getDisbursementDate()).getAmount();
+                        final BigDecimal outstandingAfterWaiver = command.bigDecimalValueOfParameterNamed(LoanApiConstants.outstandingAfterWaiver);
+                        final BigDecimal outstandingToCompare = (outstandingAfterWaiver != null) ? outstandingAfterWaiver : loanOutstanding;
                         final BigDecimal firstDisbursalAmount = existingLoanApplication.getFirstDisbursalAmount();
-                        if(loanOutstanding.compareTo(firstDisbursalAmount) > 0){
+                        if(outstandingToCompare.compareTo(firstDisbursalAmount) > 0){
                             throw new GeneralPlatformDomainRuleException("error.msg.loan.amount.less.than.outstanding.of.loan.to.be.closed",
                                     "Topup loan amount should be greater than outstanding amount of loan to be closed.");
                         }
@@ -1135,8 +1139,10 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 }
                 BigDecimal loanOutstanding = this.loanReadPlatformService.retrieveLoanPrePaymentTemplate(loanIdToClose,
                         expectedDisbursementDate).getAmount();
+                final BigDecimal outstandingAfterWaiver = command.bigDecimalValueOfParameterNamed(LoanApiConstants.outstandingAfterWaiver);
+                final BigDecimal outstandingToCompare = (outstandingAfterWaiver != null) ? outstandingAfterWaiver : loanOutstanding;
                 final BigDecimal firstDisbursalAmount = loan.getFirstDisbursalAmount();
-                if(loanOutstanding.compareTo(firstDisbursalAmount) > 0){
+                if(outstandingToCompare.compareTo(firstDisbursalAmount) > 0){
                     throw new GeneralPlatformDomainRuleException("error.msg.loan.amount.less.than.outstanding.of.loan.to.be.closed",
                             "Topup loan amount should be greater than outstanding amount of loan to be closed.");
                 }

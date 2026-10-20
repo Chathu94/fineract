@@ -93,7 +93,7 @@ public final class LoanApplicationCommandFromApiJsonHelper {
             LoanApiConstants.linkAccountIdParameterName, LoanApiConstants.disbursementDataParameterName,
             LoanApiConstants.emiAmountParameterName, LoanApiConstants.maxOutstandingBalanceParameterName,
             LoanProductConstants.graceOnArrearsAgeingParameterName, LoanApiConstants.createStandingInstructionAtDisbursementParameterName,
-            LoanApiConstants.isTopup, LoanApiConstants.loanIdToClose, LoanApiConstants.datatables));
+            LoanApiConstants.isTopup, LoanApiConstants.loanIdToClose, LoanApiConstants.outstandingAfterWaiver, LoanApiConstants.datatables));
 
     private final FromJsonHelper fromApiJsonHelper;
     private final CalculateLoanScheduleQueryFromApiJsonHelper apiJsonHelper;
@@ -480,6 +480,11 @@ public final class LoanApplicationCommandFromApiJsonHelper {
                 if(isTopup != null && isTopup){
                     final Long loanId = this.fromApiJsonHelper.extractLongNamed(LoanApiConstants.loanIdToClose, element);
                     baseDataValidator.reset().parameter(LoanApiConstants.loanIdToClose).value(loanId).notNull().longGreaterThanZero();
+                    if (this.fromApiJsonHelper.parameterExists(LoanApiConstants.outstandingAfterWaiver, element)) {
+                        final BigDecimal outstandingAfterWaiver = this.fromApiJsonHelper
+                                .extractBigDecimalWithLocaleNamed(LoanApiConstants.outstandingAfterWaiver, element);
+                        baseDataValidator.reset().parameter(LoanApiConstants.outstandingAfterWaiver).value(outstandingAfterWaiver).notNull().zeroOrPositiveAmount();
+                    }
                 }
             }
         }
@@ -927,6 +932,11 @@ public final class LoanApplicationCommandFromApiJsonHelper {
                 if(isTopup != null && isTopup){
                     final Long loanId = this.fromApiJsonHelper.extractLongNamed(LoanApiConstants.loanIdToClose, element);
                     baseDataValidator.reset().parameter(LoanApiConstants.loanIdToClose).value(loanId).notNull().longGreaterThanZero();
+                    if (this.fromApiJsonHelper.parameterExists(LoanApiConstants.outstandingAfterWaiver, element)) {
+                        final BigDecimal outstandingAfterWaiver = this.fromApiJsonHelper
+                                .extractBigDecimalWithLocaleNamed(LoanApiConstants.outstandingAfterWaiver, element);
+                        baseDataValidator.reset().parameter(LoanApiConstants.outstandingAfterWaiver).value(outstandingAfterWaiver).notNull().zeroOrPositiveAmount();
+                    }
                 }
             }
         }
