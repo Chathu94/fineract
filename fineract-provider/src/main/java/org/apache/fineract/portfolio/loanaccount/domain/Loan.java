@@ -329,6 +329,14 @@ public class Loan extends AbstractPersistableCustom<Long> {
     @Transient
     private LoanSummaryWrapper loanSummaryWrapper;
 
+    /**
+     * Sum of charges capitalized into principal at loan creation (not persisted). Used so
+     * non-capitalized percentage charges keep using the originally requested principal as their
+     * base, instead of the (larger) stored principal that already includes capitalized charges.
+     */
+    @Transient
+    private BigDecimal capitalizedChargeAmountAtCreation = BigDecimal.ZERO;
+
     @Column(name = "principal_amount_proposed", scale = 6, precision = 19, nullable = false)
     private BigDecimal proposedPrincipal;
 
@@ -865,7 +873,7 @@ public class Loan extends AbstractPersistableCustom<Long> {
                 if (isMultiDisburmentLoan() && loanCharge.isDisbursementCharge()) {
                     amount = getTotalAllTrancheDisbursementAmount().getAmount().add(totalInterestCharged);
                 }else{
-                    amount = getPrincpal().getAmount().add(totalInterestCharged);
+                    amount = getPrincipalExcludingCapitalizedCharges().add(totalInterestCharged);
                 }
             break;
             case PERCENT_OF_INTEREST:
@@ -875,13 +883,26 @@ public class Loan extends AbstractPersistableCustom<Long> {
                 if (loanCharge.getTrancheDisbursementCharge() != null) {
                     amount = loanCharge.getTrancheDisbursementCharge().getloanDisbursementDetails().principal();
                 } else {
-                    amount = getPrincpal().getAmount();
+                    amount = getPrincipalExcludingCapitalizedCharges();
                 }
             break;
             default:
             break;
         }
         return amount;
+    }
+
+    /** Sets the total of charges capitalized into principal when this loan was created. */
+    public void setCapitalizedChargeAmountAtCreation(final BigDecimal capitalizedChargeAmount) {
+        this.capitalizedChargeAmountAtCreation = capitalizedChargeAmount == null ? BigDecimal.ZERO : capitalizedChargeAmount;
+    }
+
+    /**
+     * The principal to use as the base for non-capitalized percentage charges: the stored
+     * principal minus whatever was capitalized into it at creation (see {@link #setCapitalizedChargeAmountAtCreation}).
+     */
+    private BigDecimal getPrincipalExcludingCapitalizedCharges() {
+        return getPrincpal().getAmount().subtract(this.capitalizedChargeAmountAtCreation);
     }
 
     private Money getTotalAllTrancheDisbursementAmount() {
@@ -6136,7 +6157,7 @@ public class Loan extends AbstractPersistableCustom<Long> {
                     }
                 }
             } else {
-                amount = getPrincpal().getAmount();
+                amount = getPrincipalExcludingCapitalizedCharges();
             }
         }
         return amount;

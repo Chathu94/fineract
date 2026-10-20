@@ -204,7 +204,8 @@ public class LoanAssembler {
             }
         }
         final Set<LoanCollateral> collateral = this.loanCollateralAssembler.fromParsedJson(element);
-        final Set<LoanCharge> loanCharges = this.loanChargeAssembler.fromParsedJson(element,disbursementDetails).getLoanCharges();
+        final LoanChargeAssembler.Result loanChargeAssemblyResult = this.loanChargeAssembler.fromParsedJson(element, disbursementDetails);
+        final Set<LoanCharge> loanCharges = loanChargeAssemblyResult.getLoanCharges();
         for (final LoanCharge loanCharge : loanCharges) {
             if (!loanProduct.hasCurrencyCodeOf(loanCharge.currencyCode())) {
                 final String errorMessage = "Charge and Loan must have the same currency.";
@@ -275,6 +276,7 @@ public class LoanAssembler {
         if (loanApplication == null) { throw new IllegalStateException("No loan application exists for either a client or group (or both)."); }
         loanApplication.setHelpers(defaultLoanLifecycleStateMachine(), this.loanSummaryWrapper,
                 this.loanRepaymentScheduleTransactionProcessorFactory);
+        loanApplication.setCapitalizedChargeAmountAtCreation(loanChargeAssemblyResult.getCapitalizedChargeAmount());
 
         if (loanProduct.isMultiDisburseLoan()) {
             for (final LoanDisbursementDetails loanDisbursementDetails : loanApplication.getDisbursementDetails()) {
