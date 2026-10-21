@@ -83,13 +83,6 @@ public class UserPasswordApiResource {
                                    final DefaultToApiJsonSerializer<AppUser> toApiJsonSerializer,
                                    final PasswordValidationPolicyRepository passwordValidationPolicyRepository,
                                    final RoutingDataSource dataSource) {
-            final FromJsonHelper fromApiJsonHelper,
-            final AppUserRepository appUserRepository,
-            final PlatformPasswordEncoder platformPasswordEncoder,
-            final AppUserPreviousPasswordRepository appUserPreviewPasswordRepository,
-            final DefaultToApiJsonSerializer<AppUser> toApiJsonSerializer,
-            final PasswordValidationPolicyRepository passwordValidationPolicyRepository,
-            final RoutingDataSource dataSource) {
 
         this.context = context;
         this.fromApiJsonHelper = fromApiJsonHelper;
