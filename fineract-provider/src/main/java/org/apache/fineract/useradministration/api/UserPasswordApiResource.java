@@ -28,6 +28,8 @@ import org.apache.fineract.infrastructure.core.exception.InvalidJsonException;
 import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
+import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
+import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.security.service.PlatformPasswordEncoder;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.useradministration.domain.AppUser;
@@ -74,6 +76,13 @@ public class UserPasswordApiResource {
 
     @Autowired
     public UserPasswordApiResource(final PlatformSecurityContext context,
+                                   final FromJsonHelper fromApiJsonHelper,
+                                   final AppUserRepository appUserRepository,
+                                   final PlatformPasswordEncoder platformPasswordEncoder,
+                                   final AppUserPreviousPasswordRepository appUserPreviewPasswordRepository,
+                                   final DefaultToApiJsonSerializer<AppUser> toApiJsonSerializer,
+                                   final PasswordValidationPolicyRepository passwordValidationPolicyRepository,
+                                   final RoutingDataSource dataSource) {
             final FromJsonHelper fromApiJsonHelper,
             final AppUserRepository appUserRepository,
             final PlatformPasswordEncoder platformPasswordEncoder,
