@@ -28,6 +28,8 @@ import org.apache.fineract.infrastructure.core.exception.InvalidJsonException;
 import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
+import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
+import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.security.service.PlatformPasswordEncoder;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.useradministration.domain.AppUser;
@@ -66,15 +68,17 @@ public class UserPasswordApiResource {
     private final AppUserPreviousPasswordRepository appUserPreviewPasswordRepository;
     private final DefaultToApiJsonSerializer<AppUser> toApiJsonSerializer;
     private final PasswordValidationPolicyRepository passwordValidationPolicyRepository;
+    private final RoutingDataSource dataSource;
 
     @Autowired
     public UserPasswordApiResource(final PlatformSecurityContext context,
-            final FromJsonHelper fromApiJsonHelper,
-            final AppUserRepository appUserRepository,
-            final PlatformPasswordEncoder platformPasswordEncoder,
-            final AppUserPreviousPasswordRepository appUserPreviewPasswordRepository,
-            final DefaultToApiJsonSerializer<AppUser> toApiJsonSerializer,
-            final PasswordValidationPolicyRepository passwordValidationPolicyRepository) {
+                                   final FromJsonHelper fromApiJsonHelper,
+                                   final AppUserRepository appUserRepository,
+                                   final PlatformPasswordEncoder platformPasswordEncoder,
+                                   final AppUserPreviousPasswordRepository appUserPreviewPasswordRepository,
+                                   final DefaultToApiJsonSerializer<AppUser> toApiJsonSerializer,
+                                   final PasswordValidationPolicyRepository passwordValidationPolicyRepository,
+                                   final RoutingDataSource dataSource) {
 
         this.context = context;
         this.fromApiJsonHelper = fromApiJsonHelper;
@@ -83,10 +87,13 @@ public class UserPasswordApiResource {
         this.appUserPreviewPasswordRepository = appUserPreviewPasswordRepository;
         this.toApiJsonSerializer = toApiJsonSerializer;
         this.passwordValidationPolicyRepository = passwordValidationPolicyRepository;
+        this.dataSource = dataSource;
     }
 
     @PUT
     public String updatePassword(final String apiRequestBodyAsJson) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
+
         if (StringUtils.isBlank(apiRequestBodyAsJson)) {
             throw new InvalidJsonException();
         }
