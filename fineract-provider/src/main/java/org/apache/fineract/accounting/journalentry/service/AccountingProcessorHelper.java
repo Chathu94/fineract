@@ -1134,6 +1134,44 @@ public class AccountingProcessorHelper {
         return accountMapping.getGlAccount();
     }
 
+    // @sl-change
+    /**
+     * Splits <code>totalAmount</code> over the GL accounts configured per charge on the loan product
+     * (<code>feeToIncomeAccountMappings</code> / <code>penaltyToIncomeAccountMappings</code>), so that a transaction
+     * paying several charges credits each charge's own account instead of one lumped product level account. Amounts for
+     * charges that resolve to the same account are merged into a single entry.
+     * <p>
+     * Falls back to a single entry against the product level account for <code>accountMappingTypeId</code> whenever the
+     * split cannot be trusted - no charge payment details on the transaction (write offs, and any transaction whose fee
+     * portion was not derived from <code>m_loan_charge_paid_by</code> rows) or the per charge amounts not adding up to
+     * <code>totalAmount</code>. That keeps the journal entry balanced against the single debit leg the callers post,
+     * which is why this returns a fallback rather than throwing the way
+     * {@link #createCreditJournalEntryOrReversalForLoanCharges} does.
+     */
+    public Map<GLAccount, BigDecimal> getChargeSpecificAccountSplits(final Long loanProductId, final int accountMappingTypeId,
+            final Long paymentTypeId, final BigDecimal totalAmount, final List<ChargePaymentDTO> chargePaymentDTOs) {
+        final Map<GLAccount, BigDecimal> accountSplits = new LinkedHashMap<>();
+        if (chargePaymentDTOs != null && !chargePaymentDTOs.isEmpty()) {
+            BigDecimal resolvedAmount = BigDecimal.ZERO;
+            for (final ChargePaymentDTO chargePaymentDTO : chargePaymentDTOs) {
+                final BigDecimal chargeAmount = chargePaymentDTO.getAmount();
+                if (chargeAmount == null) {
+                    accountSplits.clear();
+                    break;
+                }
+                final GLAccount chargeSpecificAccount = getLinkedGLAccountForLoanCharges(loanProductId, accountMappingTypeId,
+                        chargePaymentDTO.getChargeId());
+                final BigDecimal existingAmount = accountSplits.get(chargeSpecificAccount);
+                accountSplits.put(chargeSpecificAccount, existingAmount == null ? chargeAmount : existingAmount.add(chargeAmount));
+                resolvedAmount = resolvedAmount.add(chargeAmount);
+            }
+            if (!accountSplits.isEmpty() && resolvedAmount.compareTo(totalAmount) == 0) { return accountSplits; }
+            accountSplits.clear();
+        }
+        accountSplits.put(getLinkedGLAccountForLoanProduct(loanProductId, accountMappingTypeId, paymentTypeId), totalAmount);
+        return accountSplits;
+    }
+
     private GLAccount getLinkedGLAccountForSavingsCharges(final Long savingsProductId, final int accountMappingTypeId, final Long chargeId) {
         ProductToGLAccountMapping accountMapping = this.accountMappingRepository.findCoreProductToFinAccountMapping(savingsProductId,
                 PortfolioProductType.SAVING.getValue(), accountMappingTypeId);

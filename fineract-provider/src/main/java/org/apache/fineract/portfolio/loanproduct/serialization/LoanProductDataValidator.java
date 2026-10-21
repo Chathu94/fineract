@@ -946,7 +946,7 @@ public final class LoanProductDataValidator {
 
         if (this.fromApiJsonHelper.parameterExists("description", element)) {
             final String description = this.fromApiJsonHelper.extractStringNamed("description", element);
-            baseDataValidator.reset().parameter("description").value(description).notExceedingLengthOf(1000);
+            baseDataValidator.reset().parameter("description").value(description).notExceedingLengthOf(2000);
         }
 
         if (this.fromApiJsonHelper.parameterExists("fundId", element)) {

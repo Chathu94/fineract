@@ -498,7 +498,7 @@ public class AppUser extends AbstractPersistableCustom<Long> implements Platform
 
         if (!hasNotPermissionForAnyOf("ALL_FUNCTIONS", "ALL_FUNCTIONS_READ", matchPermission)) { return; }
 
-        throw new NoAuthorizationException(authorizationMessage);
+        throw new NoAuthorizationException(authorizationMessage, matchPermission);
     }
 
     private boolean hasNotPermissionTo(final String permissionCode) {
@@ -553,7 +553,7 @@ public class AppUser extends AbstractPersistableCustom<Long> implements Platform
     public void validateHasPermissionTo(final String function, final List<String> allowedPermissions) {
         if (hasNotAnyPermission(allowedPermissions)) {
             final String authorizationMessage = "User has no authority to: " + function;
-            throw new NoAuthorizationException(authorizationMessage);
+            throw new NoAuthorizationException(authorizationMessage, allowedPermissions);
         }
     }
 
@@ -561,7 +561,7 @@ public class AppUser extends AbstractPersistableCustom<Long> implements Platform
         if (hasNotPermissionTo(function)) {
             final String authorizationMessage = "User has no authority to: " + function;
             logger.info("Unauthorized access: userId: " + getId() + " action: " + function + " allowed: " + getAuthorities());
-            throw new NoAuthorizationException(authorizationMessage);
+            throw new NoAuthorizationException(authorizationMessage, function);
         }
     }
 
@@ -578,13 +578,13 @@ public class AppUser extends AbstractPersistableCustom<Long> implements Platform
         final String checkerPermissionName = function.toUpperCase() + "_CHECKER";
         if (hasNotPermissionTo("CHECKER_SUPER_USER") && hasNotPermissionTo(checkerPermissionName)) {
             final String authorizationMessage = "User has no authority to be a checker for: " + function;
-            throw new NoAuthorizationException(authorizationMessage);
+            throw new NoAuthorizationException(authorizationMessage, "CHECKER_SUPER_USER", checkerPermissionName);
         }
     }
 
     public void validateHasDatatableReadPermission(final String datatable) {
         if (hasNotPermissionForDatatable(datatable, "READ")) { throw new NoAuthorizationException("Not authorised to read datatable: "
-                + datatable); }
+                + datatable, "READ_" + datatable); }
     }
 
     public Long getStaffId() {

@@ -19,6 +19,7 @@
 package org.apache.fineract.infrastructure.core.data;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import javax.xml.bind.annotation.XmlElement;
@@ -82,6 +83,10 @@ public class ApiGlobalErrorResponse {
     }
 
     public static ApiGlobalErrorResponse unAuthorized(final String defaultUserMessage) {
+        return unAuthorized(defaultUserMessage, Collections.<String> emptyList());
+    }
+    
+    public static ApiGlobalErrorResponse unAuthorized(final String defaultUserMessage, final List<String> requiredPermissions) {
         final ApiGlobalErrorResponse globalErrorResponse = new ApiGlobalErrorResponse();
         globalErrorResponse.setHttpStatusCode("403");
         globalErrorResponse
@@ -90,7 +95,7 @@ public class ApiGlobalErrorResponse {
         globalErrorResponse.setDefaultUserMessage("Insufficient privileges to perform this action.");
 
         final List<ApiParameterError> errors = new ArrayList<>();
-        errors.add(ApiParameterError.generalError("error.msg.not.authorized", defaultUserMessage));
+        errors.add(ApiParameterError.notAuthorizedError("error.msg.not.authorized", defaultUserMessage, requiredPermissions));
         globalErrorResponse.setErrors(errors);
 
         return globalErrorResponse;

@@ -4866,12 +4866,6 @@ public class Loan extends AbstractPersistableCustom<Long> {
                             defaultUserMessage);
                     dataValidationErrors.add(error);
                 }
-                if(isOpen() && this.isTopup()){
-                    final String defaultUserMessage = "Loan Undo disbursal is not allowed on Topup Loans";
-                    final ApiParameterError error = ApiParameterError.generalError("error.msg.loan.undo.disbursal.not.allowed.on.topup.loan",
-                            defaultUserMessage);
-                    dataValidationErrors.add(error);
-                }
             break;
             case LOAN_REPAYMENT_OR_WAIVER:
                 if (!isOpen()) {

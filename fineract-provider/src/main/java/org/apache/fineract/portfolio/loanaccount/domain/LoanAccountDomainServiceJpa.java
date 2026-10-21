@@ -457,8 +457,56 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
 
     @Override
     public void reverseTransfer(final LoanTransaction loanTransaction) {
-        loanTransaction.reverse();
-        saveLoanTransactionWithDataIntegrityViolationChecks(loanTransaction);
+        if (loanTransaction.isReversed()) {
+            return;
+        }
+        if (LoanTransactionType.REPAYMENT.equals(loanTransaction.getTypeOf())
+                || LoanTransactionType.RECOVERY_REPAYMENT.equals(loanTransaction.getTypeOf())) {
+            final Loan loan = loanTransaction.getLoan();
+            this.loanAccountAssembler.setHelpers(loan);
+
+            final List<Long> existingTransactionIds = new ArrayList<>();
+            final List<Long> existingReversedTransactionIds = new ArrayList<>();
+            existingTransactionIds.addAll(loan.findExistingTransactionIds());
+            existingReversedTransactionIds.addAll(loan.findExistingReversedTransactionIds());
+
+            AppUser currentUser = getAppUserIfPresent();
+
+            LocalDate recalculateFrom = null;
+            if (loan.repaymentScheduleDetail().isInterestRecalculationEnabled()) {
+                recalculateFrom = loanTransaction.getTransactionDate();
+            }
+            final ScheduleGeneratorDTO scheduleGeneratorDTO = this.loanUtilService.buildScheduleGeneratorDTO(loan, recalculateFrom);
+
+            final Money zeroAmount = Money.zero(loan.getCurrency());
+            final LocalDateTime currentDateTime = DateUtils.getLocalDateTimeOfTenant();
+            LoanTransaction newTransactionDetail = LoanTransaction.repayment(loan.getOffice(), zeroAmount, null,
+                    loanTransaction.getTransactionDate(), null, currentDateTime, currentUser);
+
+            final ChangedTransactionDetail changedTransactionDetail = loan.adjustExistingTransaction(newTransactionDetail,
+                    defaultLoanLifecycleStateMachine(), loanTransaction, existingTransactionIds, existingReversedTransactionIds,
+                    scheduleGeneratorDTO, currentUser);
+
+            saveLoanTransactionWithDataIntegrityViolationChecks(loanTransaction);
+            saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
+
+            if (changedTransactionDetail != null) {
+                for (final Map.Entry<Long, LoanTransaction> mapEntry : changedTransactionDetail.getNewTransactionMappings().entrySet()) {
+                    saveLoanTransactionWithDataIntegrityViolationChecks(mapEntry.getValue());
+                    loan.addLoanTransaction(mapEntry.getValue());
+                    updateLoanTransaction(mapEntry.getKey(), mapEntry.getValue());
+                }
+            }
+
+            postJournalEntries(loan, existingTransactionIds, existingReversedTransactionIds, false, false);
+            recalculateAccruals(loan);
+
+            this.businessEventNotifierService.notifyBusinessEventWasExecuted(BUSINESS_EVENTS.LOAN_ADJUST_TRANSACTION,
+                    constructEntityMap(BUSINESS_ENTITY.LOAN_ADJUSTED_TRANSACTION, loanTransaction));
+        } else {
+            loanTransaction.reverse();
+            saveLoanTransactionWithDataIntegrityViolationChecks(loanTransaction);
+        }
     }
 
     /*

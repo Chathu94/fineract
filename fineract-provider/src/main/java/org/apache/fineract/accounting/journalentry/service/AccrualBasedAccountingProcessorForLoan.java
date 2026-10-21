@@ -228,23 +228,20 @@ public class AccrualBasedAccountingProcessorForLoan implements AccountingProcess
         if (feesAmount != null && !(feesAmount.compareTo(BigDecimal.ZERO) == 0)) {
             totalDebitAmount = totalDebitAmount.add(feesAmount);
 
-            if (isIncomeFromFee) {
-                GLAccount account = this.helper.getLinkedGLAccountForLoanProduct(loanProductId,
-                        ACCRUAL_ACCOUNTS_FOR_LOAN.INCOME_FROM_FEES.getValue(), paymentTypeId);
+            // @sl-change: resolve the credit account per charge instead of once per transaction, so that charges
+            // mapped to their own income account through feeToIncomeAccountMappings land there rather than all being
+            // lumped onto the product level account. Falls back to the product level account when the transaction
+            // carries no usable charge payment details - see AccountingProcessorHelper.getChargeSpecificAccountSplits.
+            final int feeAccountMappingTypeId = isIncomeFromFee ? ACCRUAL_ACCOUNTS_FOR_LOAN.INCOME_FROM_FEES.getValue()
+                    : ACCRUAL_ACCOUNTS_FOR_LOAN.FEES_RECEIVABLE.getValue();
+            for (final Entry<GLAccount, BigDecimal> feeSplit : this.helper.getChargeSpecificAccountSplits(loanProductId,
+                    feeAccountMappingTypeId, paymentTypeId, feesAmount, loanTransactionDTO.getFeePayments()).entrySet()) {
+                final GLAccount account = feeSplit.getKey();
                 if (accountMap.containsKey(account)) {
-                    BigDecimal amount = accountMap.get(account).add(feesAmount);
+                    BigDecimal amount = accountMap.get(account).add(feeSplit.getValue());
                     accountMap.put(account, amount);
                 } else {
-                    accountMap.put(account, feesAmount);
-                }
-            } else {
-                GLAccount account = this.helper.getLinkedGLAccountForLoanProduct(loanProductId,
-                        ACCRUAL_ACCOUNTS_FOR_LOAN.FEES_RECEIVABLE.getValue(), paymentTypeId);
-                if (accountMap.containsKey(account)) {
-                    BigDecimal amount = accountMap.get(account).add(feesAmount);
-                    accountMap.put(account, amount);
-                } else {
-                    accountMap.put(account, feesAmount);
+                    accountMap.put(account, feeSplit.getValue());
                 }
             }
         }
@@ -252,23 +249,18 @@ public class AccrualBasedAccountingProcessorForLoan implements AccountingProcess
         // handle penalties payment of writeOff (and reversals)
         if (penaltiesAmount != null && !(penaltiesAmount.compareTo(BigDecimal.ZERO) == 0)) {
             totalDebitAmount = totalDebitAmount.add(penaltiesAmount);
-            if (isIncomeFromFee) {
-                GLAccount account = this.helper.getLinkedGLAccountForLoanProduct(loanProductId,
-                        ACCRUAL_ACCOUNTS_FOR_LOAN.INCOME_FROM_PENALTIES.getValue(), paymentTypeId);
+
+            // @sl-change: per charge resolution for penalties, see the fee block above
+            final int penaltyAccountMappingTypeId = isIncomeFromFee ? ACCRUAL_ACCOUNTS_FOR_LOAN.INCOME_FROM_PENALTIES.getValue()
+                    : ACCRUAL_ACCOUNTS_FOR_LOAN.PENALTIES_RECEIVABLE.getValue();
+            for (final Entry<GLAccount, BigDecimal> penaltySplit : this.helper.getChargeSpecificAccountSplits(loanProductId,
+                    penaltyAccountMappingTypeId, paymentTypeId, penaltiesAmount, loanTransactionDTO.getPenaltyPayments()).entrySet()) {
+                final GLAccount account = penaltySplit.getKey();
                 if (accountMap.containsKey(account)) {
-                    BigDecimal amount = accountMap.get(account).add(penaltiesAmount);
+                    BigDecimal amount = accountMap.get(account).add(penaltySplit.getValue());
                     accountMap.put(account, amount);
                 } else {
-                    accountMap.put(account, penaltiesAmount);
-                }
-            } else {
-                GLAccount account = this.helper.getLinkedGLAccountForLoanProduct(loanProductId,
-                        ACCRUAL_ACCOUNTS_FOR_LOAN.PENALTIES_RECEIVABLE.getValue(), paymentTypeId);
-                if (accountMap.containsKey(account)) {
-                    BigDecimal amount = accountMap.get(account).add(penaltiesAmount);
-                    accountMap.put(account, amount);
-                } else {
-                    accountMap.put(account, penaltiesAmount);
+                    accountMap.put(account, penaltySplit.getValue());
                 }
             }
         }
