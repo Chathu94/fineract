@@ -43,6 +43,7 @@ import org.apache.fineract.infrastructure.core.serialization.DatatableCommandFro
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.infrastructure.core.serialization.JsonParserHelper;
 import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
+import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.dataqueries.api.DataTableApiConstant;
 import org.apache.fineract.infrastructure.dataqueries.data.*;
 import org.apache.fineract.infrastructure.dataqueries.exception.DatatableEntryRequiredException;
@@ -526,6 +527,17 @@ public class ReadWriteNonCoreDataServiceImpl implements ReadWriteNonCoreDataServ
         sqlBuilder = sqlBuilder.append(", ");
     }
 
+    /**
+     * Vitess/VTGate cannot resolve the keyspace for a DDL statement by looking up the table in its vschema when the
+     * table doesn't exist yet (CREATE) or the session's default database was lost (pooled/reset connections), so it
+     * fails with "VT09005: no database selected". Qualifying the table name with the tenant schema avoids relying on
+     * the connection's current "USE"'d database for DDL.
+     */
+    private String qualifiedTableName(final String tableName) {
+        final String schemaName = ThreadLocalContextUtil.getTenant().getConnection().getSchemaName();
+        return "`" + schemaName + "`.`" + tableName + "`";
+    }
+
     @Transactional
     @Override
     public CommandProcessingResult createDatatable(final JsonCommand command) {
@@ -564,7 +576,7 @@ public class ReadWriteNonCoreDataServiceImpl implements ReadWriteNonCoreDataServ
             StringBuilder sqlBuilder = new StringBuilder();
             final StringBuilder constrainBuilder = new StringBuilder();
             final Map<String, Long> codeMappings = new HashMap<>();
-            sqlBuilder = sqlBuilder.append("CREATE TABLE `" + datatableName + "` (");
+            sqlBuilder = sqlBuilder.append("CREATE TABLE " + qualifiedTableName(datatableName) + " (");
 
             if (multiRow) {
                 sqlBuilder = sqlBuilder.append("`id` BIGINT(20) NOT NULL AUTO_INCREMENT, ")
@@ -884,14 +896,14 @@ public class ReadWriteNonCoreDataServiceImpl implements ReadWriteNonCoreDataServ
                     StringBuilder sqlBuilder = new StringBuilder();
 
                     if (mapColumnNameDefinition.containsKey("id")) {
-                        sqlBuilder = sqlBuilder.append("ALTER TABLE `" + datatableName + "` ").append("DROP KEY `fk_" + oldFKName + "`,")
+                        sqlBuilder = sqlBuilder.append("ALTER TABLE " + qualifiedTableName(datatableName) + " ").append("DROP KEY `fk_" + oldFKName + "`,")
                                 .append("DROP FOREIGN KEY `fk_" + oldConstraintName + "`,")
                                 .append("CHANGE COLUMN `" + oldFKName + "` `" + newFKName + "` BIGINT(20) NOT NULL,")
                                 .append("ADD KEY `fk_" + newFKName + "` (`" + newFKName + "`),")
                                 .append("ADD CONSTRAINT `fk_" + newConstraintName + "` ").append("FOREIGN KEY (`" + newFKName + "`) ")
                                 .append("REFERENCES `" + actualAppTableName + "` (`id`)");
                     } else {
-                        sqlBuilder = sqlBuilder.append("ALTER TABLE `" + datatableName + "` ")
+                        sqlBuilder = sqlBuilder.append("ALTER TABLE " + qualifiedTableName(datatableName) + " ")
                                 .append("DROP FOREIGN KEY `fk_" + oldConstraintName + "`,")
                                 .append("CHANGE COLUMN `" + oldFKName + "` `" + newFKName + "` BIGINT(20) NOT NULL,")
                                 .append("ADD CONSTRAINT `fk_" + newConstraintName + "` ").append("FOREIGN KEY (`" + newFKName + "`) ")
@@ -912,7 +924,7 @@ public class ReadWriteNonCoreDataServiceImpl implements ReadWriteNonCoreDataServ
                 	throw new GeneralPlatformDomainRuleException("error.msg.non.empty.datatable.column.cannot.be.deleted",
                             "Non-empty datatable columns can not be deleted.");
                 }
-                StringBuilder sqlBuilder = new StringBuilder("ALTER TABLE `" + datatableName + "`");
+                StringBuilder sqlBuilder = new StringBuilder("ALTER TABLE " + qualifiedTableName(datatableName));
                 final StringBuilder constrainBuilder = new StringBuilder();
                 final List<String> codeMappings = new ArrayList<>();
                 for (final JsonElement column : dropColumns) {
@@ -930,7 +942,7 @@ public class ReadWriteNonCoreDataServiceImpl implements ReadWriteNonCoreDataServ
             }
             if (addColumns != null) {
 
-                StringBuilder sqlBuilder = new StringBuilder("ALTER TABLE `" + datatableName + "`");
+                StringBuilder sqlBuilder = new StringBuilder("ALTER TABLE " + qualifiedTableName(datatableName));
                 final StringBuilder constrainBuilder = new StringBuilder();
                 final Map<String, Long> codeMappings = new HashMap<>();
                 for (final JsonElement column : addColumns) {
@@ -954,7 +966,7 @@ public class ReadWriteNonCoreDataServiceImpl implements ReadWriteNonCoreDataServ
             }
             if (changeColumns != null) {
 
-                StringBuilder sqlBuilder = new StringBuilder("ALTER TABLE `" + datatableName + "`");
+                StringBuilder sqlBuilder = new StringBuilder("ALTER TABLE " + qualifiedTableName(datatableName));
                 final StringBuilder constrainBuilder = new StringBuilder();
                 final Map<String, Long> codeMappings = new HashMap<>();
                 final List<String> removeMappings = new ArrayList<>();
@@ -1042,7 +1054,7 @@ public class ReadWriteNonCoreDataServiceImpl implements ReadWriteNonCoreDataServ
             } else {
                 sqlArray = new String[1];
             }
-            final String sql = "DROP TABLE `" + datatableName + "`";
+            final String sql = "DROP TABLE " + qualifiedTableName(datatableName);
             sqlArray[0] = sql;
             this.jdbcTemplate.batchUpdate(sqlArray);
         } catch (final DataIntegrityViolationException e) {

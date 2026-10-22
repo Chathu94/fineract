@@ -12845,6 +12845,71 @@ Request Body:
                 </div>
             </div>
 
+            <a id="loans_charges_bulk_create" name="loans_charges_bulk_create" class="old-syle-anchor">&nbsp;</a>
+            <div class="method-section">
+                <div class="method-description">
+                    <h4>Create Loan Charges on Multiple Loans</h4>
+                    <p>Adds one charge per <code>charges</code> item; each item names its own loan, charge, amount and due date. Uses the CREATE_LOANCHARGE permission.</p>
+                    <p>By default the batch is atomic: any failure rolls back every item. With <code>?continueOnFailure=true</code> each item is committed on its own, and failed items are returned under <code>failed</code> with the error body the single-loan call would have produced.</p>
+                    <table class=matrixHeading>
+						<tr class="matrixHeadingBG">
+							<td><div class="fineractHeading2">Mandatory Fields</div></td>
+						</tr>
+						<tr class=alt>
+							<td>charges (each with loanId, chargeId, amount, dueDate)</td>
+						</tr>
+						<tr class="matrixHeadingBG">
+							<td><div class="fineractHeading2">Optional Query Parameters</div></td>
+						</tr>
+						<tr class=alt>
+							<td>continueOnFailure (default false)</td>
+						</tr>
+                    </table>
+                </div>
+                <div class="method-example">
+                    <code class="method-declaration">
+POST https://DomainName/api/v1/loans/charges?continueOnFailure=true
+                    </code>
+                    <code class="method-request">
+POST /loans/charges?continueOnFailure=true
+Content-Type: application/json
+Request Body:
+{
+  "locale": "en",
+  "dateFormat": "dd MMMM yyyy",
+  "charges": [
+    { "loanId": 1, "chargeId": 2, "amount": "100", "dueDate": "29 April 2013" },
+    { "loanId": 2, "chargeId": 2, "amount": "250", "dueDate": "30 April 2013" },
+    { "loanId": 999, "chargeId": 2, "amount": "100", "dueDate": "29 April 2013" }
+  ]
+}
+                    </code>
+                    <code class="method-response">
+{
+  "changes": {
+    "created": [
+      { "loanId": 1, "chargeId": 2, "loanChargeId": 31 },
+      { "loanId": 2, "chargeId": 2, "loanChargeId": 32 }
+    ],
+    "failed": [
+      {
+        "loanId": 999,
+        "chargeId": 2,
+        "error": {
+          "developerMessage": "The requested resource is not available.",
+          "httpStatusCode": "404",
+          "defaultUserMessage": "Loan with identifier 999 does not exist",
+          "userMessageGlobalisationCode": "error.msg.loan.id.invalid",
+          "errors": [ { "developerMessage": "Loan with identifier 999 does not exist", "userMessageGlobalisationCode": "error.msg.loan.id.invalid", "parameterName": "id", "args": [ { "value": 999 } ] } ]
+        }
+      }
+    ]
+  }
+}
+	                </code>
+                </div>
+            </div>
+
             <a id="loans_charges_update" name="loans_charges_update"
 				class="old-syle-anchor">&nbsp;</a>
 			<div class="method-section">
@@ -12920,6 +12985,49 @@ Request Body:
     }
 
 					</code>
+				</div>
+			</div>
+
+			<a id="loans_penalty_charges_bulk_waive" name="loans_penalty_charges_bulk_waive" class="old-syle-anchor">&nbsp;</a>
+			<div class="method-section">
+				<div class="method-description">
+					<h4>Waive Penalty Charges in Bulk</h4>
+					<p>Waives multiple penalty charges belonging to the same active loan. The operation is atomic.</p>
+				</div>
+				<div class="method-example">
+					<code class="method-declaration">
+POST https://DomainName/api/v1/loans/{loanId}/charges?command=waive
+					</code>
+					<code class="method-request">
+POST loans/1/charges?command=waive
+Content-Type: application/json
+Request Body:
+{
+  "chargeIds": [12, 13, 14]
+}
+					</code>
+				</div>
+			</div>
+
+			<a id="loans_penalty_charges_bulk_undo_waive" name="loans_penalty_charges_bulk_undo_waive" class="old-syle-anchor">&nbsp;</a>
+			<div class="method-section">
+				<div class="method-description">
+					<h4>Undo Penalty Charge Waivers in Bulk</h4>
+					<p>Reverses the active waiver transactions for multiple penalty charges on the same loan and recalculates the loan schedule, accruals, accounting entries, and arrears.</p>
+				</div>
+				<div class="method-example">
+					<code class="method-declaration">
+POST https://DomainName/api/v1/loans/{loanId}/charges?command=undoWaive
+					</code>
+					<code class="method-request">
+POST loans/1/charges?command=undoWaive
+Content-Type: application/json
+Request Body:
+{
+  "chargeIds": [12, 13, 14]
+}
+					</code>
+					<p>A single waiver can also be undone with <code>POST /loans/{loanId}/charges/{chargeId}?command=undoWaive</code>.</p>
 				</div>
 			</div>
 			<a id="loans_charges_delete" name="loans_charges_delete" class="old-syle-anchor">&nbsp;</a>

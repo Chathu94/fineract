@@ -65,7 +65,7 @@ public class LoanChargeAssembler {
         this.loanProductRepository = loanProductRepository;
     }
 
-    public Set<LoanCharge> fromParsedJson(final JsonElement element, List<LoanDisbursementDetails> disbursementDetails) {
+    public Result fromParsedJson(final JsonElement element, List<LoanDisbursementDetails> disbursementDetails) {
         JsonArray jsonDisbursement = this.fromApiJsonHelper.extractJsonArrayNamed("disbursementData", element);
         List<Long> disbursementChargeIds = new ArrayList<>();
 
@@ -90,6 +90,7 @@ public class LoanChargeAssembler {
         }
 
         final Set<LoanCharge> loanCharges = new HashSet<>();
+        BigDecimal capitalizedChargeAmount = BigDecimal.ZERO;
         final BigDecimal principal = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed("principal", element);
         final Integer numberOfRepayments = this.fromApiJsonHelper.extractIntegerWithLocaleNamed("numberOfRepayments", element);
         final Long productId = this.fromApiJsonHelper.extractLongNamed("productId", element);
@@ -118,6 +119,8 @@ public class LoanChargeAssembler {
                             .extractLocalDateNamed("dueDate", loanChargeElement, dateFormat, locale);
                     final Integer chargePaymentMode = this.fromApiJsonHelper.extractIntegerNamed("chargePaymentMode", loanChargeElement,
                             locale);
+                    final boolean capitalized = Boolean.TRUE.equals(this.fromApiJsonHelper.extractBooleanNamed(
+                            LoanApiConstants.chargeCapitalizedParameterName, loanChargeElement));
                     if (id == null) {
                         final Charge chargeDefinition = this.chargeRepository.findOneWithNotFoundDetection(chargeId);
 
@@ -143,8 +146,14 @@ public class LoanChargeAssembler {
                         if (!isMultiDisbursal) {
                             final LoanCharge loanCharge = LoanCharge.createNewWithoutLoan(chargeDefinition, principal, amount, chargeTime,
                                     chargeCalculation, dueDate, chargePaymentModeEnum, numberOfRepayments);
-                            loanCharges.add(loanCharge);
+                            if (capitalized) {
+                                capitalizedChargeAmount = capitalizedChargeAmount.add(loanCharge.amount());
+                            } else {
+                                loanCharges.add(loanCharge);
+                            }
                         } else {
+                            // ponytail: capitalizing a per-tranche disbursement/tranche-disbursement charge is
+                            // ambiguous (which disbursement's principal absorbs it?); not supported here.
                             if (topLevelJsonElement.has("disbursementData") && topLevelJsonElement.get("disbursementData").isJsonArray()) {
                                 final JsonArray disbursementArray = topLevelJsonElement.get("disbursementData").getAsJsonArray();
                                 if (disbursementArray.size() > 0) {
@@ -198,7 +207,11 @@ public class LoanChargeAssembler {
                             } else {
                                 final LoanCharge loanCharge = LoanCharge.createNewWithoutLoan(chargeDefinition, principal, amount,
                                         chargeTime, chargeCalculation, dueDate, chargePaymentModeEnum, numberOfRepayments);
-                                loanCharges.add(loanCharge);
+                                if (capitalized) {
+                                    capitalizedChargeAmount = capitalizedChargeAmount.add(loanCharge.amount());
+                                } else {
+                                    loanCharges.add(loanCharge);
+                                }
                             }
                         }
                     } else {
@@ -216,7 +229,27 @@ public class LoanChargeAssembler {
             }
         }
 
-        return loanCharges;
+        return new Result(loanCharges, capitalizedChargeAmount);
+    }
+
+    public static final class Result {
+
+        private final Set<LoanCharge> loanCharges;
+        private final BigDecimal capitalizedChargeAmount;
+
+        private Result(final Set<LoanCharge> loanCharges, final BigDecimal capitalizedChargeAmount) {
+            this.loanCharges = loanCharges;
+            this.capitalizedChargeAmount = capitalizedChargeAmount;
+        }
+
+        public Set<LoanCharge> getLoanCharges() {
+            return this.loanCharges;
+        }
+
+        /** Sum of charges flagged "capitalized" - excluded from loanCharges, to be added to the loan principal instead. */
+        public BigDecimal getCapitalizedChargeAmount() {
+            return this.capitalizedChargeAmount;
+        }
     }
 
     public Set<Charge> getNewLoanTrancheCharges(final JsonElement element) {

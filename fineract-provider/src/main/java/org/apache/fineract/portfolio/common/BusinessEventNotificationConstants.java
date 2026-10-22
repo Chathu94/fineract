@@ -29,7 +29,8 @@ public class BusinessEventNotificationConstants {
                 "loan_adjust_transaction"), LOAN_MAKE_REPAYMENT("loan_repayment_transaction"), LOAN_WRITTEN_OFF("loan_writtenoff"), LOAN_UNDO_WRITTEN_OFF(
                 "loan_undo_writtenoff"), LOAN_DISBURSAL("loan_disbursal"), LOAN_WAIVE_INTEREST("loan_waive_interest"), LOAN_CLOSE(
                 "loan_close"), LOAN_CLOSE_AS_RESCHEDULE("loan_close_as_reschedule"), LOAN_ADD_CHARGE("loan_add_charge"), LOAN_UPDATE_CHARGE(
-                "loan_update_charge"), LOAN_WAIVE_CHARGE("loan_waive_charge"), LOAN_DELETE_CHARGE("loan_delete_charge"), LOAN_CHARGE_PAYMENT(
+                "loan_update_charge"), LOAN_WAIVE_CHARGE("loan_waive_charge"), LOAN_UNDO_WAIVE_CHARGE(
+                "loan_undo_waive_charge"), LOAN_DELETE_CHARGE("loan_delete_charge"), LOAN_CHARGE_PAYMENT(
                 "loan_charge_payment"), LOAN_INITIATE_TRANSFER("loan_initiate_transfer"), LOAN_ACCEPT_TRANSFER("loan_accept_transfer"), LOAN_WITHDRAW_TRANSFER(
                 "loan_withdraw_transfer"), LOAN_REJECT_TRANSFER("loan_reject_transfer"), LOAN_REASSIGN_OFFICER("loan_reassign_officer"), LOAN_REMOVE_OFFICER(
                 "loan_remove_officer"), LOAN_APPLY_OVERDUE_CHARGE("loan_apply_overdue_charge"), LOAN_INTEREST_RECALCULATION(

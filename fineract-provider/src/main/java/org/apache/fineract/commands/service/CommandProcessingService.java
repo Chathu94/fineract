@@ -26,7 +26,7 @@ import org.apache.fineract.useradministration.domain.AppUser;
 
 public interface CommandProcessingService {
 
-    CommandProcessingResult processAndLogCommand(CommandWrapper wrapper, JsonCommand command, boolean isApprovedByChecker);
+    CommandProcessingResult processAndLogCommand(CommandWrapper wrapper, JsonCommand command, boolean isApprovedByChecker, boolean makerIsChecker);
 
     CommandProcessingResult logCommand(CommandSource commandSourceResult);
     

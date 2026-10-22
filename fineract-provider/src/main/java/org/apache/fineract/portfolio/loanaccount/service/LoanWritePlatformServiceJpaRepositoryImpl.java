@@ -34,6 +34,7 @@ import org.apache.fineract.infrastructure.core.data.DataValidatorBuilder;
 import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRuleException;
 import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
 import org.apache.fineract.infrastructure.core.exception.PlatformServiceUnavailableException;
+import org.apache.fineract.batch.exception.ErrorHandler;
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
@@ -125,11 +126,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.CollectionUtils;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 
 @Service
 public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatformService {
@@ -160,6 +165,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     private final LoanChargeReadPlatformService loanChargeReadPlatformService;
     private final LoanReadPlatformService loanReadPlatformService;
     private final FromJsonHelper fromApiJsonHelper;
+    private final TransactionTemplate newTransaction;
     private final AccountTransferRepository accountTransferRepository;
     private final CalendarRepository calendarRepository;
     private final LoanRepaymentScheduleInstallmentRepository repaymentScheduleInstallmentRepository;
@@ -208,8 +214,11 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             final CodeValueRepositoryWrapper codeValueRepository,
             final LoanRepositoryWrapper loanRepositoryWrapper,
             final CashierTransactionDataValidator cashierTransactionDataValidator,
-                                                     final RoutingDataSource dataSource) {
+                                                     final RoutingDataSource dataSource,
+                                                     final PlatformTransactionManager transactionManager) {
         this.context = context;
+        this.newTransaction = new TransactionTemplate(transactionManager);
+        this.newTransaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
         this.loanEventApiJsonValidator = loanEventApiJsonValidator;
         this.loanAssembler = loanAssembler;
         this.loanRepositoryWrapper = loanRepositoryWrapper ;
@@ -346,15 +355,17 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
                 BigDecimal loanOutstanding = this.loanReadPlatformService.retrieveLoanPrePaymentTemplate(loanIdToClose,
                             actualDisbursementDate).getAmount();
+                final BigDecimal outstandingAfterWaiver = command.bigDecimalValueOfParameterNamed(LoanApiConstants.outstandingAfterWaiver);
+                final BigDecimal outstandingToCompare = (outstandingAfterWaiver != null) ? outstandingAfterWaiver : loanOutstanding;
                 final BigDecimal firstDisbursalAmount = loan.getFirstDisbursalAmount();
-                if(loanOutstanding.compareTo(firstDisbursalAmount) > 0){
+                if(outstandingToCompare.compareTo(firstDisbursalAmount) > 0){
                     throw new GeneralPlatformDomainRuleException("error.msg.loan.amount.less.than.outstanding.of.loan.to.be.closed",
                             "Topup loan amount should be greater than outstanding amount of loan to be closed.");
                 }
 
                 amountToDisburse = disburseAmount.minus(loanOutstanding);
 
-                disburseLoanToLoan(loan, command, loanOutstanding);
+                disburseLoanToLoan(loan, command, loanOutstanding, paymentDetail);
             }
 
             if (isAccountTransfer) {
@@ -1374,6 +1385,62 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 .build();
     }
 
+    @Transactional
+    @Override
+    public CommandProcessingResult bulkAddLoanCharge(final JsonCommand command) {
+        this.loanEventApiJsonValidator.validateBulkAddLoanCharge(command.json());
+        final boolean continueOnFailure = command.booleanPrimitiveValueOfParameterNamed("continueOnFailure");
+        final JsonObject body = command.parsedJson().getAsJsonObject();
+
+        final List<Map<String, Object>> created = new ArrayList<>();
+        final List<Map<String, Object>> failed = new ArrayList<>();
+        for (final JsonElement item : command.arrayOfParameterNamed("charges")) {
+            // reshape each item into the payload the single-loan add accepts
+            final JsonObject chargeJson = this.fromApiJsonHelper.parse(item.toString()).getAsJsonObject();
+            final Long loanId = chargeJson.remove("loanId").getAsLong();
+            for (final String shared : new String[] { "locale", "dateFormat" }) {
+                if (body.has(shared) && !chargeJson.has(shared)) {
+                    chargeJson.add(shared, body.get(shared));
+                }
+            }
+            final JsonCommand chargeCommand = JsonCommand.fromExistingCommand(command, chargeJson);
+
+            final Map<String, Object> entry = new LinkedHashMap<>();
+            entry.put("loanId", loanId);
+            entry.put("chargeId", chargeJson.get("chargeId"));
+            try {
+                // continueOnFailure: each loan in its own transaction so one failure cannot roll back the others
+                final CommandProcessingResult result = continueOnFailure
+                        ? this.newTransaction.execute(status -> addLoanCharge(loanId, chargeCommand))
+                        : addLoanCharge(loanId, chargeCommand);
+                entry.put("loanChargeId", result.resourceId());
+                created.add(entry);
+            } catch (final RuntimeException e) {
+                if (!continueOnFailure) { throw e; }
+                entry.put("error", errorBody(e));
+                failed.add(entry);
+            }
+        }
+
+        final Map<String, Object> changes = new LinkedHashMap<>();
+        changes.put("created", created);
+        changes.put("failed", failed);
+        return new CommandProcessingResultBuilder() //
+                .withCommandId(command.commandId()) //
+                .with(changes) //
+                .build();
+    }
+
+    /** The same error body the API would have returned for a single-loan call, embedded as JSON where possible. */
+    private Object errorBody(final RuntimeException e) {
+        final String errorJson = ErrorHandler.handler(e).getMessage();
+        try {
+            return this.fromApiJsonHelper.parse(errorJson);
+        } catch (final RuntimeException notJson) {
+            return errorJson;
+        }
+    }
+
     private void validateAddLoanCharge(final Loan loan, final Charge chargeDefinition, final LoanCharge loanCharge) {
         if (chargeDefinition.isOverdueInstallment()) {
             final String defaultUserMessage = "Installment charge cannot be added to the loan.";
@@ -1585,6 +1652,154 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
     @Transactional
     @Override
+    public CommandProcessingResult bulkWaivePenaltyCharges(final Long loanId, final JsonCommand command) {
+        this.loanEventApiJsonValidator.validateBulkPenaltyChargeTransaction(command.json());
+        final List<Long> chargeIds = extractChargeIds(command);
+
+        final Loan loan = this.loanAssembler.assembleFrom(loanId);
+        checkClientOrGroupActive(loan);
+        if (!loan.status().isActive()) {
+            throw new LoanChargeCannotBeWaivedException(LOAN_CHARGE_CANNOT_BE_WAIVED_REASON.LOAN_INACTIVE, chargeIds.get(0));
+        }
+
+        for (final Long chargeId : chargeIds) {
+            final LoanCharge loanCharge = retrieveLoanChargeBy(loanId, chargeId);
+            validatePenaltyCharge(loanCharge);
+            if (loanCharge.isWaived()) {
+                throw new LoanChargeCannotBeWaivedException(LOAN_CHARGE_CANNOT_BE_WAIVED_REASON.ALREADY_WAIVED, chargeId);
+            } else if (loanCharge.isPaid()) {
+                throw new LoanChargeCannotBeWaivedException(LOAN_CHARGE_CANNOT_BE_WAIVED_REASON.ALREADY_PAID, chargeId);
+            }
+        }
+
+        final JsonCommand singleChargeCommand = JsonCommand.fromExistingCommand(command, new JsonObject());
+        for (final Long chargeId : chargeIds) {
+            waiveLoanCharge(loanId, chargeId, singleChargeCommand);
+        }
+
+        final Map<String, Object> changes = new LinkedHashMap<>();
+        changes.put("chargeIds", chargeIds);
+        return new CommandProcessingResultBuilder() //
+                .withCommandId(command.commandId()) //
+                .withOfficeId(loan.getOfficeId()) //
+                .withClientId(loan.getClientId()) //
+                .withGroupId(loan.getGroupId()) //
+                .withLoanId(loanId) //
+                .with(changes) //
+                .build();
+    }
+
+    @Transactional
+    @Override
+    public CommandProcessingResult undoWaivePenaltyCharges(final Long loanId, final Long loanChargeId, final JsonCommand command) {
+        final List<Long> chargeIds;
+        if (loanChargeId == null) {
+            this.loanEventApiJsonValidator.validateBulkPenaltyChargeTransaction(command.json());
+            chargeIds = extractChargeIds(command);
+        } else {
+            chargeIds = Collections.singletonList(loanChargeId);
+        }
+
+        final Loan loan = this.loanAssembler.assembleFrom(loanId);
+        checkClientOrGroupActive(loan);
+        if (!loan.status().isActive() && !loan.status().isClosedObligationsMet()) {
+            throw new GeneralPlatformDomainRuleException("error.msg.loan.penalty.charge.undo.waive.loan.inactive",
+                    "Penalty charge waiver cannot be undone because loan {0} is not active or closed with obligations met", loanId);
+        }
+
+        final Map<Long, LoanCharge> chargesById = new LinkedHashMap<>();
+        for (final Long chargeId : chargeIds) {
+            final LoanCharge loanCharge = retrieveLoanChargeBy(loanId, chargeId);
+            validatePenaltyCharge(loanCharge);
+            if (!loanCharge.getAmountWaived(loan.getCurrency()).isGreaterThanZero()) {
+                throw new GeneralPlatformDomainRuleException("error.msg.loan.penalty.charge.not.waived",
+                        "Penalty charge {0} has no waived amount to undo", chargeId);
+            }
+            chargesById.put(chargeId, loanCharge);
+        }
+
+        final Set<LoanTransaction> transactionsToReverse = new LinkedHashSet<>();
+        final Set<Long> matchedChargeIds = new HashSet<>();
+        for (final LoanTransaction transaction : loan.getLoanTransactions()) {
+            if (transaction.isChargesWaiver()) {
+                for (final LoanChargePaidBy chargePaidBy : transaction.getLoanChargesPaid()) {
+                    final Long chargeId = chargePaidBy.getLoanCharge().getId();
+                    if (chargesById.containsKey(chargeId)) {
+                        transactionsToReverse.add(transaction);
+                        matchedChargeIds.add(chargeId);
+                    }
+                }
+            }
+        }
+        if (!matchedChargeIds.containsAll(chargeIds)) {
+            final List<Long> missingChargeIds = new ArrayList<>(chargeIds);
+            missingChargeIds.removeAll(matchedChargeIds);
+            throw new GeneralPlatformDomainRuleException("error.msg.loan.penalty.charge.waive.transaction.not.found",
+                    "No active waiver transaction was found for penalty charge(s) {0}", missingChargeIds);
+        }
+
+        for (final LoanCharge loanCharge : chargesById.values()) {
+            this.businessEventNotifierService.notifyBusinessEventToBeExecuted(BUSINESS_EVENTS.LOAN_UNDO_WAIVE_CHARGE,
+                    constructEntityMap(BUSINESS_ENTITY.LOAN_CHARGE, loanCharge));
+        }
+
+        final List<Long> existingTransactionIds = new ArrayList<>();
+        final List<Long> existingReversedTransactionIds = new ArrayList<>();
+        final ScheduleGeneratorDTO scheduleGeneratorDTO = this.loanUtilService.buildScheduleGeneratorDTO(loan, null);
+        final ChangedTransactionDetail changedTransactionDetail = loan.undoWaiveLoanChargeTransactions(transactionsToReverse,
+                defaultLoanLifecycleStateMachine(), existingTransactionIds, existingReversedTransactionIds, scheduleGeneratorDTO,
+                getAppUserIfPresent());
+        if (changedTransactionDetail != null) {
+            for (final Map.Entry<Long, LoanTransaction> mapEntry : changedTransactionDetail.getNewTransactionMappings().entrySet()) {
+                this.loanTransactionRepository.save(mapEntry.getValue());
+                this.accountTransfersWritePlatformService.updateLoanTransaction(mapEntry.getKey(), mapEntry.getValue());
+            }
+        }
+
+        saveLoanWithDataIntegrityViolationChecks(loan);
+        postJournalEntries(loan, existingTransactionIds, existingReversedTransactionIds);
+        this.loanAccountDomainService.recalculateAccruals(loan);
+
+        for (final LoanCharge loanCharge : chargesById.values()) {
+            this.businessEventNotifierService.notifyBusinessEventWasExecuted(BUSINESS_EVENTS.LOAN_UNDO_WAIVE_CHARGE,
+                    constructEntityMap(BUSINESS_ENTITY.LOAN_CHARGE, loanCharge));
+        }
+
+        final List<Long> reversedTransactionIds = new ArrayList<>();
+        for (final LoanTransaction transaction : transactionsToReverse) {
+            reversedTransactionIds.add(transaction.getId());
+        }
+        final Map<String, Object> changes = new LinkedHashMap<>();
+        changes.put("chargeIds", chargeIds);
+        changes.put("reversedTransactionIds", reversedTransactionIds);
+        return new CommandProcessingResultBuilder() //
+                .withCommandId(command.commandId()) //
+                .withEntityId(loanChargeId) //
+                .withOfficeId(loan.getOfficeId()) //
+                .withClientId(loan.getClientId()) //
+                .withGroupId(loan.getGroupId()) //
+                .withLoanId(loanId) //
+                .with(changes) //
+                .build();
+    }
+
+    private List<Long> extractChargeIds(final JsonCommand command) {
+        final List<Long> chargeIds = new ArrayList<>();
+        for (final JsonElement chargeId : command.arrayOfParameterNamed("chargeIds")) {
+            chargeIds.add(chargeId.getAsLong());
+        }
+        return chargeIds;
+    }
+
+    private void validatePenaltyCharge(final LoanCharge loanCharge) {
+        if (!loanCharge.isPenaltyCharge()) {
+            throw new GeneralPlatformDomainRuleException("error.msg.loan.charge.is.not.penalty",
+                    "Loan charge {0} is not a penalty charge", loanCharge.getId());
+        }
+    }
+
+    @Transactional
+    @Override
     public CommandProcessingResult deleteLoanCharge(final Long loanId, final Long loanChargeId, final JsonCommand command) {
 
         final Loan loan = this.loanAssembler.assembleFrom(loanId);
@@ -1690,6 +1905,10 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     }
 
     public void disburseLoanToLoan(final Loan loan, final JsonCommand command, final BigDecimal amount) {
+        disburseLoanToLoan(loan, command, amount, null);
+    }
+
+    public void disburseLoanToLoan(final Loan loan, final JsonCommand command, final BigDecimal amount, final PaymentDetail paymentDetail) {
 
         final LocalDate transactionDate = command.localDateValueOfParameterNamed("actualDisbursementDate");
         final String txnExternalId = command.stringValueOfParameterNamedAllowingNull("externalId");
@@ -1698,7 +1917,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         final DateTimeFormatter fmt = DateTimeFormat.forPattern(command.dateFormat()).withLocale(locale);
         final AccountTransferDTO accountTransferDTO = new AccountTransferDTO(transactionDate, amount,
                 PortfolioAccountType.LOAN, PortfolioAccountType.LOAN, loan.getId(), loan.getTopupLoanDetails().getLoanIdToClose(),
-                "Loan Topup", locale, fmt, LoanTransactionType.DISBURSEMENT.getValue(), LoanTransactionType.REPAYMENT.getValue(),
+                "Loan Topup", locale, fmt, paymentDetail, LoanTransactionType.DISBURSEMENT.getValue(), LoanTransactionType.REPAYMENT.getValue(),
                 txnExternalId, loan, null);
         AccountTransferDetails accountTransferDetails = this.accountTransfersWritePlatformService.repayLoanWithTopup(accountTransferDTO);
         loan.getTopupLoanDetails().setAccountTransferDetails(accountTransferDetails.getId());

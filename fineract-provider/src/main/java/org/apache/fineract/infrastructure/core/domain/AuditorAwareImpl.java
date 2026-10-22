@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.infrastructure.core.domain;
 
+import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.apache.fineract.useradministration.domain.AppUserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,8 +32,14 @@ public class AuditorAwareImpl implements AuditorAware<AppUser> {
     @Autowired
     private AppUserRepository userRepository;
 
+    @Autowired
+    private PlatformSecurityContext context;
+
     @Override
     public AppUser getCurrentAuditor() {
+
+        final AppUser maker = this.context.maker();
+        if (maker != null) { return maker; }
 
         AppUser currentUser = null;
         final SecurityContext securityContext = SecurityContextHolder.getContext();

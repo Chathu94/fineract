@@ -41,7 +41,9 @@ public class AddLoanChargeCommandHandler implements NewCommandSourceHandler {
     @Transactional
     @Override
     public CommandProcessingResult processCommand(final JsonCommand command) {
-
+        if (command.getLoanId() == null) {
+            return this.writePlatformService.bulkAddLoanCharge(command);
+        }
         return this.writePlatformService.addLoanCharge(command.getLoanId(), command);
     }
 }

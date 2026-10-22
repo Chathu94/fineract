@@ -680,6 +680,30 @@ public class LoansApiResource {
         return this.toApiJsonSerializer.serialize(result);
     }
 
+    @POST
+    @Path("charges")
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON })
+    public String bulkAddLoanCharge(@QueryParam("continueOnFailure") @DefaultValue("false") final boolean continueOnFailure,
+            final String apiRequestBodyAsJson) {
+        ThreadLocalContextUtil.executeReplicaQuery(this.dataSource, false);
+
+        String json = apiRequestBodyAsJson;
+        if (continueOnFailure && StringUtils.isNotBlank(json)) {
+            // carried in the body so a maker-checker replay behaves the same way
+            final JsonElement body = this.fromJsonHelper.parse(json);
+            if (body.isJsonObject()) {
+                body.getAsJsonObject().addProperty("continueOnFailure", true);
+                json = body.toString();
+            }
+        }
+
+        final CommandWrapper commandRequest = new CommandWrapperBuilder().bulkCreateLoanCharge().withJson(json).build();
+        final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
+
+        return this.toApiJsonSerializer.serialize(result);
+    }
+
     @PUT
     @Path("{loanId}")
     @Consumes({ MediaType.APPLICATION_JSON })

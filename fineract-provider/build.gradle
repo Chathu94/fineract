@@ -25,8 +25,8 @@ buildscript {
 //  	 jcenter()
   	 mavenCentral()
   	 maven { url "https://plugins.gradle.org/m2/" }
-      google()
-      gradlePluginPortal()
+    //   google()
+    //   gradlePluginPortal()
       flatDir { dirs("lib") }
   }
 
@@ -86,27 +86,48 @@ openjpa {
     enforcePropertyRestrictions = true
 }
 
+task copyDeps(type: Copy, dependsOn: jar) {
+    from configurations.runtime
+    into "${buildDir}/libs/lib"
+}
+
 task fatJar(type: Jar, dependsOn: classes) {
-    // name like myapp-all.jar
     baseName = project.name
     classifier = 'all'
-
-    // keep your existing MANIFEST (Main-Class already set in `jar {}`)
     manifest {
-        from jar.manifest
+        attributes(
+            'Main-Class': 'org.apache.fineract.ServerApplication'
+        )
     }
-
-    // include project classes/resources
     from sourceSets.main.output
-
-    // include all runtime dependencies
     from {
         configurations.runtime.collect { it.isDirectory() ? it : zipTree(it) }
     }
-
-    // avoid signature & duplicate META-INF conflicts
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     exclude 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA'
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+    from {
+        def handlersContent = new StringBuilder()
+        def schemasContent = new StringBuilder()
+
+        configurations.runtime.resolvedConfiguration.resolvedArtifacts.each { artifact ->
+            def file = artifact.file
+            if (file.name.endsWith('.jar')) {
+                def zip = new java.util.zip.ZipFile(file)
+                def handlers = zip.getEntry('META-INF/spring.handlers')
+                if (handlers) handlersContent.append(zip.getInputStream(handlers).text).append('\n')
+                def schemas = zip.getEntry('META-INF/spring.schemas')
+                if (schemas) schemasContent.append(zip.getInputStream(schemas).text).append('\n')
+                zip.close()
+            }
+        }
+
+        def tmpDir = new File("${buildDir}/merged-meta-inf")
+        tmpDir.mkdirs()
+        new File(tmpDir, 'spring.handlers').text = handlersContent.toString()
+        new File(tmpDir, 'spring.schemas').text = schemasContent.toString()
+        tmpDir
+    } into 'META-INF'
 }
 
 //rat {
@@ -439,8 +460,8 @@ buildscript {
             dirs("lib")
         }
         mavenCentral()
-        google()
-        gradlePluginPortal()
+        // google()
+        // gradlePluginPortal()
     }
 
     dependencies {

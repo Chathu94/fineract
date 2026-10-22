@@ -364,6 +364,27 @@ public class LoanCharge extends AbstractPersistableCustom<Long> {
 
     }
 
+    public Money undoWaivedAmountBy(final Money decrementBy, final Integer loanInstallmentNumber) {
+        final MonetaryCurrency currency = decrementBy.getCurrency();
+        Money amountToUndo = decrementBy;
+        if (isInstalmentFee()) {
+            amountToUndo = getInstallmentLoanCharge(loanInstallmentNumber).undoWaivedAmountBy(decrementBy);
+        } else {
+            final Money amountWaivedToDate = getAmountWaived(currency);
+            if (decrementBy.isGreaterThanOrEqualTo(amountWaivedToDate)) {
+                amountToUndo = amountWaivedToDate;
+            }
+        }
+
+        this.amountWaived = getAmountWaived(currency).minus(amountToUndo).getAmount();
+        this.amountOutstanding = calculateOutstanding();
+        final boolean fullyAccountedFor = determineIfFullyPaid();
+        this.waived = fullyAccountedFor && getAmountWaived(currency).isGreaterThanZero();
+        this.paid = fullyAccountedFor && !this.waived && getAmountWrittenOff(currency).isZero();
+
+        return amountToUndo;
+    }
+
     public BigDecimal getAmountPercentageAppliedTo() {
         return this.amountPercentageAppliedTo;
     }

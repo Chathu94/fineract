@@ -23,7 +23,15 @@ import org.apache.fineract.useradministration.domain.AppUser;
 
 public interface PlatformSecurityContext {
 
+    AppUser authenticatedUser(Boolean overrideMaker);
+
     AppUser authenticatedUser();
+
+    AppUser maker();
+
+    void setMaker(AppUser maker);
+
+    AppUser getAuthenticatedUserIfPresent(Boolean overrideMaker);
 
     /**
      * Convenience method returns null (does not throw an exception) if an
@@ -41,6 +49,8 @@ public interface PlatformSecurityContext {
     String officeHierarchy();
 
     boolean doesPasswordHasToBeRenewed(AppUser currentUser);
+
+    AppUser authenticatedUser(CommandWrapper commandWrapper, Boolean overrideMaker);
 
     AppUser authenticatedUser(CommandWrapper commandWrapper);
 }

@@ -329,6 +329,14 @@ public class Loan extends AbstractPersistableCustom<Long> {
     @Transient
     private LoanSummaryWrapper loanSummaryWrapper;
 
+    /**
+     * Sum of charges capitalized into principal at loan creation (not persisted). Used so
+     * non-capitalized percentage charges keep using the originally requested principal as their
+     * base, instead of the (larger) stored principal that already includes capitalized charges.
+     */
+    @Transient
+    private BigDecimal capitalizedChargeAmountAtCreation = BigDecimal.ZERO;
+
     @Column(name = "principal_amount_proposed", scale = 6, precision = 19, nullable = false)
     private BigDecimal proposedPrincipal;
 
@@ -865,7 +873,7 @@ public class Loan extends AbstractPersistableCustom<Long> {
                 if (isMultiDisburmentLoan() && loanCharge.isDisbursementCharge()) {
                     amount = getTotalAllTrancheDisbursementAmount().getAmount().add(totalInterestCharged);
                 }else{
-                    amount = getPrincpal().getAmount().add(totalInterestCharged);
+                    amount = getPrincipalExcludingCapitalizedCharges().add(totalInterestCharged);
                 }
             break;
             case PERCENT_OF_INTEREST:
@@ -875,13 +883,26 @@ public class Loan extends AbstractPersistableCustom<Long> {
                 if (loanCharge.getTrancheDisbursementCharge() != null) {
                     amount = loanCharge.getTrancheDisbursementCharge().getloanDisbursementDetails().principal();
                 } else {
-                    amount = getPrincpal().getAmount();
+                    amount = getPrincipalExcludingCapitalizedCharges();
                 }
             break;
             default:
             break;
         }
         return amount;
+    }
+
+    /** Sets the total of charges capitalized into principal when this loan was created. */
+    public void setCapitalizedChargeAmountAtCreation(final BigDecimal capitalizedChargeAmount) {
+        this.capitalizedChargeAmountAtCreation = capitalizedChargeAmount == null ? BigDecimal.ZERO : capitalizedChargeAmount;
+    }
+
+    /**
+     * The principal to use as the base for non-capitalized percentage charges: the stored
+     * principal minus whatever was capitalized into it at creation (see {@link #setCapitalizedChargeAmountAtCreation}).
+     */
+    private BigDecimal getPrincipalExcludingCapitalizedCharges() {
+        return getPrincpal().getAmount().subtract(this.capitalizedChargeAmountAtCreation);
     }
 
     private Money getTotalAllTrancheDisbursementAmount() {
@@ -1052,6 +1073,51 @@ public class Loan extends AbstractPersistableCustom<Long> {
         doPostLoanTransactionChecks(waiveLoanChargeTransaction.getTransactionDate(), loanLifecycleStateMachine);
 
         return waiveLoanChargeTransaction;
+    }
+
+    public ChangedTransactionDetail undoWaiveLoanChargeTransactions(final Collection<LoanTransaction> transactionsToReverse,
+            final LoanLifecycleStateMachine loanLifecycleStateMachine, final List<Long> existingTransactionIds,
+            final List<Long> existingReversedTransactionIds, final ScheduleGeneratorDTO scheduleGeneratorDTO,
+            final AppUser currentUser) {
+
+        existingTransactionIds.addAll(findExistingTransactionIds());
+        existingReversedTransactionIds.addAll(findExistingReversedTransactionIds());
+
+        LocalDate recalculateFrom = null;
+        for (final LoanTransaction transaction : transactionsToReverse) {
+            if (!transaction.isChargesWaiver()) {
+                continue;
+            }
+            for (final LoanChargePaidBy chargePaidBy : transaction.getLoanChargesPaid()) {
+                chargePaidBy.getLoanCharge().undoWaivedAmountBy(Money.of(getCurrency(), chargePaidBy.getAmount()),
+                        chargePaidBy.getInstallmentNumber());
+            }
+            if (recalculateFrom == null || transaction.getTransactionDate().isBefore(recalculateFrom)) {
+                recalculateFrom = transaction.getTransactionDate();
+            }
+            transaction.reverse();
+            transaction.manuallyAdjustedOrReversed();
+        }
+
+        if (isClosedObligationsMet()) {
+            this.loanStatus = LoanStatus.ACTIVE.getValue();
+            this.closedOnDate = null;
+            this.actualMaturityDate = null;
+        }
+
+        scheduleGeneratorDTO.setRecalculateFrom(recalculateFrom);
+        if (this.repaymentScheduleDetail().isInterestRecalculationEnabled()) {
+            regenerateRepaymentScheduleWithInterestRecalculation(scheduleGeneratorDTO, currentUser);
+        }
+
+        final LoanRepaymentScheduleTransactionProcessor loanRepaymentScheduleTransactionProcessor = this.transactionProcessorFactory
+                .determineProcessor(this.transactionProcessingStrategy);
+        final ChangedTransactionDetail changedTransactionDetail = loanRepaymentScheduleTransactionProcessor.handleTransaction(
+                getDisbursementDate(), retreiveListOfTransactionsPostDisbursement(), getCurrency(), getRepaymentScheduleInstallments(),
+                charges());
+        updateLoanSummaryDerivedFields();
+        doPostLoanTransactionChecks(getLastUserTransactionDate(), loanLifecycleStateMachine);
+        return changedTransactionDetail;
     }
 
     public Client client() {
@@ -4800,12 +4866,6 @@ public class Loan extends AbstractPersistableCustom<Long> {
                             defaultUserMessage);
                     dataValidationErrors.add(error);
                 }
-                if(isOpen() && this.isTopup()){
-                    final String defaultUserMessage = "Loan Undo disbursal is not allowed on Topup Loans";
-                    final ApiParameterError error = ApiParameterError.generalError("error.msg.loan.undo.disbursal.not.allowed.on.topup.loan",
-                            defaultUserMessage);
-                    dataValidationErrors.add(error);
-                }
             break;
             case LOAN_REPAYMENT_OR_WAIVER:
                 if (!isOpen()) {
@@ -6091,7 +6151,7 @@ public class Loan extends AbstractPersistableCustom<Long> {
                     }
                 }
             } else {
-                amount = getPrincpal().getAmount();
+                amount = getPrincipalExcludingCapitalizedCharges();
             }
         }
         return amount;

@@ -100,6 +100,20 @@ public class LoanInstallmentCharge extends AbstractPersistableCustom<Long> imple
         return getAmountWaived(currency);
     }
 
+    public Money undoWaivedAmountBy(final Money decrementBy) {
+        final MonetaryCurrency currency = decrementBy.getCurrency();
+        final Money amountWaivedToDate = getAmountWaived(currency);
+        final Money amountToUndo = decrementBy.isGreaterThanOrEqualTo(amountWaivedToDate) ? amountWaivedToDate : decrementBy;
+
+        this.amountWaived = amountWaivedToDate.minus(amountToUndo).getAmount();
+        this.amountOutstanding = calculateOutstanding();
+        final boolean fullyAccountedFor = determineIfFullyPaid();
+        this.waived = fullyAccountedFor && getAmountWaived(currency).isGreaterThanZero();
+        this.paid = fullyAccountedFor && !this.waived && getAmountWrittenOff(currency).isZero();
+
+        return amountToUndo;
+    }
+
     public Money getAmountWaived(final MonetaryCurrency currency) {
         return Money.of(currency, this.amountWaived);
     }

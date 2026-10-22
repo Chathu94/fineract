@@ -44,6 +44,7 @@ import org.joda.time.LocalDate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.reflect.TypeToken;
 
@@ -74,11 +75,13 @@ public final class LoanEventApiJsonValidator {
 
         if (isAccountTransfer) {
             disbursementParameters = new HashSet<>(Arrays.asList("actualDisbursementDate", "externalId", "note", "locale",
-                    "dateFormat", LoanApiConstants.principalDisbursedParameterName, LoanApiConstants.emiAmountParameterName));
+                    "dateFormat", LoanApiConstants.principalDisbursedParameterName, LoanApiConstants.emiAmountParameterName,
+                    LoanApiConstants.outstandingAfterWaiver));
         } else {
             disbursementParameters = new HashSet<>(Arrays.asList("actualDisbursementDate", "externalId", "note", "locale",
                     "dateFormat", "paymentTypeId", "accountNumber", "checkNumber", "routingCode", "receiptNumber", "bankNumber", "adjustRepaymentDate", 
-                    LoanApiConstants.principalDisbursedParameterName, LoanApiConstants.emiAmountParameterName));
+                    LoanApiConstants.principalDisbursedParameterName, LoanApiConstants.emiAmountParameterName,
+                    LoanApiConstants.outstandingAfterWaiver));
         }
 
         final Type typeOfMap = new TypeToken<Map<String, Object>>() {}.getType();
@@ -380,6 +383,90 @@ public final class LoanEventApiJsonValidator {
         final Integer installmentNumber = this.fromApiJsonHelper.extractIntegerWithLocaleNamed("installmentNumber", element);
         baseDataValidator.reset().parameter("installmentNumber").value(installmentNumber).ignoreIfNull().integerGreaterThanZero();
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
+    }
+
+    public void validateBulkPenaltyChargeTransaction(final String json) {
+
+        if (StringUtils.isBlank(json)) { throw new InvalidJsonException(); }
+
+        final Set<String> transactionParameters = new HashSet<>(Arrays.asList("chargeIds"));
+        final Type typeOfMap = new TypeToken<Map<String, Object>>() {}.getType();
+        this.fromApiJsonHelper.checkForUnsupportedParameters(typeOfMap, json, transactionParameters);
+
+        final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
+        final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors)
+                .resource("loan.penalty.charge.bulk.transaction");
+        final JsonElement element = this.fromApiJsonHelper.parse(json);
+
+        validateUniqueIdArray(baseDataValidator, element, "chargeIds");
+
+        throwExceptionIfValidationWarningsExist(dataValidationErrors);
+    }
+
+    public void validateBulkAddLoanCharge(final String json) {
+
+        if (StringUtils.isBlank(json)) { throw new InvalidJsonException(); }
+
+        final Set<String> supportedParameters = new HashSet<>(Arrays.asList("charges", "locale", "dateFormat", "continueOnFailure"));
+        final Type typeOfMap = new TypeToken<Map<String, Object>>() {}.getType();
+        this.fromApiJsonHelper.checkForUnsupportedParameters(typeOfMap, json, supportedParameters);
+
+        final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
+        final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors).resource("loanCharge.bulk");
+        final JsonElement element = this.fromApiJsonHelper.parse(json);
+
+        JsonArray charges = null;
+        if (!this.fromApiJsonHelper.parameterExists("charges", element)) {
+            baseDataValidator.reset().parameter("charges").value(null).notNull();
+        } else if (!element.getAsJsonObject().get("charges").isJsonArray()) {
+            baseDataValidator.reset().parameter("charges").expectedArrayButIsNot();
+        } else {
+            charges = this.fromApiJsonHelper.extractJsonArrayNamed("charges", element);
+            baseDataValidator.reset().parameter("charges").value(charges).jsonArrayNotEmpty();
+        }
+        if (charges != null) {
+            for (final JsonElement charge : charges) {
+                if (!charge.isJsonObject()) {
+                    baseDataValidator.reset().parameter("charges").failWithCode("elements.must.be.objects",
+                            "Every charges element must be an object with loanId, chargeId, amount and dueDate");
+                } else {
+                    // chargeId, amount and dueDate are validated per loan by the single-loan add
+                    final Long loanId = this.fromApiJsonHelper.extractLongNamed("loanId", charge);
+                    baseDataValidator.reset().parameter("charges.loanId").value(loanId).notNull().longGreaterThanZero();
+                }
+            }
+        }
+
+        throwExceptionIfValidationWarningsExist(dataValidationErrors);
+    }
+
+    private void validateUniqueIdArray(final DataValidatorBuilder baseDataValidator, final JsonElement element,
+            final String parameterName) {
+        JsonArray ids = null;
+        if (!this.fromApiJsonHelper.parameterExists(parameterName, element)) {
+            baseDataValidator.reset().parameter(parameterName).value(null).notNull();
+        } else if (!element.getAsJsonObject().get(parameterName).isJsonArray()) {
+            baseDataValidator.reset().parameter(parameterName).expectedArrayButIsNot();
+        } else {
+            ids = this.fromApiJsonHelper.extractJsonArrayNamed(parameterName, element);
+            baseDataValidator.reset().parameter(parameterName).value(ids).jsonArrayNotEmpty();
+        }
+        if (ids == null) { return; }
+
+        final Set<Long> uniqueIds = new HashSet<>();
+        for (final JsonElement idElement : ids) {
+            if (!idElement.isJsonPrimitive() || !idElement.getAsJsonPrimitive().isNumber()) {
+                baseDataValidator.reset().parameter(parameterName).failWithCode("elements.must.be.numeric",
+                        "Every " + parameterName + " element must be a number");
+            } else {
+                final Long id = idElement.getAsLong();
+                baseDataValidator.reset().parameter(parameterName).value(id).longGreaterThanZero();
+                if (!uniqueIds.add(id)) {
+                    baseDataValidator.reset().parameter(parameterName).value(id).failWithCode("elements.must.be.unique",
+                            parameterName + " must not contain duplicates");
+                }
+            }
+        }
     }
 
     public void validateUpdateDisbursementDateAndAmount(final String json, LoanDisbursementDetails loanDisbursementDetails) {

@@ -61,11 +61,9 @@ public class SynchronousCommandProcessingService implements CommandProcessingSer
             final CommandSourceRepository commandSourceRepository, final ConfigurationDomainService configurationDomainService,
             final CommandHandlerProvider commandHandlerProvider) {
         this.context = context;
-        this.context = context;
         this.applicationContext = applicationContext;
         this.toApiJsonSerializer = toApiJsonSerializer;
         this.toApiResultJsonSerializer = toApiResultJsonSerializer;
-        this.commandSourceRepository = commandSourceRepository;
         this.commandSourceRepository = commandSourceRepository;
         this.configurationDomainService = configurationDomainService;
         this.commandHandlerProvider = commandHandlerProvider;
@@ -74,15 +72,23 @@ public class SynchronousCommandProcessingService implements CommandProcessingSer
     @Transactional
     @Override
     public CommandProcessingResult processAndLogCommand(final CommandWrapper wrapper, final JsonCommand command,
-            final boolean isApprovedByChecker) {
+            final boolean isApprovedByChecker, final boolean makerIsChecker) {
 
         final boolean rollbackTransaction = this.configurationDomainService.isMakerCheckerEnabledForTask(wrapper.taskPermissionName());
 
         final NewCommandSourceHandler handler = findCommandHandler(wrapper);
 
-        final CommandProcessingResult result = handler.processCommand(command);
-
-        final AppUser maker = this.context.authenticatedUser(wrapper);
+        final CommandProcessingResult result;
+        final AppUser maker;
+        try {
+            if (makerIsChecker) {
+                this.context.setMaker(this.commandSourceRepository.findOne(command.commandId()).getMaker());
+            }
+            result = handler.processCommand(command);
+            maker = this.context.authenticatedUser(wrapper);
+        } finally {
+            this.context.setMaker(null);
+        }
 
         CommandSource commandSourceResult = null;
         if (command.commandId() != null) {

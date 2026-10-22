@@ -131,7 +131,7 @@ public class SchedulerJobApiResource {
         final boolean hasNotPermission = this.context.authenticatedUser().hasNotPermissionForAnyOf("ALL_FUNCTIONS", "EXECUTEJOB_SCHEDULER");
         if (hasNotPermission) {
             final String authorizationMessage = "User has no authority to execute scheduler jobs";
-            throw new NoAuthorizationException(authorizationMessage);
+            throw new NoAuthorizationException(authorizationMessage, "EXECUTEJOB_SCHEDULER");
         }
         Response response = Response.status(400).build();
         if (is(commandParam, SchedulerJobApiConstants.COMMAND_EXECUTE_JOB)) {

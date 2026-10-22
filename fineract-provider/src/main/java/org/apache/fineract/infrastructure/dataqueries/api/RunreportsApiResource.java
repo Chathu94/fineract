@@ -158,7 +158,7 @@ public class RunreportsApiResource {
         if (!parameterType) {
             final AppUser currentUser = this.context.authenticatedUser();
             if (currentUser.hasNotPermissionForReport(reportName)) { throw new NoAuthorizationException("Not authorised to run report: "
-                    + reportName); }
+                    + reportName, "REPORTING_SUPER_USER", "READ_" + reportName); }
         }
     }
 

@@ -93,7 +93,7 @@ public final class LoanApplicationCommandFromApiJsonHelper {
             LoanApiConstants.linkAccountIdParameterName, LoanApiConstants.disbursementDataParameterName,
             LoanApiConstants.emiAmountParameterName, LoanApiConstants.maxOutstandingBalanceParameterName,
             LoanProductConstants.graceOnArrearsAgeingParameterName, LoanApiConstants.createStandingInstructionAtDisbursementParameterName,
-            LoanApiConstants.isTopup, LoanApiConstants.loanIdToClose, LoanApiConstants.datatables));
+            LoanApiConstants.isTopup, LoanApiConstants.loanIdToClose, LoanApiConstants.outstandingAfterWaiver, LoanApiConstants.datatables));
 
     private final FromJsonHelper fromApiJsonHelper;
     private final CalculateLoanScheduleQueryFromApiJsonHelper apiJsonHelper;
@@ -397,7 +397,7 @@ public final class LoanApplicationCommandFromApiJsonHelper {
             if (topLevelJsonElement.get(chargesParameterName).isJsonArray()) {
                 final Type arrayObjectParameterTypeOfMap = new TypeToken<Map<String, Object>>() {}.getType();
                 final Set<String> supportedParameters = new HashSet<>(Arrays.asList("id", "chargeId", "amount", "chargeTimeType",
-                        "chargeCalculationType", "dueDate"));
+                        "chargeCalculationType", "dueDate", LoanApiConstants.chargeCapitalizedParameterName));
 
                 final JsonArray array = topLevelJsonElement.get("charges").getAsJsonArray();
                 for (int i = 1; i <= array.size(); i++) {
@@ -480,6 +480,11 @@ public final class LoanApplicationCommandFromApiJsonHelper {
                 if(isTopup != null && isTopup){
                     final Long loanId = this.fromApiJsonHelper.extractLongNamed(LoanApiConstants.loanIdToClose, element);
                     baseDataValidator.reset().parameter(LoanApiConstants.loanIdToClose).value(loanId).notNull().longGreaterThanZero();
+                    if (this.fromApiJsonHelper.parameterExists(LoanApiConstants.outstandingAfterWaiver, element)) {
+                        final BigDecimal outstandingAfterWaiver = this.fromApiJsonHelper
+                                .extractBigDecimalWithLocaleNamed(LoanApiConstants.outstandingAfterWaiver, element);
+                        baseDataValidator.reset().parameter(LoanApiConstants.outstandingAfterWaiver).value(outstandingAfterWaiver).notNull().zeroOrPositiveAmount();
+                    }
                 }
             }
         }
@@ -927,6 +932,11 @@ public final class LoanApplicationCommandFromApiJsonHelper {
                 if(isTopup != null && isTopup){
                     final Long loanId = this.fromApiJsonHelper.extractLongNamed(LoanApiConstants.loanIdToClose, element);
                     baseDataValidator.reset().parameter(LoanApiConstants.loanIdToClose).value(loanId).notNull().longGreaterThanZero();
+                    if (this.fromApiJsonHelper.parameterExists(LoanApiConstants.outstandingAfterWaiver, element)) {
+                        final BigDecimal outstandingAfterWaiver = this.fromApiJsonHelper
+                                .extractBigDecimalWithLocaleNamed(LoanApiConstants.outstandingAfterWaiver, element);
+                        baseDataValidator.reset().parameter(LoanApiConstants.outstandingAfterWaiver).value(outstandingAfterWaiver).notNull().zeroOrPositiveAmount();
+                    }
                 }
             }
         }
