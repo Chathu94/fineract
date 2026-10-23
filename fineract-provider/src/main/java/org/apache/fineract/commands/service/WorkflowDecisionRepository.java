@@ -18,17 +18,12 @@
  */
 package org.apache.fineract.commands.service;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
-import javax.persistence.PersistenceException;
 import javax.persistence.Query;
-
+import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.springframework.stereotype.Repository;
 
 /** Reads existing workflow state using the maker-checker decision transaction. */
@@ -53,16 +48,14 @@ public class WorkflowDecisionRepository {
     }
 
     private boolean hasTable(final String tableName) {
-        try (Connection connection = this.entityManager.unwrap(Connection.class);
-                Statement statement = connection.createStatement();
-                ResultSet tables = statement.executeQuery("SHOW TABLES LIKE '" + tableName + "'")) {
-            while (tables.next()) {
-                if (tableName.equals(tables.getString(1))) { return true; }
-            }
-            return false;
-        } catch (SQLException exception) {
-            throw new PersistenceException("Unable to check tenant table " + tableName, exception);
+        final String schemaName = ThreadLocalContextUtil.getTenant().getConnection().getSchemaName();
+        final Query query = this.entityManager
+                .createNativeQuery("SHOW TABLES FROM `" + schemaName + "` LIKE '" + tableName + "'");
+        for (Object value : query.getResultList()) {
+            final Object name = value instanceof Object[] ? ((Object[]) value)[0] : value;
+            if (name != null && tableName.equals(name.toString())) { return true; }
         }
+        return false;
     }
 
     public List<WorkflowState> lockContexts(final Long commandId) {

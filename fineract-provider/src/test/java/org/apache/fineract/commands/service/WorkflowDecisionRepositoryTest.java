@@ -27,6 +27,10 @@ import java.util.List;
 import javax.persistence.EntityManager;
 import javax.persistence.Query;
 import org.apache.fineract.commands.service.WorkflowDecisionRepository.WorkflowState;
+import org.apache.fineract.infrastructure.core.domain.FineractPlatformTenant;
+import org.apache.fineract.infrastructure.core.domain.FineractPlatformTenantConnection;
+import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -43,6 +47,13 @@ public class WorkflowDecisionRepositoryTest {
         repository = new WorkflowDecisionRepository();
         ReflectionTestUtils.setField(repository, "entityManager", entityManager);
         when(entityManager.createNativeQuery(anyString())).thenReturn(query);
+        FineractPlatformTenantConnection connection = mock(FineractPlatformTenantConnection.class);
+        when(connection.getSchemaName()).thenReturn("fli_tenant");
+        ThreadLocalContextUtil.setTenant(new FineractPlatformTenant(1L, "synthetic", "Synthetic tenant", "Asia/Colombo", connection));
+    }
+
+    @After public void tearDown() {
+        ThreadLocalContextUtil.clearTenant();
     }
 
     @Test public void schemaPresenceUsesExistingTenantWorkflowTable() {
@@ -50,8 +61,7 @@ public class WorkflowDecisionRepositoryTest {
         assertTrue(repository.hasWorkflowSchema());
         ArgumentCaptor<String> sql = ArgumentCaptor.forClass(String.class);
         verify(entityManager).createNativeQuery(sql.capture());
-        assertTrue(sql.getValue().contains("table_schema = database()"));
-        assertTrue(sql.getValue().contains("table_name = 'workflow_context'"));
+        assertEquals("SHOW TABLES FROM `fli_tenant` LIKE 'workflow_context'", sql.getValue());
     }
 
     @Test public void missingWorkflowTableIsDetected() {
@@ -88,8 +98,7 @@ public class WorkflowDecisionRepositoryTest {
         verify(query).setParameter(1, 321001L);
         ArgumentCaptor<String> sql = ArgumentCaptor.forClass(String.class);
         verify(entityManager, times(2)).createNativeQuery(sql.capture());
-        assertTrue(sql.getAllValues().get(0).contains("table_schema = database()"));
-        assertTrue(sql.getAllValues().get(0).contains("table_name = 'c_checker_inbox_rule'"));
+        assertEquals("SHOW TABLES FROM `fli_tenant` LIKE 'c_checker_inbox_rule'", sql.getAllValues().get(0));
         String lookup = sql.getAllValues().get(1);
         assertTrue(lookup.contains("from m_portfolio_command_source cmd"));
         assertTrue(lookup.contains("rule.entity_name = cmd.entity_name"));
