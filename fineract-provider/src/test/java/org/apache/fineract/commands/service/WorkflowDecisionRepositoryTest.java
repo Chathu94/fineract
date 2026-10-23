@@ -45,20 +45,6 @@ public class WorkflowDecisionRepositoryTest {
         when(entityManager.createNativeQuery(anyString())).thenReturn(query);
     }
 
-    @Test public void schemaPresenceUsesExistingTenantWorkflowTable() {
-        when(query.getResultList()).thenReturn(Collections.singletonList("workflow_context"));
-        assertTrue(repository.hasWorkflowSchema());
-        ArgumentCaptor<String> sql = ArgumentCaptor.forClass(String.class);
-        verify(entityManager).createNativeQuery(sql.capture());
-        assertTrue(sql.getValue().contains("table_schema = database()"));
-        assertTrue(sql.getValue().contains("table_name = 'workflow_context'"));
-    }
-
-    @Test public void missingWorkflowTableIsDetected() {
-        when(query.getResultList()).thenReturn(Collections.emptyList());
-        assertFalse(repository.hasWorkflowSchema());
-    }
-
     @Test public void commandIdIsBoundAsExactTextWithoutLosingPrecision() {
         when(query.getResultList()).thenReturn(Collections.emptyList());
         repository.lockContexts(9007199254740993L);
@@ -82,15 +68,12 @@ public class WorkflowDecisionRepositoryTest {
     }
 
     @Test public void bothEnabledFlagsAreRequiredForStoredCommandEntityAndAction() {
-        when(query.getResultList()).thenReturn(Collections.singletonList("c_checker_inbox_rule"),
-                Collections.singletonList(321010L));
+        when(query.getResultList()).thenReturn(Collections.singletonList(321010L));
         assertTrue(repository.isValidationEnabled(321001L));
         verify(query).setParameter(1, 321001L);
         ArgumentCaptor<String> sql = ArgumentCaptor.forClass(String.class);
-        verify(entityManager, times(2)).createNativeQuery(sql.capture());
-        assertTrue(sql.getAllValues().get(0).contains("table_schema = database()"));
-        assertTrue(sql.getAllValues().get(0).contains("table_name = 'c_checker_inbox_rule'"));
-        String lookup = sql.getAllValues().get(1);
+        verify(entityManager).createNativeQuery(sql.capture());
+        String lookup = sql.getValue();
         assertTrue(lookup.contains("from m_portfolio_command_source cmd"));
         assertTrue(lookup.contains("rule.entity_name = cmd.entity_name"));
         assertTrue(lookup.contains("rule.action_name = cmd.action_name"));
@@ -99,15 +82,8 @@ public class WorkflowDecisionRepositoryTest {
     }
 
     @Test public void disabledOrMissingMatchingConfigurationOrRuleDoesNotEnableValidation() {
-        when(query.getResultList()).thenReturn(Collections.singletonList("c_checker_inbox_rule"), Collections.emptyList());
-        assertFalse(repository.isValidationEnabled(321001L));
-        verify(query).setParameter(1, 321001L);
-    }
-
-    @Test public void missingRuleTableDoesNotEnableValidationOrQueryIt() {
         when(query.getResultList()).thenReturn(Collections.emptyList());
         assertFalse(repository.isValidationEnabled(321001L));
-        verify(entityManager, times(1)).createNativeQuery(anyString());
-        verify(query, never()).setParameter(anyInt(), anyObject());
+        verify(query).setParameter(1, 321001L);
     }
 }

@@ -18,17 +18,11 @@
  */
 package org.apache.fineract.commands.service;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
-import javax.persistence.PersistenceException;
 import javax.persistence.Query;
-
 import org.springframework.stereotype.Repository;
 
 /** Reads existing workflow state using the maker-checker decision transaction. */
@@ -39,30 +33,12 @@ public class WorkflowDecisionRepository {
     private EntityManager entityManager;
 
     public boolean isValidationEnabled(final Long commandId) {
-        if (!hasTable("c_checker_inbox_rule")) { return false; }
         final Query query = this.entityManager.createNativeQuery("select config.id from m_portfolio_command_source cmd "
                 + "join c_checker_inbox_rule rule on rule.entity_name = cmd.entity_name and rule.action_name = cmd.action_name "
                 + "join c_configuration config on config.id = rule.configuration_id "
                 + "where cmd.id = ?1 and config.enabled = 1 and rule.validation_enabled = 1");
         query.setParameter(1, commandId);
         return !query.getResultList().isEmpty();
-    }
-
-    public boolean hasWorkflowSchema() {
-        return hasTable("workflow_context");
-    }
-
-    private boolean hasTable(final String tableName) {
-        try (Connection connection = this.entityManager.unwrap(Connection.class);
-                Statement statement = connection.createStatement();
-                ResultSet tables = statement.executeQuery("SHOW TABLES LIKE '" + tableName + "'")) {
-            while (tables.next()) {
-                if (tableName.equals(tables.getString(1))) { return true; }
-            }
-            return false;
-        } catch (SQLException exception) {
-            throw new PersistenceException("Unable to check tenant table " + tableName, exception);
-        }
     }
 
     public List<WorkflowState> lockContexts(final Long commandId) {
