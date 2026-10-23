@@ -39,7 +39,6 @@ public class WorkflowDecisionService {
 
     public void validate(final Long commandId) {
         if (!this.repository.isValidationEnabled(commandId)) { return; }
-        if (!this.repository.hasWorkflowSchema()) { return; }
         for (WorkflowState state : this.repository.lockContexts(commandId)) {
             if (("RUNNING".equals(state.status) || "PENDING_APPROVAL".equals(state.status))
                     && (state.approvalStatus == null || state.approvalStatus.trim().isEmpty())) {

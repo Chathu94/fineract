@@ -37,7 +37,6 @@ public class WorkflowDecisionServiceTest {
         repository = mock(WorkflowDecisionRepository.class);
         service = new WorkflowDecisionService(repository);
         when(repository.isValidationEnabled(COMMAND)).thenReturn(true);
-        when(repository.hasWorkflowSchema()).thenReturn(true);
     }
 
     private void state(final String status, final String approvalStatus) {
@@ -105,12 +104,6 @@ public class WorkflowDecisionServiceTest {
         service.validate(COMMAND);
     }
 
-    @Test public void tenantWithoutWorkflowTableRetainsExistingBehavior() {
-        when(repository.hasWorkflowSchema()).thenReturn(false);
-        service.validate(COMMAND);
-        verify(repository, never()).lockContexts(anyLong());
-    }
-
     @Test public void allLinkedWorkflowsMustBeCompleted() {
         when(repository.lockContexts(COMMAND)).thenReturn(Arrays.asList(
                 new WorkflowState("COMPLETED", "APPROVED"), new WorkflowState("PENDING_APPROVAL", null)));
@@ -127,7 +120,6 @@ public class WorkflowDecisionServiceTest {
         state("PENDING_APPROVAL", null);
         when(repository.isValidationEnabled(COMMAND)).thenReturn(false);
         service.validate(COMMAND);
-        verify(repository, never()).hasWorkflowSchema();
         verify(repository, never()).lockContexts(anyLong());
     }
 

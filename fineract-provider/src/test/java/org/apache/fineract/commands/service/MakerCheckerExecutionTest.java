@@ -98,7 +98,6 @@ public class MakerCheckerExecutionTest {
         api = new MakercheckersApiResource(null, new DefaultToApiJsonSerializer<>(
                 new ExcludeNothingWithPrettyPrintingOffJsonSerializerGoogleGson(), null, null, null), null, null, writeService, null);
         when(workflowRepository.isValidationEnabled(ID)).thenReturn(true);
-        when(workflowRepository.hasWorkflowSchema()).thenReturn(true);
         state("PENDING_APPROVAL", null);
     }
 
@@ -215,7 +214,6 @@ public class MakerCheckerExecutionTest {
     @Test public void executeTrueApprovesPendingWorkflowAndKeepsAudit() {
         approveAndVerifyAudit(true);
         verify(workflowRepository, never()).isValidationEnabled(anyLong());
-        verify(workflowRepository, never()).hasWorkflowSchema();
         verify(workflowRepository, never()).lockContexts(anyLong());
     }
 
@@ -226,13 +224,13 @@ public class MakerCheckerExecutionTest {
         assertFalse(commandSource.isMarkedAsAwaitingApproval());
         assertSame(checker, ReflectionTestUtils.getField(commandSource, "checker"));
         verify(workflowRepository, never()).isValidationEnabled(anyLong());
-        verify(workflowRepository, never()).hasWorkflowSchema();
+        verify(workflowRepository, never()).lockContexts(anyLong());
     }
 
     @Test public void executeTrueBypassesInvalidWorkflowState() {
         state("COMPLETED", null);
         approveAndVerifyAudit(true);
-        verify(workflowRepository, never()).hasWorkflowSchema();
+        verify(workflowRepository, never()).lockContexts(anyLong());
     }
 
     @Test public void executeTrueStillRequiresCheckerPermissionForBothActions() {
@@ -242,7 +240,7 @@ public class MakerCheckerExecutionTest {
             try { api.approveMakerCheckerEntry(ID, action, false, true); fail("Expected checker refusal"); }
             catch (NoAuthorizationException expected) { assertNoExecutionOrAuditChange(); }
         }
-        verify(workflowRepository, never()).hasWorkflowSchema();
+        verify(workflowRepository, never()).lockContexts(anyLong());
     }
 
     @Test public void executeTrueStillRefusesAlreadyDecidedCommandForBothActions() {
@@ -254,7 +252,7 @@ public class MakerCheckerExecutionTest {
                 verify(commandRepository, never()).save(any(CommandSource.class));
             }
         }
-        verify(workflowRepository, never()).hasWorkflowSchema();
+        verify(workflowRepository, never()).lockContexts(anyLong());
     }
 
     @Test public void serviceCallsWithoutExecuteStillValidateWorkflow() {
@@ -268,7 +266,6 @@ public class MakerCheckerExecutionTest {
         when(workflowRepository.isValidationEnabled(ID)).thenReturn(false);
         approveAndVerifyAudit();
         verify(workflowRepository).isValidationEnabled(ID);
-        verify(workflowRepository, never()).hasWorkflowSchema();
         verify(workflowRepository, never()).lockContexts(anyLong());
     }
 
@@ -330,6 +327,6 @@ public class MakerCheckerExecutionTest {
     @Test public void deleteRetainsExistingBehaviorWithoutNewWorkflowCheck() {
         writeService.deleteEntry(ID);
         verify(commandRepository).delete(ID);
-        verify(workflowRepository, never()).hasWorkflowSchema();
+        verify(workflowRepository, never()).lockContexts(anyLong());
     }
 }

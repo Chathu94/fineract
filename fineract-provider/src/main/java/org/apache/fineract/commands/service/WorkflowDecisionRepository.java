@@ -23,7 +23,6 @@ import java.util.List;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
-import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.springframework.stereotype.Repository;
 
 /** Reads existing workflow state using the maker-checker decision transaction. */
@@ -34,28 +33,12 @@ public class WorkflowDecisionRepository {
     private EntityManager entityManager;
 
     public boolean isValidationEnabled(final Long commandId) {
-        if (!hasTable("c_checker_inbox_rule")) { return false; }
         final Query query = this.entityManager.createNativeQuery("select config.id from m_portfolio_command_source cmd "
                 + "join c_checker_inbox_rule rule on rule.entity_name = cmd.entity_name and rule.action_name = cmd.action_name "
                 + "join c_configuration config on config.id = rule.configuration_id "
                 + "where cmd.id = ?1 and config.enabled = 1 and rule.validation_enabled = 1");
         query.setParameter(1, commandId);
         return !query.getResultList().isEmpty();
-    }
-
-    public boolean hasWorkflowSchema() {
-        return hasTable("workflow_context");
-    }
-
-    private boolean hasTable(final String tableName) {
-        final String schemaName = ThreadLocalContextUtil.getTenant().getConnection().getSchemaName();
-        final Query query = this.entityManager
-                .createNativeQuery("SHOW TABLES FROM `" + schemaName + "` LIKE '" + tableName + "'");
-        for (Object value : query.getResultList()) {
-            final Object name = value instanceof Object[] ? ((Object[]) value)[0] : value;
-            if (name != null && tableName.equals(name.toString())) { return true; }
-        }
-        return false;
     }
 
     public List<WorkflowState> lockContexts(final Long commandId) {
