@@ -63,6 +63,8 @@ import org.apache.fineract.organisation.office.domain.Office;
 import org.apache.fineract.organisation.office.domain.OfficeRepositoryWrapper;
 import org.apache.fineract.portfolio.account.PortfolioAccountType;
 import org.apache.fineract.portfolio.account.service.AccountTransfersReadPlatformService;
+import org.apache.fineract.portfolio.charge.domain.Charge;
+import org.apache.fineract.portfolio.charge.domain.ChargeRepository;
 import org.apache.fineract.portfolio.client.domain.ClientTransaction;
 import org.apache.fineract.portfolio.client.domain.ClientTransactionRepositoryWrapper;
 import org.apache.fineract.portfolio.loanaccount.data.LoanTransactionEnumData;
@@ -95,6 +97,7 @@ public class AccountingProcessorHelper {
     private final ClientTransactionRepositoryWrapper clientTransactionRepository;
     private final SavingsAccountTransactionRepository savingsAccountTransactionRepository;
     private final AccountTransfersReadPlatformService accountTransfersReadPlatformService;
+    private final ChargeRepository chargeRepository;
 
     @Autowired
     public AccountingProcessorHelper(final JournalEntryRepository glJournalEntryRepository,
@@ -104,7 +107,7 @@ public class AccountingProcessorHelper {
             final FinancialActivityAccountRepositoryWrapper financialActivityAccountRepository,
             final AccountTransfersReadPlatformService accountTransfersReadPlatformService,
             final GLAccountRepositoryWrapper accountRepositoryWrapper,
-            final ClientTransactionRepositoryWrapper clientTransactionRepositoryWrapper) {
+            final ClientTransactionRepositoryWrapper clientTransactionRepositoryWrapper, final ChargeRepository chargeRepository) {
         this.glJournalEntryRepository = glJournalEntryRepository;
         this.accountMappingRepository = accountMappingRepository;
         this.closureRepository = closureRepository;
@@ -115,6 +118,7 @@ public class AccountingProcessorHelper {
         this.accountTransfersReadPlatformService = accountTransfersReadPlatformService;
         this.accountRepositoryWrapper = accountRepositoryWrapper;
         this.clientTransactionRepository = clientTransactionRepositoryWrapper;
+        this.chargeRepository = chargeRepository;
     }
 
     public LoanDTO populateLoanDtoFromMap(final Map<String, Object> accountingBridgeData, final boolean cashBasedAccountingEnabled,
@@ -1112,6 +1116,9 @@ public class AccountingProcessorHelper {
     }
 
     private GLAccount getLinkedGLAccountForLoanCharges(final Long loanProductId, final int accountMappingTypeId, final Long chargeId) {
+        if (accountMappingTypeId == CASH_ACCOUNTS_FOR_LOAN.INCOME_FROM_FEES.getValue() && isLiabilityAccountTypeCharge(chargeId)) {
+            return getLinkedThirdPartyPayableAccountForLoanCharge(loanProductId, chargeId);
+        }
         ProductToGLAccountMapping accountMapping = this.accountMappingRepository.findCoreProductToFinAccountMapping(loanProductId,
                 PortfolioProductType.LOAN.getValue(), accountMappingTypeId);
         /*****
@@ -1170,6 +1177,27 @@ public class AccountingProcessorHelper {
         }
         accountSplits.put(getLinkedGLAccountForLoanProduct(loanProductId, accountMappingTypeId, paymentTypeId), totalAmount);
         return accountSplits;
+    }
+
+    private boolean isLiabilityAccountTypeCharge(final Long chargeId) {
+        if (chargeId == null) { return false; }
+        final Charge charge = this.chargeRepository.findOne(chargeId);
+        return charge != null && charge.isLiabilityAccountType();
+    }
+
+    private GLAccount getLinkedThirdPartyPayableAccountForLoanCharge(final Long loanProductId, final Long chargeId) {
+        final int placeholder = CASH_ACCOUNTS_FOR_LOAN.THIRD_PARTY_PAYMENT_LIABILITY.getValue();
+        ProductToGLAccountMapping accountMapping = this.accountMappingRepository.findByProductIdAndProductTypeAndFinancialAccountTypeAndChargeId(
+                loanProductId, PortfolioProductType.LOAN.getValue(), placeholder, chargeId);
+        if (accountMapping == null) {
+            accountMapping = this.accountMappingRepository.findCoreProductToFinAccountMapping(loanProductId,
+                    PortfolioProductType.LOAN.getValue(), placeholder);
+        }
+        if (accountMapping == null) {
+            throw new ProductToGLAccountMappingNotFoundException(PortfolioProductType.LOAN, loanProductId,
+                    CASH_ACCOUNTS_FOR_LOAN.THIRD_PARTY_PAYMENT_LIABILITY.toString());
+        }
+        return accountMapping.getGlAccount();
     }
 
     private GLAccount getLinkedGLAccountForSavingsCharges(final Long savingsProductId, final int accountMappingTypeId, final Long chargeId) {
