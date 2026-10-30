@@ -52,20 +52,17 @@ public class PortfolioCommandSourceWritePlatformServiceImpl implements Portfolio
     private final FromJsonHelper fromApiJsonHelper;
     private final CommandProcessingService processAndLogCommandService;
     private final SchedulerJobRunnerReadService schedulerJobRunnerReadService;
-    private final WorkflowDecisionService workflowDecisionService;
     private final static Logger logger = LoggerFactory.getLogger(PortfolioCommandSourceWritePlatformServiceImpl.class);
 
     @Autowired
     public PortfolioCommandSourceWritePlatformServiceImpl(final PlatformSecurityContext context,
             final CommandSourceRepository commandSourceRepository, final FromJsonHelper fromApiJsonHelper,
-            final CommandProcessingService processAndLogCommandService, final SchedulerJobRunnerReadService schedulerJobRunnerReadService,
-            final WorkflowDecisionService workflowDecisionService) {
+            final CommandProcessingService processAndLogCommandService, final SchedulerJobRunnerReadService schedulerJobRunnerReadService) {
         this.context = context;
         this.commandSourceRepository = commandSourceRepository;
         this.fromApiJsonHelper = fromApiJsonHelper;
         this.processAndLogCommandService = processAndLogCommandService;
         this.schedulerJobRunnerReadService = schedulerJobRunnerReadService;
-        this.workflowDecisionService = workflowDecisionService;
     }
 
     @Override
@@ -134,24 +131,10 @@ public class PortfolioCommandSourceWritePlatformServiceImpl implements Portfolio
     }
 
     @Override
-    @Transactional
-    public CommandProcessingResult approveEntry(final Long makerCheckerId) {
-        return approveEntry(makerCheckerId, false, false);
-    }
-
-    @Override
-    @Transactional
     public CommandProcessingResult approveEntry(final Long makerCheckerId, final Boolean makerIsChecker) {
-        return approveEntry(makerCheckerId, makerIsChecker, false);
-    }
-
-    @Override
-    @Transactional
-    public CommandProcessingResult approveEntry(final Long makerCheckerId, final Boolean makerIsChecker, final boolean execute) {
 
         final CommandSource commandSourceInput = validateMakerCheckerTransaction(makerCheckerId);
         validateIsUpdateAllowed();
-        if (!execute) { this.workflowDecisionService.validate(makerCheckerId); }
 
         final CommandWrapper wrapper = CommandWrapper.fromExistingCommand(makerCheckerId, commandSourceInput.getActionName(),
                 commandSourceInput.getEntityName(), commandSourceInput.resourceId(), commandSourceInput.subresourceId(),
@@ -167,8 +150,7 @@ public class PortfolioCommandSourceWritePlatformServiceImpl implements Portfolio
                 commandSourceInput.getOrganisationCreditBureauId());
 
         final boolean makerCheckerApproval = true;
-        return this.processAndLogCommandService.processAndLogCommand(wrapper, command, makerCheckerApproval,
-                Boolean.TRUE.equals(makerIsChecker));
+        return this.processAndLogCommandService.processAndLogCommand(wrapper, command, makerCheckerApproval, makerIsChecker);
     }
 
     @Transactional
@@ -200,17 +182,9 @@ public class PortfolioCommandSourceWritePlatformServiceImpl implements Portfolio
     }
 
     @Override
-    @Transactional
     public Long rejectEntry(final Long makerCheckerId) {
-        return rejectEntry(makerCheckerId, false);
-    }
-
-    @Override
-    @Transactional
-    public Long rejectEntry(final Long makerCheckerId, final boolean execute) {
         final CommandSource commandSourceInput = validateMakerCheckerTransaction(makerCheckerId);
         validateIsUpdateAllowed();
-        if (!execute) { this.workflowDecisionService.validate(makerCheckerId); }
         final AppUser maker = this.context.authenticatedUser();
         commandSourceInput.markAsRejected(maker, DateTime.now());
         this.commandSourceRepository.save(commandSourceInput);
