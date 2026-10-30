@@ -98,6 +98,7 @@ public class AccountingProcessorHelper {
     private final SavingsAccountTransactionRepository savingsAccountTransactionRepository;
     private final AccountTransfersReadPlatformService accountTransfersReadPlatformService;
     private final ChargeRepository chargeRepository;
+    private final LeasingChargeAccountResolver leasingChargeAccountResolver;
 
     @Autowired
     public AccountingProcessorHelper(final JournalEntryRepository glJournalEntryRepository,
@@ -107,7 +108,8 @@ public class AccountingProcessorHelper {
             final FinancialActivityAccountRepositoryWrapper financialActivityAccountRepository,
             final AccountTransfersReadPlatformService accountTransfersReadPlatformService,
             final GLAccountRepositoryWrapper accountRepositoryWrapper,
-            final ClientTransactionRepositoryWrapper clientTransactionRepositoryWrapper, final ChargeRepository chargeRepository) {
+            final ClientTransactionRepositoryWrapper clientTransactionRepositoryWrapper, final ChargeRepository chargeRepository,
+            final LeasingChargeAccountResolver leasingChargeAccountResolver) {
         this.glJournalEntryRepository = glJournalEntryRepository;
         this.accountMappingRepository = accountMappingRepository;
         this.closureRepository = closureRepository;
@@ -119,6 +121,7 @@ public class AccountingProcessorHelper {
         this.accountRepositoryWrapper = accountRepositoryWrapper;
         this.clientTransactionRepository = clientTransactionRepositoryWrapper;
         this.chargeRepository = chargeRepository;
+        this.leasingChargeAccountResolver = leasingChargeAccountResolver;
     }
 
     public LoanDTO populateLoanDtoFromMap(final Map<String, Object> accountingBridgeData, final boolean cashBasedAccountingEnabled,
@@ -1116,6 +1119,9 @@ public class AccountingProcessorHelper {
     }
 
     private GLAccount getLinkedGLAccountForLoanCharges(final Long loanProductId, final int accountMappingTypeId, final Long chargeId) {
+        final GLAccount capitalizedChargeAccount = this.leasingChargeAccountResolver.resolveCapitalizedChargeAccount(loanProductId,
+                accountMappingTypeId, chargeId);
+        if (capitalizedChargeAccount != null) { return capitalizedChargeAccount; }
         if (accountMappingTypeId == CASH_ACCOUNTS_FOR_LOAN.INCOME_FROM_FEES.getValue() && isLiabilityAccountTypeCharge(chargeId)) {
             return getLinkedThirdPartyPayableAccountForLoanCharge(loanProductId, chargeId);
         }
@@ -1186,6 +1192,8 @@ public class AccountingProcessorHelper {
     }
 
     private GLAccount getLinkedThirdPartyPayableAccountForLoanCharge(final Long loanProductId, final Long chargeId) {
+        final GLAccount payableAccount = this.leasingChargeAccountResolver.resolveThirdPartyPayableAccount(loanProductId, chargeId);
+        if (payableAccount != null) { return payableAccount; }
         final int placeholder = CASH_ACCOUNTS_FOR_LOAN.THIRD_PARTY_PAYMENT_LIABILITY.getValue();
         ProductToGLAccountMapping accountMapping = this.accountMappingRepository.findByProductIdAndProductTypeAndFinancialAccountTypeAndChargeId(
                 loanProductId, PortfolioProductType.LOAN.getValue(), placeholder, chargeId);
