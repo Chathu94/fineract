@@ -36,9 +36,11 @@ import org.slf4j.LoggerFactory;
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.SDKGlobalConfiguration;
+import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.amazonaws.services.s3.model.DeleteObjectRequest;
 import com.amazonaws.services.s3.model.GetObjectRequest;
@@ -58,7 +60,15 @@ public class S3ContentRepository implements ContentRepository {
         this.s3BucketName = bucketName;
         //On some AWS regions by default V4 signature is enabled. Setting this property. 
         System.setProperty(SDKGlobalConfiguration.ENABLE_S3_SIGV4_SYSTEM_PROPERTY, "true");
-        this.s3Client = new AmazonS3Client(new BasicAWSCredentials(accessKey, secretKey));
+        final AmazonS3ClientBuilder clientBuilder = AmazonS3ClientBuilder.standard()
+                .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(accessKey, secretKey)));
+        final String endpoint = System.getenv("FUSED_S3_ENDPOINT");
+        if (endpoint != null && !endpoint.trim().isEmpty()) {
+            final String configuredRegion = System.getenv("FUSED_S3_REGION");
+            final String region = configuredRegion == null || configuredRegion.trim().isEmpty() ? "us-east-1" : configuredRegion;
+            clientBuilder.withEndpointConfiguration(new EndpointConfiguration(endpoint, region));
+        }
+        this.s3Client = clientBuilder.build();
     }
 
     @Override
