@@ -30,4 +30,6 @@ public interface PaymentDetailWritePlatformService {
     PaymentDetail createPaymentDetail(final JsonCommand command, Map<String, Object> changes);
 
     PaymentDetail persistPaymentDetail(PaymentDetail paymentDetail);
+
+    PaymentDetail createAndPersistPaymentDetail(Long paymentTypeId);
 }

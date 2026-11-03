@@ -365,7 +365,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
                 amountToDisburse = disburseAmount.minus(loanOutstanding);
 
-                disburseLoanToLoan(loan, command, loanOutstanding, paymentDetail);
+                final Long settlementPaymentTypeId = command.longValueOfParameterNamed(LoanApiConstants.settlementPaymentTypeId);
+                disburseLoanToLoan(loan, command, loanOutstanding, resolveTopupSettlementPaymentDetail(paymentDetail, settlementPaymentTypeId));
             }
 
             if (isAccountTransfer) {
@@ -1906,6 +1907,16 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
     public void disburseLoanToLoan(final Loan loan, final JsonCommand command, final BigDecimal amount) {
         disburseLoanToLoan(loan, command, amount, null);
+    }
+
+    private PaymentDetail resolveTopupSettlementPaymentDetail(final PaymentDetail disbursementPaymentDetail,
+            final Long settlementPaymentTypeId) {
+        if (settlementPaymentTypeId == null) { return disbursementPaymentDetail; }
+        if (disbursementPaymentDetail != null && disbursementPaymentDetail.getPaymentType() != null
+                && settlementPaymentTypeId.equals(disbursementPaymentDetail.getPaymentType().getId())) {
+            return disbursementPaymentDetail;
+        }
+        return this.paymentDetailWritePlatformService.createAndPersistPaymentDetail(settlementPaymentTypeId);
     }
 
     public void disburseLoanToLoan(final Loan loan, final JsonCommand command, final BigDecimal amount, final PaymentDetail paymentDetail) {

@@ -81,7 +81,7 @@ public final class LoanEventApiJsonValidator {
             disbursementParameters = new HashSet<>(Arrays.asList("actualDisbursementDate", "externalId", "note", "locale",
                     "dateFormat", "paymentTypeId", "accountNumber", "checkNumber", "routingCode", "receiptNumber", "bankNumber", "adjustRepaymentDate", 
                     LoanApiConstants.principalDisbursedParameterName, LoanApiConstants.emiAmountParameterName,
-                    LoanApiConstants.outstandingAfterWaiver));
+                    LoanApiConstants.outstandingAfterWaiver, LoanApiConstants.settlementPaymentTypeId));
         }
 
         final Type typeOfMap = new TypeToken<Map<String, Object>>() {}.getType();
@@ -108,6 +108,11 @@ public final class LoanEventApiJsonValidator {
                 .notGreaterThanMax(principal);
 
         validatePaymentDetails(baseDataValidator, element);
+
+        final Integer settlementPaymentTypeId = this.fromApiJsonHelper
+                .extractIntegerWithLocaleNamed(LoanApiConstants.settlementPaymentTypeId, element);
+        baseDataValidator.reset().parameter(LoanApiConstants.settlementPaymentTypeId).value(settlementPaymentTypeId).ignoreIfNull()
+                .integerGreaterThanZero();
 
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
     }
