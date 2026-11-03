@@ -1,0 +1,3 @@
+FROM 269280350252.dkr.ecr.us-east-1.amazonaws.com/evoke-labs/fineract-backend@sha256:9536df1f75ff5b9af71bf9e1a2828d69b96d0b11671c310aab9c1a72929aded6
+
+COPY build/libs/fineract-provider.jar /app/fineract-provider.jar
