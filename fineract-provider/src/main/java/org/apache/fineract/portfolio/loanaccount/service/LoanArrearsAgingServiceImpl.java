@@ -164,6 +164,9 @@ public class LoanArrearsAgingServiceImpl implements LoanArrearsAgingService, Bus
                 String deletestatement = "DELETE FROM `m_loan_arrears_aging` WHERE  `loan_id`=" + loan.getId();
                 this.jdbcTemplate.update(deletestatement);
             }
+        } else {
+            String deletestatement = "DELETE FROM `m_loan_arrears_aging` WHERE  `loan_id`=" + loan.getId();
+            this.jdbcTemplate.update(deletestatement);
         }
     }
 
@@ -187,9 +190,12 @@ public class LoanArrearsAgingServiceImpl implements LoanArrearsAgingService, Bus
         BigDecimal interestOverdue = BigDecimal.ZERO;
         BigDecimal feeOverdue = BigDecimal.ZERO;
         BigDecimal penaltyOverdue = BigDecimal.ZERO;
-        LocalDate overDueSince = LocalDate.now();
+        LocalDate today = LocalDate.now();
+        LocalDate overDueSince = today;
+        LocalDate frozenYardDate = getFrozenYardDate(loan.getId());
         for (LoanRepaymentScheduleInstallment installment : installments) {
-            if (installment.getDueDate().isBefore(LocalDate.now())) {
+            if (installment.getDueDate().isBefore(today)
+                    && (frozenYardDate == null || !installment.getDueDate().isAfter(frozenYardDate))) {
                 principalOverdue = principalOverdue.add(installment.getPrincipalOutstanding(loan.getCurrency()).getAmount());
                 interestOverdue = interestOverdue.add(installment.getInterestOutstanding(loan.getCurrency()).getAmount());
                 feeOverdue = feeOverdue.add(installment.getFeeChargesOutstanding(loan.getCurrency()).getAmount());
@@ -211,6 +217,12 @@ public class LoanArrearsAgingServiceImpl implements LoanArrearsAgingService, Bus
             }
         }
         return updateSql;
+    }
+
+    private LocalDate getFrozenYardDate(final Long loanId) {
+        final java.sql.Date frozenYardDate = this.jdbcTemplate.queryForObject(
+                "select max(yard_date) from l_yard_loan_freeze where loan_id = ? and status = 'FROZEN'", java.sql.Date.class, loanId);
+        return frozenYardDate == null ? null : new LocalDate(frozenYardDate.getTime());
     }
 
     private List<String> updateLoanArrearsAgeingDetailsWithOriginalSchedule() {
