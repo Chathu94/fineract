@@ -131,11 +131,16 @@ registry_login() {
     LOGGED_IN+=" $host"
     case $host in
         ghcr.io)
-            if grep -Fqs 'ghcr.io"' "${DOCKER_CONFIG:-$HOME/.docker}/config.json"; then
-                log "ghcr.io: already logged in (docker config)"
+            if [[ -n ${GHCR_USE_DOCKER_LOGIN:-} ]]; then
+                log "ghcr.io: GHCR_USE_DOCKER_LOGIN set, using the existing docker login"
                 return 0
             fi
             need gh
+            # Always log in fresh with the gh token: a stale saved ghcr.io login is the usual cause
+            # of "token provided does not match expected scopes".
+            if ! gh auth status -h github.com 2>&1 | grep -q "write:packages"; then
+                die "gh token lacks write:packages; run: gh auth refresh -h github.com -s write:packages (or use --registry ecr)"
+            fi
             if ((DRY_RUN)); then
                 dry "gh auth token | docker login ghcr.io -u <gh user> --password-stdin"
                 return 0
