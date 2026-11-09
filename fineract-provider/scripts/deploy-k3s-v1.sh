@@ -32,7 +32,8 @@ FLYWAY_RE='FlywayException|Migration of schema|failed migration'
 API_NAME=fineract API_PORT=30200 JOBS_NAME=fineract-jobs JOBS_PORT=31648
 
 JAR="" REGISTRY=ghcr BASE="" TAG="" TARGET=all DRY_RUN=0 ROLLBACK=0 AUTO_ROLLBACK=1 ASSUME_YES=0
-SKIP_MIGRATE=0 FORCE_JOBS=0 IGNORE_UNHEALTHY=0 ALLOW_DIRTY=0
+SKIP_MIGRATE=0 FORCE_JOBS=0 IGNORE_UNHEALTHY=0 ALLOW_DIRTY=0 RELAX_AA=0 ALLOW_UNAVAIL=0
+API_MODE=surge # surge | relax | unavail1, decided in check_api_strategy
 ORDER="" REUSE=0 DO_MIGRATE=0 NEW_IMAGE="" CHANGE_CAUSE="" REVISION="" MIGRATE_JOB=""
 CRASHLOOP=0 FLYWAY_FAILED=0 LOGGED_IN="" TMP="" SUMMARY=""
 
@@ -68,6 +69,12 @@ Options:
   --force-jobs        with --target jobs: build a new image and deploy it to jobs only, without
                       proving it on the API first
   --ignore-unhealthy  go ahead although a deployment is degraded or crash-looping
+  --relax-anti-affinity  deploy/fineract has a REQUIRED one-pod-per-node anti-affinity and as many
+                      replicas as nodes, so a surge pod can never schedule. This flag turns it into
+                      PREFERRED (weight 100) in the same patch, so maxSurge 1 / maxUnavailable 0 works
+                      (zero downtime; the surge pod briefly shares a node). Permanent.
+  --allow-unavailable-1  instead keep one-pod-per-node and roll with maxSurge 0 / maxUnavailable 1
+                      (one API pod down at a time; the image is already proven by the migrate Job)
   --allow-dirty       build from a git tree with uncommitted changes (the tag gets -dirty)
   --dry-run           read-only: preflight, plan, build/push commands, the migration Job and every
                       patch through kubectl --dry-run=server
@@ -295,6 +302,33 @@ check_cluster() {
     die "deployments are not healthy (above); fix that first, or pass --ignore-unhealthy. Nothing was changed."
 }
 
+# deploy/fineract has a required one-pod-per-hostname anti-affinity; with replicas >= schedulable nodes a
+# maxSurge pod can never be scheduled, so the rollout would hang and be undone. Make the operator choose.
+check_api_strategy() {
+    local req nodes reps
+    case " $ORDER " in *" api "*) ;; *) return 0 ;; esac
+    req=$(kctl get deployment "$API_NAME" -o 'jsonpath={.spec.template.spec.affinity.podAntiAffinity.requiredDuringSchedulingIgnoredDuringExecution[*].topologyKey}')
+    nodes=$(kctl get nodes -o 'jsonpath={range .items[?(@.spec.unschedulable!=true)]}{.metadata.name}{"\n"}{end}' | grep -c . || true)
+    reps=$(dep api REPLICAS)
+    if [[ $req != *kubernetes.io/hostname* || $reps -lt $nodes ]]; then
+        API_MODE=surge
+        return 0
+    fi
+    if ((RELAX_AA && ALLOW_UNAVAIL)); then die "use only one of --relax-anti-affinity / --allow-unavailable-1"; fi
+    if ((RELAX_AA)); then
+        API_MODE=relax
+    elif ((ALLOW_UNAVAIL)); then
+        API_MODE=unavail1
+    else
+        log "deployment/$API_NAME: $reps replicas on $nodes schedulable nodes with a REQUIRED one-pod-per-node anti-affinity,"
+        log "  so a zero-downtime surge pod (maxSurge 1 / maxUnavailable 0) can never be scheduled."
+        log "  Choose one (Hashan's call):"
+        log "    --relax-anti-affinity   make the anti-affinity preferred, keep zero downtime (permanent change)"
+        log "    --allow-unavailable-1   keep one-pod-per-node, replace one API pod at a time (2 of $reps serving)"
+        die "API rollout strategy needs a decision; nothing was changed"
+    fi
+}
+
 preflight() {
     local mjobs j active failed
     need ssh
@@ -324,7 +358,9 @@ preflight() {
         if [[ ${active:-0} != 0 ]]; then die "job/$j is still running: another deploy is migrating right now"; fi
         if [[ ${failed:-0} != 0 ]]; then warn "job/$j failed earlier: schema_version may still hold a success = 0 row"; fi
     done <<<"$mjobs"
-    if ((ROLLBACK || REUSE)); then return 0; fi
+    if ((ROLLBACK)); then return 0; fi
+    check_api_strategy
+    if ((REUSE)); then return 0; fi
 
     if [[ $REGISTRY == ghcr ]]; then
         kctl get secret "$PULL_SECRET" -o name >/dev/null || die "secret $PULL_SECRET not found in $NAMESPACE"
@@ -397,10 +433,19 @@ needs_pull_secret() { [[ $REGISTRY != import && $NEW_IMAGE == ghcr.io/* ]]; }
 # a single rollout.
 patch_json() {
     local strategy="" secrets="" cause=${CHANGE_CAUSE//[\"\\]/} # keep the JSON valid
-    if [[ $1 == api ]]; then strategy='"strategy":{"type":"RollingUpdate","rollingUpdate":{"maxSurge":1,"maxUnavailable":0}},'; fi
+    local affinity=""
+    if [[ $1 == api ]]; then
+        case $API_MODE in
+            unavail1) strategy='"strategy":{"type":"RollingUpdate","rollingUpdate":{"maxSurge":0,"maxUnavailable":1}},' ;;
+            *) strategy='"strategy":{"type":"RollingUpdate","rollingUpdate":{"maxSurge":1,"maxUnavailable":0}},' ;;
+        esac
+        if [[ $API_MODE == relax ]]; then
+            affinity='"affinity":{"podAntiAffinity":{"requiredDuringSchedulingIgnoredDuringExecution":null,"preferredDuringSchedulingIgnoredDuringExecution":[{"weight":100,"podAffinityTerm":{"labelSelector":{"matchLabels":{"app":"fineract"}},"topologyKey":"kubernetes.io/hostname"}}]}},'
+        fi
+    fi
     if needs_pull_secret; then secrets="\"imagePullSecrets\":[{\"name\":\"$PULL_SECRET\"}],"; fi
-    printf '{"metadata":{"annotations":{"kubernetes.io/change-cause":"%s"}},"spec":{%s"template":{"metadata":{"annotations":{"evoke.io/deploy-tag":"%s"}},"spec":{%s"containers":[{"name":"%s","image":"%s"}]}}}}' \
-        "$cause" "$strategy" "$TAG" "$secrets" "$CONTAINER" "$NEW_IMAGE"
+    printf '{"metadata":{"annotations":{"kubernetes.io/change-cause":"%s"}},"spec":{%s"template":{"metadata":{"annotations":{"evoke.io/deploy-tag":"%s"}},"spec":{%s%s"containers":[{"name":"%s","image":"%s"}]}}}}' \
+        "$cause" "$strategy" "$TAG" "$affinity" "$secrets" "$CONTAINER" "$NEW_IMAGE"
 }
 
 resolve_tag() {
@@ -534,6 +579,10 @@ if e["JOB_DB"]:
     c["env"].append({"name": "EVOKE_SQL_TENANT_DB_NAME_OVERRIDE", "value": e["JOB_DB"] + "@primary"})
 spec["containers"] = [c]
 spec["restartPolicy"] = "Never"
+# The API pods' required one-per-node anti-affinity matches app=fineract pods on every node, so the Job
+# pod could never schedule with it; the Job is a single short-lived pod, so drop scheduling constraints.
+for k in ("affinity", "topologySpreadConstraints", "nodeName"):
+    spec.pop(k, None)
 if e["JOB_PULL_SECRET"]:
     secrets = spec.get("imagePullSecrets") or []
     if e["JOB_PULL_SECRET"] not in [s.get("name") for s in secrets]:
@@ -634,7 +683,11 @@ print_plan() {
         log "       current: $(dep "$t" IMAGE)"
         log "       new:     $NEW_IMAGE"
         if [[ $t == api ]]; then
-            log "       strategy -> RollingUpdate maxSurge 1 / maxUnavailable 0 (PERMANENT, same patch as the image)"
+            case $API_MODE in
+                surge) log "       strategy -> RollingUpdate maxSurge 1 / maxUnavailable 0 (PERMANENT, same patch as the image)" ;;
+                relax) log "       strategy -> RollingUpdate maxSurge 1 / maxUnavailable 0 and anti-affinity required -> preferred (PERMANENT, same patch)" ;;
+                unavail1) log "       strategy -> RollingUpdate maxSurge 0 / maxUnavailable 1 (--allow-unavailable-1: one API pod down at a time)" ;;
+            esac
         else
             log "       strategy Recreate (unchanged): the scheduler is down while the new pod starts"
         fi
@@ -675,7 +728,7 @@ deploy_target() {
     load_dep "$t"
     [[ $(dep "$t" REV) == "$rev" ]] || die "deployment/$name changed since the plan (revision $rev -> $(dep "$t" REV)); re-run"
     patch=$(patch_json "$t")
-    if [[ $t == api ]]; then log "deployment/$name: this patch permanently sets strategy RollingUpdate maxSurge 1 / maxUnavailable 0"; fi
+    if [[ $t == api ]]; then log "deployment/$name: API rollout mode '$API_MODE' (strategy/affinity in this patch are permanent)"; fi
     log "+ kubectl -n $NAMESPACE patch deployment $name --type strategic -p '$patch'"
     kctl patch deployment "$name" --type strategic -p "$patch" >&2 || die "patch of deployment/$name was rejected; it was not changed"
     if wait_rollout "$t" && health_check "$t" "$NEW_IMAGE"; then
@@ -783,6 +836,8 @@ while (($#)); do
         --no-auto-rollback) AUTO_ROLLBACK=0; shift ;;
         --force-jobs) FORCE_JOBS=1; shift ;;
         --ignore-unhealthy) IGNORE_UNHEALTHY=1; shift ;;
+        --relax-anti-affinity) RELAX_AA=1; shift ;;
+        --allow-unavailable-1) ALLOW_UNAVAIL=1; shift ;;
         --allow-dirty) ALLOW_DIRTY=1; shift ;;
         --dry-run) DRY_RUN=1; shift ;;
         --rollback) ROLLBACK=1; shift ;;
