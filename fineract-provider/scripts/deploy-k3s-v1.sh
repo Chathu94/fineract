@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Builds fineract-provider.jar, bakes it into the image deploy/fineract runs today
+# Builds fineract-provider.jar, bakes it into the image deploy/fineract-jobs (the scheduler/jobs pod) runs today
 # (Dockerfile.k3s-v1 swaps only the jar), publishes it and rolls it out on the Orel k3s
 # cluster, then health-checks it. See README.md next to this script, or --help.
 set -euo pipefail
@@ -9,7 +9,7 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 DOCKERFILE="$SCRIPT_DIR/Dockerfile.k3s-v1"
 
 NAMESPACE="${NAMESPACE:-fused}"
-DEPLOYMENT="${DEPLOYMENT:-fineract}"
+DEPLOYMENT="${DEPLOYMENT:-fineract-jobs}"
 CONTAINER="${CONTAINER:-fineract}"
 SSH_HOST="${SSH_HOST:-k3s1}"
 NODES="${NODES:-k3s1 k3s2 k3s3}"
@@ -18,7 +18,7 @@ ECR_REPO="${ECR_REPO:-269280350252.dkr.ecr.us-east-1.amazonaws.com/evoke-labs/fi
 AWS_REGION="${AWS_REGION:-us-east-1}"
 ROLLOUT_TIMEOUT="${ROLLOUT_TIMEOUT:-15m}"
 NODE_IPS="${NODE_IPS:-172.16.183.35 172.16.50.8 172.16.44.22}"
-NODE_PORT=30200
+NODE_PORT="${NODE_PORT:-31648}" # NodePort of svc/fineract-jobs (svc/fineract is 30200)
 HEALTH_PATH="/fineract-provider/api/v1/evoke/health?tenantIdentifier=default"
 PULL_SECRET=ghcr-pull
 TAG_RE='^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$'
@@ -32,7 +32,8 @@ Usage: $0 [options]
 
 Build fineract-provider.jar, layer it onto the current image of deploy/$DEPLOYMENT
 (namespace $NAMESPACE) with Dockerfile.k3s-v1, publish it as linux/amd64, roll it out
-and health-check every node. deploy/fineract-jobs is never touched.
+and health-check every node. Only deploy/$DEPLOYMENT is changed; the API pods
+(deploy/fineract) are never touched unless you set DEPLOYMENT=fineract NODE_PORT=30200.
 
 Options:
   --jar PATH        use this jar instead of running ./build-jar.sh (needs a Java 8 JDK)
@@ -57,7 +58,7 @@ Environment overrides (current values):
   SSH_HOST=$SSH_HOST NODES="$NODES" AWS_REGION=$AWS_REGION ROLLOUT_TIMEOUT=$ROLLOUT_TIMEOUT
   GHCR_REPO=$GHCR_REPO
   ECR_REPO=$ECR_REPO
-  NODE_IPS="$NODE_IPS"
+  NODE_IPS="$NODE_IPS" NODE_PORT=$NODE_PORT
   KUBECONFIG_MODE=local or KUBECONTEXT=<ctx>: use the local kubectl (you open the tunnel)
     instead of 'ssh \$SSH_HOST kubectl'; health checks and imports still go over ssh.
 EOF

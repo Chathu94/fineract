@@ -1,9 +1,9 @@
 # fineract-provider/scripts
 
-## Deploying v1 (fineract) to Orel k3s
+## Deploying v1 fineract-jobs (scheduler pod) to Orel k3s
 
 `deploy-k3s-v1.sh` builds `fineract-provider.jar` (via `./build-jar.sh`), layers it onto the image
-`deploy/fineract` (namespace `fused`) runs today, publishes it as `linux/amd64`, rolls it out and
+`deploy/fineract-jobs` (namespace `fused`, the single scheduler/jobs pod) runs today, publishes it as `linux/amd64`, rolls it out and
 health-checks every node. `Dockerfile.k3s-v1` only replaces `/app/fineract-provider.jar`, so CMD,
 env, the `jre/lib/ext` jars and `logback.xml` stay identical to the running image.
 
@@ -30,9 +30,8 @@ fineract-provider/scripts/deploy-k3s-v1.sh --rollback             # rollout undo
 
 Notes:
 
-- The Deployment's strategy is RollingUpdate maxSurge 0 / maxUnavailable 1, so 1 of the 3 pods is down
-  while each new pod starts. The script does not change the strategy.
-- `fineract-jobs` uses the same image and is left alone on purpose. Update it separately if it needs the new jar.
+- Target is `fineract-jobs`: 1 replica, strategy `Recreate`, so the jobs pod is down for the ~1-3 min it takes the new pod to start. That is intended: two schedulers must never run at once. Its health check uses NodePort 31648.
+- The API pods (`deploy/fineract`, 3 replicas, same base image) are left alone. To update them instead: `DEPLOYMENT=fineract NODE_PORT=30200 ./deploy-k3s-v1.sh`.
 - `ghcr` and `ecr` deploy by digest. For `ghcr`, `imagePullSecrets: ghcr-pull` goes in the same patch as
   the image, so you get a single rollout.
 - `import` deploys `ghcr.io/evoke-labs/fineract-backend:<tag>` by tag. That tag only exists on the nodes it
