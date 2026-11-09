@@ -262,7 +262,17 @@ deploy() {
 
     if [[ -z $JAR ]]; then
         JAR="$REPO_ROOT/build/libs/fineract-provider.jar"
-        run "$REPO_ROOT/build-jar.sh"
+        if [[ -x $REPO_ROOT/build-jar.sh ]]; then
+            run "$REPO_ROOT/build-jar.sh"
+        else
+            # Same as build-jar.sh / the Jenkinsfile 'Build' stage, for branches without it.
+            if ((DRY_RUN)); then
+                dry "(cd $REPO_ROOT/fineract-provider && ./gradlew clean jar copyDeps)"
+            else
+                log "+ (cd $REPO_ROOT/fineract-provider && ./gradlew clean jar copyDeps)"
+                (cd "$REPO_ROOT/fineract-provider" && ./gradlew clean jar copyDeps)
+            fi
+        fi
     fi
     if [[ -f $JAR ]]; then
         log "jar: $JAR ($(du -h "$JAR" | cut -f1))"
