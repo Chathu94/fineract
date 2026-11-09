@@ -1,0 +1,7 @@
+# check=skip=InvalidDefaultArgInFrom
+# Used by deploy-k3s-v1.sh: swaps only the application jar into the running v1 image,
+# so CMD, env, jre/lib/ext jars and /app/logback.xml stay identical.
+# Build context: a directory containing just fineract-provider.jar.
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
+COPY fineract-provider.jar /app/fineract-provider.jar
