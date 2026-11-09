@@ -4,4 +4,7 @@
 # Build context: a directory containing just fineract-provider.jar.
 ARG BASE_IMAGE
 FROM ${BASE_IMAGE}
+ARG REVISION
+ARG CREATED
+LABEL org.opencontainers.image.revision=$REVISION org.opencontainers.image.created=$CREATED
 COPY fineract-provider.jar /app/fineract-provider.jar
