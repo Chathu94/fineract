@@ -68,4 +68,13 @@ public class PaymentDetailWritePlatformServiceJpaRepositoryImpl implements Payme
         if (paymentDetail != null) { return persistPaymentDetail(paymentDetail); }
         return paymentDetail;
     }
+
+    @Override
+    @Transactional
+    public PaymentDetail createAndPersistPaymentDetail(final Long paymentTypeId) {
+        if (paymentTypeId == null) { return null; }
+
+        final PaymentType paymentType = this.paymentTyperepositoryWrapper.findOneWithNotFoundDetection(paymentTypeId);
+        return persistPaymentDetail(PaymentDetail.instance(paymentType, null, null, null, null, null));
+    }
 }

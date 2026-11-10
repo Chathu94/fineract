@@ -124,6 +124,7 @@ public interface LoanApiConstants {
     public static final String loanIdToClose = "loanIdToClose";
     public static final String topupAmount = "topupAmount";
     public static final String outstandingAfterWaiver = "outstandingAfterWaiver";
+    public static final String settlementPaymentTypeId = "settlementPaymentTypeId";
 
     public static final String datatables = "datatables";
 }
