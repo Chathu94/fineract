@@ -106,6 +106,9 @@ public class Charge extends AbstractPersistableCustom<Long> {
     @Column(name = "fee_frequency", nullable = true)
     private Integer feeFrequency;
 
+    @Column(name = "charge_account_type_enum", nullable = true, insertable = false, updatable = false)
+    private Integer chargeAccountType;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "income_or_liability_account_id")
     private GLAccount account;
@@ -254,6 +257,10 @@ public class Charge extends AbstractPersistableCustom<Long> {
 
     public boolean isPenalty() {
         return this.penalty;
+    }
+
+    public boolean isLiabilityAccountType() {
+        return this.chargeAccountType != null && this.chargeAccountType.intValue() == 2;
     }
 
     public boolean isDeleted() {
