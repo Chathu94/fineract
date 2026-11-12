@@ -799,6 +799,16 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
         return listOfTransactionsSorted;
     }
 
+    private List<SavingsAccountTransaction> retreiveListOfTransactionsForBalanceCheck() {
+        final List<SavingsAccountTransaction> listOfTransactionsSorted = retreiveListOfTransactions();
+        Collections.sort(listOfTransactionsSorted, (o1, o2) -> {
+            final int comparsion = o1.transactionLocalDate().compareTo(o2.transactionLocalDate());
+            if (comparsion != 0) { return comparsion; }
+            return Boolean.compare(o2.isInterestPostingAndNotReversed(), o1.isInterestPostingAndNotReversed());
+        });
+        return listOfTransactionsSorted;
+    }
+
     protected void recalculateDailyBalances(final Money openingAccountBalance, final LocalDate interestPostingUpToDate) {
 
         Money runningBalance = openingAccountBalance.copy();
@@ -1050,7 +1060,7 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
 
     public void validateAccountBalanceDoesNotBecomeNegative(final BigDecimal transactionAmount, final boolean isException,
             final List<DepositAccountOnHoldTransaction> depositAccountOnHoldTransactions) {
-        final List<SavingsAccountTransaction> transactionsSortedByDate = retreiveListOfTransactions();
+        final List<SavingsAccountTransaction> transactionsSortedByDate = retreiveListOfTransactionsForBalanceCheck();
         Money runningBalance = Money.zero(this.currency);
         Money minRequiredBalance = minRequiredBalanceDerived(getCurrency());
         LocalDate lastSavingsDate = null;
@@ -1104,7 +1114,7 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
     public void validateAccountBalanceDoesNotBecomeNegative(final String transactionAction,
             final List<DepositAccountOnHoldTransaction> depositAccountOnHoldTransactions) {
 
-        final List<SavingsAccountTransaction> transactionsSortedByDate = retreiveListOfTransactions();
+        final List<SavingsAccountTransaction> transactionsSortedByDate = retreiveListOfTransactionsForBalanceCheck();
         Money runningBalance = Money.zero(this.currency);
         Money minRequiredBalance = minRequiredBalanceDerived(getCurrency());
         LocalDate lastSavingsDate = null;
