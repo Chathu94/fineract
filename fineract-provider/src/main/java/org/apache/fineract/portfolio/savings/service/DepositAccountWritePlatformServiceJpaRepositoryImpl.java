@@ -580,7 +580,7 @@ public class DepositAccountWritePlatformServiceJpaRepositoryImpl implements Depo
     public void transferInterestToSavings() throws JobExecutionException {
         if (ThreadLocalContextUtil.getVTReplicaMode()) {
             this.jdbcTemplate.execute("SET workload = OLAP");
-            jdbcTemplate.execute("USE @primary");
+            jdbcTemplate.execute("USE `fused_fli@primary`");
         }
 
         Collection<AccountTransferDTO> accountTrasferData = this.depositAccountReadPlatformService.retrieveDataForInterestTransfer();

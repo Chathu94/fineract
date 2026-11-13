@@ -239,15 +239,27 @@
       <method v="2" />
     </configuration>
     <configuration name="ServerApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" temporary="true" nameIsGenerated="true">
-      <option name="ALTERNATIVE_JRE_PATH" value="corretto-1.8" />
+      <option name="ALTERNATIVE_JRE_PATH" value="azul-1.8" />
       <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />
       <envs>
         <env name="DRIVERCLASS_NAME" value="com.mysql.cj.jdbc.Driver" />
         <env name="SUB_PROTOCOL" value="mysql" />
+        <env name="DS_HOST" value="vitess.qa.evokelabs.io" />
+        <env name="DS_PORT" value="15306" />
+        <env name="DS_PASSWORD" value="bHvn5MEl4BNi" />
+        <env name="DS_USERNAME" value="minjanar" />
+        <env name="DS_DATABASE" value="fused_fli" />
+        <env name="DS_LOG" value="all" />
+        <env name="EVOKE_SQL_TENANT_HOST_OVERRIDE" value="vitess.qa.evokelabs.io" />
+        <env name="EVOKE_SQL_TENANT_PORT_OVERRIDE" value="15306" />
+        <env name="EVOKE_SQL_TENANT_USERNAME_OVERRIDE" value="minjanar" />
+        <env name="EVOKE_SQL_TENANT_PASSWORD_OVERRIDE" value="bHvn5MEl4BNi" />
+        <env name="EVOKE_SQL_TENANT_DB_NAME_OVERRIDE" value="fused_fli" />
+        <env name="FINERACT_TENANTS_DB" value="tenants" />
       </envs>
       <module name="fineract-provider.main" />
       <option name="SPRING_BOOT_MAIN_CLASS" value="org.apache.fineract.ServerApplication" />
-      <option name="VM_PARAMETERS" value="-Dfineract.datasource.port=3306 -DEvokeDisableScheduler -Dfineract.datasource.host=mysql.fqa.evokelabs.io -Dfineract.datasource.username=admin -Dfineract.datasource.password=udIF7un9FFlBLOk0 -Dfineract.tenantdb.fixup=false -Dfineract.datasource.subprotocol=mysql -Dlog4j.logger.org.hibernate.type=trace -Xms4g -Xmx8g" />
+      <option name="VM_PARAMETERS" value="-Dfineract.datasource.port=15306 -DEvokeDisableScheduler -Dfineract.datasource.host=vitess.qa.evokelabs.io -Dfineract.datasource.username=minjanar -Dfineract.datasource.password=bHvn5MEl4BNi -Dfineract.datasource.db=tenants -Dfineract.tenantdb.fixup=false -Dfineract.datasource.subprotocol=mysql -Dlog4j.logger.org.hibernate.type=trace -Xms2g -Xmx4g" />
       <extension name="coverage">
         <pattern>
           <option name="PATTERN" value="org.apache.fineract.*" />

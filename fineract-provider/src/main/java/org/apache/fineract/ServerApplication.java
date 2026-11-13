@@ -49,7 +49,20 @@ public class ServerApplication {
 
 	public static void main(String[] args) throws Exception {
 		ConfigurableApplicationContext ctx = SpringApplication.run(Configuration.class, args);
-//		ApplicationExitUtil.waitForKeyPressToCleanlyExit(ctx);
+
+		String runJobArg = null;
+		boolean exitWhenDone = false;
+		for (String arg : args) {
+			if (arg.startsWith("--run-job=")) {
+				runJobArg = arg.substring("--run-job=".length());
+			} else if ("--exit-after-jobs".equalsIgnoreCase(arg)) {
+				exitWhenDone = true;
+			}
+		}
+
+		if (runJobArg != null && !runJobArg.isEmpty()) {
+			org.apache.fineract.infrastructure.jobs.service.JobRunnerCli.runJobs(ctx, runJobArg, exitWhenDone);
+		}
 	}
 
 }

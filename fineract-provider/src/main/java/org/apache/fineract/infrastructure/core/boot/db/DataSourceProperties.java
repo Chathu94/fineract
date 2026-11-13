@@ -113,26 +113,33 @@ public class DataSourceProperties extends PoolProperties {
 		}
 
         String host = getHost();
-        String envHost = System.getenv("EVOKE_SQL_TENANT_HOST_OVERRIDE");
-        if (envHost != null && !envHost.isEmpty()) host = envHost;
-
         String port = String.valueOf(getPort());
-        String envPort = System.getenv("EVOKE_SQL_TENANT_PORT_OVERRIDE");
-        if (envPort != null && !envPort.isEmpty()) port = envPort;
 
         String dbName = getDBName();
-        String envDbName = System.getenv("EVOKE_SQL_TENANT_DB_NAME_OVERRIDE");
-        if (envDbName != null && !envDbName.isEmpty()) dbName = envDbName;
-        // @sl-change
-//		return jdbcProtocol + ":" + jdbcSubprotocol + "://fused-fli:" + getPort() + "/" + getDBName();
-        return jdbcProtocol + ":" + jdbcSubprotocol + "://" + host + ":" + port + "/" + dbName;
+        String envTenantsDb = System.getenv("FINERACT_TENANTS_DB");
+        if (envTenantsDb == null || envTenantsDb.isEmpty()) envTenantsDb = System.getenv("DS_TENANTS_DATABASE");
+        if (envTenantsDb == null || envTenantsDb.isEmpty()) envTenantsDb = System.getenv("EVOKE_SQL_TENANTS_DB_NAME_OVERRIDE");
+        if (envTenantsDb != null && !envTenantsDb.isEmpty()) {
+            dbName = envTenantsDb;
+        } else if ("mifosplatform-tenants".equals(dbName)) {
+            dbName = "tenants";
         }
+        return jdbcProtocol + ":" + jdbcSubprotocol + "://" + host + ":" + port + "/" + dbName;
+    }
 
 	public String getHost() {
+        String envHost = System.getenv("EVOKE_SQL_TENANT_HOST_OVERRIDE");
+        if (envHost == null || envHost.isEmpty()) envHost = System.getenv("DS_HOST");
+        if (envHost != null && !envHost.isEmpty()) return envHost;
 		return hostname;
 	}
 
 	public int getPort() {
+        String envPort = System.getenv("EVOKE_SQL_TENANT_PORT_OVERRIDE");
+        if (envPort == null || envPort.isEmpty()) envPort = System.getenv("DS_PORT");
+        if (envPort != null && !envPort.isEmpty()) {
+            try { return Integer.parseInt(envPort); } catch (NumberFormatException ignored) {}
+        }
 		return port;
 	}
 
@@ -155,6 +162,7 @@ public class DataSourceProperties extends PoolProperties {
 	@Override
 	public String getUsername() {
         String envUsername = System.getenv("EVOKE_SQL_TENANT_USERNAME_OVERRIDE");
+        if (envUsername == null || envUsername.isEmpty()) envUsername = System.getenv("DS_USERNAME");
         if (envUsername != null && !envUsername.isEmpty()) return envUsername;
 		return this.username;
 	}
@@ -167,6 +175,7 @@ public class DataSourceProperties extends PoolProperties {
 	@Override
 	public String getPassword() {
         String envPassword = System.getenv("EVOKE_SQL_TENANT_PASSWORD_OVERRIDE");
+        if (envPassword == null || envPassword.isEmpty()) envPassword = System.getenv("DS_PASSWORD");
         if (envPassword != null && !envPassword.isEmpty()) return envPassword;
 		return this.password;
 	}

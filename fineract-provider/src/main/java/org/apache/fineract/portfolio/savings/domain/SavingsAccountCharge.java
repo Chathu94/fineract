@@ -742,20 +742,25 @@ public class SavingsAccountCharge extends AbstractPersistableCustom<Long> {
 
     private LocalDate calculateNextDueDate(final LocalDate date) {
         LocalDate nextDueLocalDate = null;
+        int interval = (this.feeInterval != null) ? this.feeInterval : 1;
         if (isAnnualFee()) {
-            nextDueLocalDate = date.withMonthOfYear(this.feeOnMonth).plusYears(1);
+            int month = (this.feeOnMonth != null) ? this.feeOnMonth : date.getMonthOfYear();
+            nextDueLocalDate = date.withMonthOfYear(month).plusYears(1);
             nextDueLocalDate = setDayOfMonth(nextDueLocalDate);
         } else if (isMonthlyFee()) {
-            nextDueLocalDate = date.plusMonths(this.feeInterval);
+            nextDueLocalDate = date.plusMonths(interval);
             nextDueLocalDate = setDayOfMonth(nextDueLocalDate);
         } else if (isWeeklyFee()) {
-            nextDueLocalDate = date.plusWeeks(this.feeInterval);
+            nextDueLocalDate = date.plusWeeks(interval);
             nextDueLocalDate = setDayOfWeek(nextDueLocalDate);
         }
         return nextDueLocalDate;
     }
 
     private LocalDate setDayOfMonth(LocalDate nextDueLocalDate) {
+        if (this.feeOnDay == null || nextDueLocalDate == null) {
+            return nextDueLocalDate;
+        }
         int maxDayOfMonth = nextDueLocalDate.dayOfMonth().withMaximumValue().getDayOfMonth();
         int newDayOfMonth = (this.feeOnDay.intValue() < maxDayOfMonth) ? this.feeOnDay.intValue() : maxDayOfMonth;
         nextDueLocalDate = nextDueLocalDate.withDayOfMonth(newDayOfMonth);
@@ -763,6 +768,9 @@ public class SavingsAccountCharge extends AbstractPersistableCustom<Long> {
     }
 
     private LocalDate setDayOfWeek(LocalDate nextDueLocalDate) {
+        if (this.feeOnDay == null || nextDueLocalDate == null) {
+            return nextDueLocalDate;
+        }
         if (this.feeOnDay != nextDueLocalDate.getDayOfWeek()) {
             nextDueLocalDate = nextDueLocalDate.withDayOfWeek(this.feeOnDay);
         }

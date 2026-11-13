@@ -89,6 +89,9 @@ public class FineractPlatformTenantConnection {
      * @return the schemaServer
      */
     public String getSchemaServer() {
+        String envHost = System.getenv("EVOKE_SQL_TENANT_HOST_OVERRIDE");
+        if (envHost == null || envHost.isEmpty()) envHost = System.getenv("DS_HOST");
+        if (envHost != null && !envHost.isEmpty()) return envHost;
         return this.schemaServer;
     }
 
@@ -97,6 +100,9 @@ public class FineractPlatformTenantConnection {
      * @return the schemaServerPort
      */
     public String getSchemaServerPort() {
+        String envPort = System.getenv("EVOKE_SQL_TENANT_PORT_OVERRIDE");
+        if (envPort == null || envPort.isEmpty()) envPort = System.getenv("DS_PORT");
+        if (envPort != null && !envPort.isEmpty()) return envPort;
         return this.schemaServerPort;
     }
 
@@ -106,6 +112,7 @@ public class FineractPlatformTenantConnection {
      */
     public String getSchemaUsername() {
         String envUsername = System.getenv("EVOKE_SQL_TENANT_USERNAME_OVERRIDE");
+        if (envUsername == null || envUsername.isEmpty()) envUsername = System.getenv("DS_USERNAME");
         if (envUsername != null && !envUsername.isEmpty()) return envUsername;
         return this.schemaUsername;
     }
@@ -116,6 +123,7 @@ public class FineractPlatformTenantConnection {
      */
     public String getSchemaPassword() {
         String envPassword = System.getenv("EVOKE_SQL_TENANT_PASSWORD_OVERRIDE");
+        if (envPassword == null || envPassword.isEmpty()) envPassword = System.getenv("DS_PASSWORD");
         if (envPassword != null && !envPassword.isEmpty()) return envPassword;
         return this.schemaPassword;
     }
@@ -249,6 +257,9 @@ public class FineractPlatformTenantConnection {
     }
 
     public String getSchemaName() {
+        String envDbName = System.getenv("EVOKE_SQL_TENANT_DB_NAME_OVERRIDE");
+        if (envDbName == null || envDbName.isEmpty()) envDbName = System.getenv("DS_DATABASE");
+        if (envDbName != null && !envDbName.isEmpty()) return envDbName;
         return schemaName;
     }
     @Override

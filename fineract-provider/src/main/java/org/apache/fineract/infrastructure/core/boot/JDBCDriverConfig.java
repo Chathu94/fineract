@@ -68,14 +68,17 @@ public class JDBCDriverConfig {
     public String constructProtocol(String schemaServer, String schemaServerPort, String schemaName) {
 		String host = schemaServer;
 		String envHost = System.getenv("EVOKE_SQL_TENANT_HOST_OVERRIDE");
+		if (envHost == null || envHost.isEmpty()) envHost = System.getenv("DS_HOST");
 		if (envHost != null && !envHost.isEmpty()) host = envHost;
 
 		String port = schemaServerPort;
 		String envPort = System.getenv("EVOKE_SQL_TENANT_PORT_OVERRIDE");
+		if (envPort == null || envPort.isEmpty()) envPort = System.getenv("DS_PORT");
 		if (envPort != null && !envPort.isEmpty()) port = envPort;
 
 		String dbName = schemaName;
 		String envDbName = System.getenv("EVOKE_SQL_TENANT_DB_NAME_OVERRIDE");
+		if (envDbName == null || envDbName.isEmpty()) envDbName = System.getenv("DS_DATABASE");
 		if (envDbName != null && !envDbName.isEmpty()) dbName = envDbName;
 		// @sl-change
 //    	final String url = new StringBuilder(protocol).append(":").append(subProtocol).append("://").append("fused-fli").append(':').append(schemaServerPort).append('/').append(schemaName).toString();
@@ -84,4 +87,3 @@ public class JDBCDriverConfig {
     }
 
 }
-

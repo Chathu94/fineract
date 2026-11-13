@@ -23,6 +23,8 @@ import java.sql.SQLException;
 
 import javax.sql.DataSource;
 
+import org.apache.fineract.infrastructure.core.domain.FineractPlatformTenant;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.datasource.AbstractDataSource;
 import org.springframework.jdbc.datasource.lookup.AbstractRoutingDataSource;
@@ -50,7 +52,10 @@ public class RoutingDataSource extends AbstractDataSource {
     }
 
     private DataSource determineTargetDataSource() {
-        return this.dataSourceServiceFactory.determineDataSourceService().retrieveDataSource();
+        DataSource ds = this.dataSourceServiceFactory.determineDataSourceService().retrieveDataSource();
+        FineractPlatformTenant t = ThreadLocalContextUtil.getTenant();
+        System.out.println(">>> RoutingDataSource: tenant=" + (t != null ? t.getTenantIdentifier() : "NULL") + " | ds=" + ds);
+        return ds;
     }
 
     @Override

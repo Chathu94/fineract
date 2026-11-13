@@ -5,3 +5,5 @@
 *.ear
 .gradle
 build
+keystore.jks
+.env

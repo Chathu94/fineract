@@ -88,7 +88,7 @@ public class SavingsAccountRepositoryWrapper {
 
     public Slice<Long> findIdsByStatus(@Param("status") Integer status, Pageable pageable) {
         this.jdbcTemplate.execute("SET workload = OLAP");
-            jdbcTemplate.execute("USE @primary");
+            jdbcTemplate.execute("USE `fused_fli@primary`");
         return this.repository.findIdsByStatus(status, pageable);
     }
 

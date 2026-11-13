@@ -68,7 +68,7 @@ public class LoanSchedularServiceImpl implements LoanSchedularService {
 
 		if (ThreadLocalContextUtil.getVTReplicaMode()) {
 			this.jdbcTemplate.execute("SET workload = OLAP");
-            jdbcTemplate.execute("USE @primary");
+            jdbcTemplate.execute("USE `fused_fli@primary`");
 		}
 
         final Long penaltyWaitPeriodValue = this.configurationDomainService.retrievePenaltyWaitPeriod();
@@ -111,10 +111,11 @@ public class LoanSchedularServiceImpl implements LoanSchedularService {
                     if (e.getCause() != null) {
                         realCause = e.getCause();
                     }
+                    String errMsg = realCause.getMessage() != null ? realCause.getMessage() : realCause.toString();
                     logger.error("Apply Charges due for overdue loans failed for account:" + loanId + " with message "
-                            + realCause.getMessage());
+                            + errMsg, realCause);
                     sb.append("Apply Charges due for overdue loans failed for account:").append(loanId).append(" with message ")
-                            .append(realCause.getMessage());
+                            .append(errMsg);
                 }
             }
             if (sb.length() > 0) { throw new JobExecutionException(sb.toString()); }
@@ -126,7 +127,7 @@ public class LoanSchedularServiceImpl implements LoanSchedularService {
 	public void recalculateInterest() throws JobExecutionException {
 		if (ThreadLocalContextUtil.getVTReplicaMode()) {
 			jdbcTemplate.execute("SET workload = OLAP");
-			jdbcTemplate.execute("USE @primary");
+			jdbcTemplate.execute("USE `fused_fli@primary`");
 		}
 
 		Integer maxNumberOfRetries = ThreadLocalContextUtil.getTenant()
@@ -182,10 +183,11 @@ public class LoanSchedularServiceImpl implements LoanSchedularService {
 						if (e.getCause() != null) {
 							realCause = e.getCause();
 						}
+						String errMsg = realCause.getMessage() != null ? realCause.getMessage() : realCause.toString();
 						logger.error("Interest recalculation for loans failed for account:"	+ loanId + " with message "
-								+ realCause.getMessage());
+								+ errMsg, realCause);
 						sb.append("Interest recalculation for loans failed for account:").append(loanId).append(" with message ")
-                        .append(realCause.getMessage());
+                        .append(errMsg);
 						numberOfRetries = maxNumberOfRetries + 1;
 					}
 					i++;

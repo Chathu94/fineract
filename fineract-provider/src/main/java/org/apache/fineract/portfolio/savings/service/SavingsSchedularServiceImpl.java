@@ -77,7 +77,7 @@ public class SavingsSchedularServiceImpl implements SavingsSchedularService {
 
         if (ThreadLocalContextUtil.getVTReplicaMode()) {
             this.jdbcTemplate.execute("SET workload = OLAP");
-            jdbcTemplate.execute("USE @primary");
+            jdbcTemplate.execute("USE `fused_fli@primary`");
         }
 //        final List<SavingsAccount> savingsAccounts = this.savingAccountRepositoryWrapper.findSavingAccountByStatus(SavingsAccountStatusType.ACTIVE
 //                .getValue());
@@ -124,7 +124,7 @@ public class SavingsSchedularServiceImpl implements SavingsSchedularService {
 
                             if (ThreadLocalContextUtil.getVTReplicaMode()) {
                                 this.jdbcTemplate.execute("SET workload = OLAP");
-            jdbcTemplate.execute("USE @primary");
+            jdbcTemplate.execute("USE `fused_fli@primary`");
                             }
                             System.out.println("RUNNING - " + id);
                             SavingsAccount savingsAccount = savingAccountRepositoryWrapper.findOneWithNotFoundDetection(id);

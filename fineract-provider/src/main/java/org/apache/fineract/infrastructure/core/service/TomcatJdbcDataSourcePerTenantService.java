@@ -88,6 +88,7 @@ public class TomcatJdbcDataSourcePerTenantService implements RoutingDataSourceSe
 
         // see also org.apache.fineract.DataSourceProperties.setDefaults()
     	 String jdbcUrl = this.driverConfig.constructProtocol(tenantConnectionObj.getSchemaServer(), tenantConnectionObj.getSchemaServerPort(), tenantConnectionObj.getSchemaName()) ;
+        System.out.println(">>> createNewDataSourceFor tenant jdbcUrl=" + jdbcUrl + " username=" + tenantConnectionObj.getSchemaUsername());
         //final String jdbcUrl = tenantConnectionObj.databaseURL();
         final PoolConfiguration poolConfiguration = new PoolProperties();
         poolConfiguration.setDriverClassName(this.driverConfig.getDriverClassName());
@@ -98,6 +99,7 @@ public class TomcatJdbcDataSourcePerTenantService implements RoutingDataSourceSe
 
         poolConfiguration.setInitialSize(tenantConnectionObj.getInitialSize());
 
+        poolConfiguration.setInitSQL("USE " + tenantConnectionObj.getSchemaName());
         poolConfiguration.setTestOnBorrow(tenantConnectionObj.isTestOnBorrow());
         poolConfiguration.setValidationQuery("SELECT 1");
         poolConfiguration.setValidationInterval(tenantConnectionObj.getValidationInterval());

@@ -93,7 +93,7 @@ public class LoanArrearsAgingServiceImpl implements LoanArrearsAgingService, Bus
 
         if (ThreadLocalContextUtil.getVTReplicaMode()) {
             this.jdbcTemplate.execute("SET workload = OLAP");
-            jdbcTemplate.execute("USE @primary");
+            jdbcTemplate.execute("USE `fused_fli@primary`");
         }
 
         this.jdbcTemplate.execute("truncate table m_loan_arrears_aging");

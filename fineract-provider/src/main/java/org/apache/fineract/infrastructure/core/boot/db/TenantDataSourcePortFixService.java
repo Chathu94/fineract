@@ -72,6 +72,12 @@ public class TenantDataSourcePortFixService {
     }
 
     public void fixUpTenantsSchemaServerPort() {
+        String envHost = System.getenv("EVOKE_SQL_TENANT_HOST_OVERRIDE");
+        if (envHost == null || envHost.isEmpty()) envHost = System.getenv("DS_HOST");
+        if (envHost != null && !envHost.isEmpty()) {
+            logger.info("Remote DB override detected; skipping tenant_server_connections table UPDATE to avoid modifying shared/remote schema.");
+            return;
+        }
 	if (!enabled)  {
 		logger.info("No schema_server_port UPDATE made to tenant_server_connections table of the mifosplatform-tenants schema, because " + ENABLED + " = false");
 		return;

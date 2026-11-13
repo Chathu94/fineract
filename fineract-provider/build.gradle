@@ -418,6 +418,10 @@ repositories {
 configurations {
     driver
 }
+configurations.all {
+    exclude group: 'ch.vorburger.mariaDB4j', module: 'mariaDB4j-db-win32'
+    exclude group: 'ch.vorburger.mariaDB4j', module: 'mariaDB4j-db-mac-64'
+}
 dependencies {
     driver 'org.drizzle.jdbc:drizzle-jdbc:1.3'
     driver 'com.mchange:c3p0:0.10.0'

@@ -1608,6 +1608,10 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
     @Override
     public Collection<LoanScheduleAccrualData> retriveScheduleAccrualData() {
 
+        if (ThreadLocalContextUtil.getVTReplicaMode()) {
+            this.jdbcTemplate.execute("SET workload = OLAP");
+            jdbcTemplate.execute("USE `fused_fli@primary`");
+        }
         LoanScheduleAccrualMapper mapper = new LoanScheduleAccrualMapper();
         Date organisationStartDate = this.configurationDomainService.retrieveOrganisationStartDate();
         final StringBuilder sqlBuilder = new StringBuilder(400);
@@ -1645,7 +1649,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
 
         if (ThreadLocalContextUtil.getVTReplicaMode()) {
             this.jdbcTemplate.execute("SET workload = OLAP");
-            jdbcTemplate.execute("USE @primary");
+            jdbcTemplate.execute("USE `fused_fli@primary`");
         }
         final StringBuilder sqlBuilder = new StringBuilder(400);
         sqlBuilder

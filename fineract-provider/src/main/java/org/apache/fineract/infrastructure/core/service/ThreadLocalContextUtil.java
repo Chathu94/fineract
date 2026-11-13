@@ -55,17 +55,52 @@ public class ThreadLocalContextUtil {
             }
         }
 
+        String dsHost = System.getenv("DS_HOST");
+        if (dsHost != null && dsHost.toLowerCase().contains("vitess")) {
+            return true;
+        }
+
+        String overrideHost = System.getenv("EVOKE_SQL_TENANT_HOST_OVERRIDE");
+        if (overrideHost != null && overrideHost.toLowerCase().contains("vitess")) {
+            return true;
+        }
+
         return false;
     }
 
     public static void executeReplicaQuery(final RoutingDataSource dataSource, final boolean readOnly) {
         if (!ThreadLocalContextUtil.getVTReplicaMode()) return;
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-        if (readOnly) {
-            jdbcTemplate.execute("USE @replica");
-        } else {
-            jdbcTemplate.execute("USE @primary");
+        String schema = "fused_fli";
+        FineractPlatformTenant tenant = ThreadLocalContextUtil.getTenant();
+        if (tenant != null && tenant.getConnection() != null && tenant.getConnection().getSchemaName() != null) {
+            schema = tenant.getConnection().getSchemaName();
         }
+        if (readOnly) {
+            jdbcTemplate.execute("USE `" + schema + "@replica`");
+        } else {
+            jdbcTemplate.execute("USE `" + schema + "@primary`");
+        }
+    }
+
+    public static void setPrimaryTarget(final JdbcTemplate jdbcTemplate) {
+        if (!getVTReplicaMode()) return;
+        String schema = "fused_fli";
+        FineractPlatformTenant tenant = getTenant();
+        if (tenant != null && tenant.getConnection() != null && tenant.getConnection().getSchemaName() != null) {
+            schema = tenant.getConnection().getSchemaName();
+        }
+        jdbcTemplate.execute("USE `" + schema + "@primary`");
+    }
+
+    public static void setReplicaTarget(final JdbcTemplate jdbcTemplate) {
+        if (!getVTReplicaMode()) return;
+        String schema = "fused_fli";
+        FineractPlatformTenant tenant = getTenant();
+        if (tenant != null && tenant.getConnection() != null && tenant.getConnection().getSchemaName() != null) {
+            schema = tenant.getConnection().getSchemaName();
+        }
+        jdbcTemplate.execute("USE `" + schema + "@replica`");
     }
 
     public static void clearTenant() {

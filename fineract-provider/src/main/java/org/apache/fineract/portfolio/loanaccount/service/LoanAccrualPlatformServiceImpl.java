@@ -60,6 +60,10 @@ public class LoanAccrualPlatformServiceImpl implements LoanAccrualPlatformServic
     @Override
     @CronTarget(jobName = JobName.ADD_ACCRUAL_ENTRIES)
     public void addAccrualAccounting() throws JobExecutionException {
+        if (ThreadLocalContextUtil.getVTReplicaMode()) {
+            this.jdbcTemplate.execute("SET workload = OLAP");
+            jdbcTemplate.execute("USE `fused_fli@primary`");
+        }
         Collection<LoanScheduleAccrualData> loanScheduleAccrualDatas = this.loanReadPlatformService.retriveScheduleAccrualData();
         StringBuilder sb = new StringBuilder();
         Map<Long, Collection<LoanScheduleAccrualData>> loanDataMap = new HashMap<>();
@@ -101,7 +105,7 @@ public class LoanAccrualPlatformServiceImpl implements LoanAccrualPlatformServic
 
         if (ThreadLocalContextUtil.getVTReplicaMode()) {
             this.jdbcTemplate.execute("SET workload = OLAP");
-            jdbcTemplate.execute("USE @primary");
+            jdbcTemplate.execute("USE `fused_fli@primary`");
         }
 
         Collection<LoanScheduleAccrualData> loanScheduleAccrualDatas = this.loanReadPlatformService.retrivePeriodicAccrualData(tilldate);
@@ -113,7 +117,7 @@ public class LoanAccrualPlatformServiceImpl implements LoanAccrualPlatformServic
 
         if (ThreadLocalContextUtil.getVTReplicaMode()) {
             this.jdbcTemplate.execute("SET workload = OLAP");
-            jdbcTemplate.execute("USE @primary");
+            jdbcTemplate.execute("USE `fused_fli@primary`");
         }
 
         Collection<LoanScheduleAccrualData> loanScheduleAccrualDatas = this.loanReadPlatformService.retrivePeriodicAccrualData(tilldate, loanId);
@@ -159,7 +163,7 @@ public class LoanAccrualPlatformServiceImpl implements LoanAccrualPlatformServic
 
                 if (ThreadLocalContextUtil.getVTReplicaMode()) {
                     this.jdbcTemplate.execute("SET workload = OLAP");
-                    jdbcTemplate.execute("USE @primary");
+                    jdbcTemplate.execute("USE `fused_fli@primary`");
                 }
 
                 try {

@@ -196,7 +196,7 @@ public class StandingInstructionWritePlatformServiceImpl implements StandingInst
 
         if (ThreadLocalContextUtil.getVTReplicaMode()) {
             this.jdbcTemplate.execute("SET workload = OLAP");
-            jdbcTemplate.execute("USE @primary");
+            jdbcTemplate.execute("USE `fused_fli@primary`");
         }
 
         Collection<StandingInstructionData> instructionDatas = this.standingInstructionReadPlatformService

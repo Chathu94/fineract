@@ -102,7 +102,7 @@ public class JournalEntryRunningBalanceUpdateServiceImpl implements JournalEntry
 
         if (ThreadLocalContextUtil.getVTReplicaMode()) {
             this.jdbcTemplate.execute("SET workload = OLAP");
-            jdbcTemplate.execute("USE @primary");
+            jdbcTemplate.execute("USE `fused_fli@primary`");
         }
 
         String dateFinder = "select MIN(je.entry_date) as entityDate from acc_gl_journal_entry  je "
