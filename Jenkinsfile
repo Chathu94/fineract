@@ -14,11 +14,11 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                checkout scm
                 script {
-                    // BRANCH_NAME is set in multibranch jobs; GIT_BRANCH (e.g. origin/fli-qa) otherwise
-                    def branch = env.BRANCH_NAME ?: env.GIT_BRANCH ?: ''
-                    env.DEPLOY_BRANCH = branch.replaceFirst(/^origin\//, '')
+                    // checkout returns the git vars (GIT_BRANCH e.g. origin/fli-staging); BRANCH_NAME is only set in multibranch jobs
+                    def scmVars = checkout scm
+                    def branch = env.BRANCH_NAME ?: scmVars.GIT_BRANCH ?: env.GIT_BRANCH ?: ''
+                    env.DEPLOY_BRANCH = branch.replaceFirst(/^refs\/heads\//, '').replaceFirst(/^(refs\/remotes\/)?origin\//, '')
                     echo "Branch: ${env.DEPLOY_BRANCH}"
                     if (!(env.DEPLOY_BRANCH in ['fli-qa', 'fli-staging'])) {
                         error "Branch '${env.DEPLOY_BRANCH}' is not a deployable branch (expected fli-qa or fli-staging)"
