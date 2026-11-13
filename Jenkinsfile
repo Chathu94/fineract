@@ -58,7 +58,8 @@ pipeline {
         stage('Deploy (Staging)') {
             when { expression { env.DEPLOY_BRANCH == 'fli-staging' } }
             steps {
-                dir('fineract-provider/build/libs') {
+                // build.gradle sets buildDir = ../build, so the jar lands in <workspace>/build/libs
+                dir('build/libs') {
                     sh '''
                         set -e
                         JAR=$(ls *.jar | grep -v -- '-all' | head -n 1)
