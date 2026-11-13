@@ -1063,6 +1063,9 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
         final List<SavingsAccountTransaction> transactionsSortedByDate = retreiveListOfTransactionsForBalanceCheck();
         Money runningBalance = Money.zero(this.currency);
         Money minRequiredBalance = minRequiredBalanceDerived(getCurrency());
+        final Money overdraftFloor = this.allowOverdraft
+                ? Money.zero(this.currency).minus(this.overdraftLimit == null ? BigDecimal.ZERO : this.overdraftLimit)
+                : Money.zero(this.currency);
         LocalDate lastSavingsDate = null;
         final BigDecimal withdrawalFee = null;
         for (final SavingsAccountTransaction transaction : transactionsSortedByDate) {
@@ -1094,15 +1097,32 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
                 }
             }
 
-            // deal with potential minRequiredBalance and
-            // enforceMinRequiredBalance
-            if (!isException && transaction.canProcessBalanceCheck()) {
-                if (runningBalance.minus(minRequiredBalance).isLessThanZero()) { throw new InsufficientAccountBalanceException(
-                        "transactionAmount", getAccountBalance(), withdrawalFee, transactionAmount); }
+            if (transaction.canProcessBalanceCheck()) {
+                // Account balance cannot become negative or exceed overdraft limit at any point in time
+                if (runningBalance.minus(overdraftFloor).isLessThanZero()) {
+                    throw new InsufficientAccountBalanceException(
+                            "transactionAmount", getAccountBalance(), withdrawalFee, transactionAmount);
+                }
+                // Minimum required balance is enforced on newly submitted transactions
+                if (!isException && transaction.getId() == null) {
+                    if (runningBalance.minus(minRequiredBalance).isLessThanZero()) {
+                        throw new InsufficientAccountBalanceException(
+                                "transactionAmount", getAccountBalance(), withdrawalFee, transactionAmount);
+                    }
+                }
             }
             lastSavingsDate = transaction.transactionLocalDate();
 
         }
+
+        // Enforce minimum required balance on final account balance
+        if (!isException && this.enforceMinRequiredBalance) {
+            if (runningBalance.minus(minRequiredBalance).isLessThanZero()) {
+                throw new InsufficientAccountBalanceException("transactionAmount", getAccountBalance(), withdrawalFee,
+                        transactionAmount);
+            }
+        }
+
 		if (this.getSavingsHoldAmount().compareTo(BigDecimal.ZERO) == 1) {
 			if (runningBalance.minus(this.getSavingsHoldAmount()).isLessThanZero()) {
 				throw new InsufficientAccountBalanceException("transactionAmount", getAccountBalance(), withdrawalFee,
@@ -1116,7 +1136,9 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
 
         final List<SavingsAccountTransaction> transactionsSortedByDate = retreiveListOfTransactionsForBalanceCheck();
         Money runningBalance = Money.zero(this.currency);
-        Money minRequiredBalance = minRequiredBalanceDerived(getCurrency());
+        Money overdraftFloor = this.allowOverdraft
+                ? Money.zero(this.currency).minus(this.overdraftLimit == null ? BigDecimal.ZERO : this.overdraftLimit)
+                : Money.zero(this.currency);
         LocalDate lastSavingsDate = null;
         for (final SavingsAccountTransaction transaction : transactionsSortedByDate) {
             if (transaction.isNotReversed() && transaction.isCredit()) {
@@ -1127,8 +1149,7 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
 
             /*
              * Loop through the onHold funds and see if we need to deduct or add
-             * to minimum required balance and the point in time the transaction
-             * was made:
+             * to overdraft floor and the point in time the transaction was made:
              */
             if (depositAccountOnHoldTransactions != null) {
                 for (final DepositAccountOnHoldTransaction onHoldTransaction : depositAccountOnHoldTransactions) {
@@ -1137,17 +1158,17 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
                             .getTransactionDate().isEqual(transaction.transactionLocalDate()))
                             && (lastSavingsDate == null || onHoldTransaction.getTransactionDate().isAfter(lastSavingsDate))) {
                         if (onHoldTransaction.getTransactionType().isHold()) {
-                            minRequiredBalance = minRequiredBalance.plus(onHoldTransaction.getAmountMoney(this.currency));
+                            overdraftFloor = overdraftFloor.plus(onHoldTransaction.getAmountMoney(this.currency));
                         } else {
-                            minRequiredBalance = minRequiredBalance.minus(onHoldTransaction.getAmountMoney(this.currency));
+                            overdraftFloor = overdraftFloor.minus(onHoldTransaction.getAmountMoney(this.currency));
                         }
                     }
                 }
             }
 
-            // enforceMinRequiredBalance
+            // enforce overdraft / on-hold / non-negative balance check
             if (transaction.canProcessBalanceCheck()) {
-                if (runningBalance.minus(minRequiredBalance).isLessThanZero()) {
+                if (runningBalance.minus(overdraftFloor).isLessThanZero()) {
                     final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
                     final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors)
                             .resource(depositAccountType().resourceName() + transactionAction);
