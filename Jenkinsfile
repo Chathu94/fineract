@@ -5,7 +5,7 @@ pipeline {
         JAVA_HOME     = '/usr/lib/jvm/java-1.8.0-amazon-corretto'
 
         // Staging (fli-stg) deployment settings
-        STG_HOST      = 'fli-stg'
+        STG_HOST      = 'staging2.fineract.evokelabs.io'   // fli-stg
         STG_USER      = 'ubuntu'
         STG_SSH_KEY   = '/var/lib/jenkins/.ssh/fli-stg.pem'   // path to the fli-stg key on the Jenkins server
         STG_APP_DIR   = '/home/ubuntu/fineract'
