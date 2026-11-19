@@ -30,6 +30,8 @@ import org.quartz.JobExecutionException;
 import org.quartz.JobKey;
 import org.quartz.JobListener;
 import org.quartz.Trigger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.mapping.GrantedAuthoritiesMapper;
@@ -45,6 +47,8 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class SchedulerJobListener implements JobListener {
+
+    private final static Logger logger = LoggerFactory.getLogger(SchedulerJobListener.class);
 
     private int stackTraceLevel = 0;
 
@@ -83,9 +87,22 @@ public class SchedulerJobListener implements JobListener {
 
     @Override
     public void jobWasExecuted(final JobExecutionContext context, final JobExecutionException jobException) {
-        final Trigger trigger = context.getTrigger();
         final JobKey key = context.getJobDetail().getKey();
         final String jobKey = key.getName() + SchedulerServiceConstants.JOB_KEY_SEPERATOR + key.getGroup();
+        try {
+            saveRunHistory(context, jobException, jobKey);
+        } catch (final RuntimeException e) {
+            // the run history and currently_running are saved in one transaction; if that fails the job stays
+            // "running" and every later trigger is vetoed until restart, so clear the flag on its own
+            logger.error("Saving run history failed for job " + jobKey + ", clearing currently_running", e);
+            final ScheduledJobDetail scheduledJobDetails = this.schedularService.findByJobKey(jobKey);
+            scheduledJobDetails.updateCurrentlyRunningStatus(false);
+            this.schedularService.saveOrUpdate(scheduledJobDetails);
+        }
+    }
+
+    private void saveRunHistory(final JobExecutionContext context, final JobExecutionException jobException, final String jobKey) {
+        final Trigger trigger = context.getTrigger();
         final ScheduledJobDetail scheduledJobDetails = this.schedularService.findByJobKey(jobKey);
         final Long version = this.schedularService.fetchMaxVersionBy(jobKey) + 1;
         String status = SchedulerServiceConstants.STATUS_SUCCESS;

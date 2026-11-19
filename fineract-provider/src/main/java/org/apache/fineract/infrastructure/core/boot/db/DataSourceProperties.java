@@ -91,6 +91,12 @@ public class DataSourceProperties extends PoolProperties {
         setTimeBetweenEvictionRunsMillis(30000);
         setMinEvictableIdleTimeMillis(60000);
 
+        // Reset autocommit on every borrow (ConnectionState interceptor), like the per-tenant pools do.
+        // OpenJPA borrows from this pool when no tenant is bound (RoutingDataSource fallback, e.g. at boot)
+        // and hands the connection back with autocommit=false; JdbcTemplate lookups on it then opened
+        // transactions that were never committed (Vitess kills them after 50m and the next lookup fails).
+        // Note rollbackOnReturn only takes effect when defaultAutoCommit is FALSE.
+        setDefaultAutoCommit(true);
         setRollbackOnReturn(true);
         setRemoveAbandoned(false);
         setLogAbandoned(true);
