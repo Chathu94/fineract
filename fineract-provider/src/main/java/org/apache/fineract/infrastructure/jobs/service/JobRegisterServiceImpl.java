@@ -122,18 +122,28 @@ public class JobRegisterServiceImpl implements JobRegisterService, ApplicationLi
         }
         final List<FineractPlatformTenant> allTenants = this.tenantDetailsService.findAllTenants();
         for (final FineractPlatformTenant tenant : allTenants) {
-            ThreadLocalContextUtil.setTenant(tenant);
-            final List<ScheduledJobDetail> scheduledJobDetails = this.schedularWritePlatformService.retrieveAllJobs();
-            for (final ScheduledJobDetail jobDetails : scheduledJobDetails) {
-                scheduleJob(jobDetails);
-                jobDetails.updateTriggerMisfired(false);
-                this.schedularWritePlatformService.saveOrUpdate(jobDetails);
+            // One unreachable tenant DB must not prevent the platform from starting for all other tenants.
+            try {
+                loadTenantJobs(tenant);
+            } catch (final RuntimeException e) {
+                logger.error("Skipping scheduler job registration for tenant '" + tenant.getTenantIdentifier()
+                        + "'; its jobs will not run until its database is reachable and the server is restarted", e);
             }
-            final SchedulerDetail schedulerDetail = this.schedularWritePlatformService.retriveSchedulerDetail();
-            if (schedulerDetail.isResetSchedulerOnBootup()) {
-                schedulerDetail.updateSuspendedState(false);
-                this.schedularWritePlatformService.updateSchedulerDetail(schedulerDetail);
-            }
+        }
+    }
+
+    private void loadTenantJobs(final FineractPlatformTenant tenant) {
+        ThreadLocalContextUtil.setTenant(tenant);
+        final List<ScheduledJobDetail> scheduledJobDetails = this.schedularWritePlatformService.retrieveAllJobs();
+        for (final ScheduledJobDetail jobDetails : scheduledJobDetails) {
+            scheduleJob(jobDetails);
+            jobDetails.updateTriggerMisfired(false);
+            this.schedularWritePlatformService.saveOrUpdate(jobDetails);
+        }
+        final SchedulerDetail schedulerDetail = this.schedularWritePlatformService.retriveSchedulerDetail();
+        if (schedulerDetail.isResetSchedulerOnBootup()) {
+            schedulerDetail.updateSuspendedState(false);
+            this.schedularWritePlatformService.updateSchedulerDetail(schedulerDetail);
         }
     }
 
