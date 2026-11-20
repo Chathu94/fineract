@@ -26,6 +26,8 @@ import org.apache.fineract.infrastructure.core.boot.db.TenantDataSourcePortFixSe
 import org.apache.fineract.infrastructure.core.domain.FineractPlatformTenant;
 import org.apache.fineract.infrastructure.core.domain.FineractPlatformTenantConnection;
 import org.apache.fineract.infrastructure.security.service.TenantDetailsService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
@@ -40,6 +42,8 @@ import java.util.List;
  */
 @Service
 public class TenantDatabaseUpgradeService {
+
+    private static final Logger logger = LoggerFactory.getLogger(TenantDatabaseUpgradeService.class);
 
     private final TenantDetailsService tenantDetailsService;
     protected final DataSource tenantDataSource;
@@ -60,44 +64,54 @@ public class TenantDatabaseUpgradeService {
         upgradeTenantDB();
         final List<FineractPlatformTenant> tenants = this.tenantDetailsService.findAllTenants();
         for (final FineractPlatformTenant tenant : tenants) {
-            final FineractPlatformTenantConnection connection = tenant.getConnection();
-            if (connection.isAutoUpdateEnabled()) {
-                final Flyway flyway = new Flyway();
+            // One unreachable tenant DB must not prevent the platform from starting for all other tenants.
+            try {
+                upgradeTenant(tenant);
+            } catch (final RuntimeException e) {
+                logger.error("Skipping schema upgrade for tenant '" + tenant.getTenantIdentifier()
+                        + "'; this tenant will be unavailable until its database is reachable and the server is restarted", e);
+            }
+        }
+    }
 
-                String host = connection.getSchemaServer();
-                String envHost = System.getenv("EVOKE_SQL_TENANT_HOST_OVERRIDE");
-                if (envHost != null && !envHost.isEmpty()) host = envHost;
+    private void upgradeTenant(final FineractPlatformTenant tenant) {
+        final FineractPlatformTenantConnection connection = tenant.getConnection();
+        if (connection.isAutoUpdateEnabled()) {
+            final Flyway flyway = new Flyway();
 
-                String port = connection.getSchemaServerPort();
-                String envPort = System.getenv("EVOKE_SQL_TENANT_PORT_OVERRIDE");
-                if (envPort != null && !envPort.isEmpty()) port = envPort;
+            String host = connection.getSchemaServer();
+            String envHost = System.getenv("EVOKE_SQL_TENANT_HOST_OVERRIDE");
+            if (envHost != null && !envHost.isEmpty()) host = envHost;
 
-                String dbName = connection.getSchemaName();
-                String envDbName = System.getenv("EVOKE_SQL_TENANT_DB_NAME_OVERRIDE");
-                if (envDbName != null && !envDbName.isEmpty()) dbName = envDbName;
-                // @sl-change
+            String port = connection.getSchemaServerPort();
+            String envPort = System.getenv("EVOKE_SQL_TENANT_PORT_OVERRIDE");
+            if (envPort != null && !envPort.isEmpty()) port = envPort;
+
+            String dbName = connection.getSchemaName();
+            String envDbName = System.getenv("EVOKE_SQL_TENANT_DB_NAME_OVERRIDE");
+            if (envDbName != null && !envDbName.isEmpty()) dbName = envDbName;
+            // @sl-change
 //                String connectionProtocol = driverConfig.constructProtocol("fused-fli", connection.getSchemaServerPort(), connection.getSchemaName()) ;
-                String connectionProtocol = driverConfig.constructProtocol(host, port, dbName) ;
+            String connectionProtocol = driverConfig.constructProtocol(host, port, dbName) ;
 
-                String dbUsername =  connection.getSchemaUsername();
-                String envUsername = System.getenv("EVOKE_SQL_TENANT_USERNAME_OVERRIDE");
-                if (envUsername != null && !envUsername.isEmpty()) dbUsername = envUsername;
+            String dbUsername =  connection.getSchemaUsername();
+            String envUsername = System.getenv("EVOKE_SQL_TENANT_USERNAME_OVERRIDE");
+            if (envUsername != null && !envUsername.isEmpty()) dbUsername = envUsername;
 
-                String dbPassword =  connection.getSchemaPassword();
-                String envPassword = System.getenv("EVOKE_SQL_TENANT_PASSWORD_OVERRIDE");
-                if (envPassword != null && !envPassword.isEmpty()) dbPassword = envPassword;
+            String dbPassword =  connection.getSchemaPassword();
+            String envPassword = System.getenv("EVOKE_SQL_TENANT_PASSWORD_OVERRIDE");
+            if (envPassword != null && !envPassword.isEmpty()) dbPassword = envPassword;
 
-                DriverDataSource source = new DriverDataSource(driverConfig.getDriverClassName(), connectionProtocol, dbUsername, dbPassword) ;
-                flyway.setDataSource(source);
-                flyway.setLocations("sql/migrations/core_db");
-                flyway.setOutOfOrder(true);
-                try {
-                    flyway.migrate();
-                } catch (FlywayException e) {
-                    String betterMessage = e.getMessage() + "; for Tenant DB URL: " + connectionProtocol + ", username: "
-                            + connection.getSchemaUsername();
-                    throw new FlywayException(betterMessage, e.getCause());
-                }
+            DriverDataSource source = new DriverDataSource(driverConfig.getDriverClassName(), connectionProtocol, dbUsername, dbPassword) ;
+            flyway.setDataSource(source);
+            flyway.setLocations("sql/migrations/core_db");
+            flyway.setOutOfOrder(true);
+            try {
+                flyway.migrate();
+            } catch (FlywayException e) {
+                String betterMessage = e.getMessage() + "; for Tenant DB URL: " + connectionProtocol + ", username: "
+                        + dbUsername;
+                throw new FlywayException(betterMessage, e.getCause());
             }
         }
     }
