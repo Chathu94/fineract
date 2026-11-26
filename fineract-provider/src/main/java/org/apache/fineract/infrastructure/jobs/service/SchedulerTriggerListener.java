@@ -31,6 +31,7 @@ import org.quartz.TriggerListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -66,9 +67,16 @@ public class SchedulerTriggerListener implements TriggerListener {
     public boolean vetoJobExecution(final Trigger trigger, final JobExecutionContext context) {
 
         final String tenantIdentifier = trigger.getJobDataMap().getString(SchedulerServiceConstants.TENANT_IDENTIFIER);
-        final FineractPlatformTenant tenant = this.tenantDetailsService.loadTenantById(tenantIdentifier);
-        ThreadLocalContextUtil.setTenant(tenant);
         final JobKey key = trigger.getJobKey();
+        FineractPlatformTenant tenant;
+        try {
+            tenant = this.tenantDetailsService.loadTenantById(tenantIdentifier);
+        } catch (final DataAccessException e) {
+            // an exception here makes Quartz skip the trigger, so retry once before giving up
+            logger.error("Tenant lookup failed for job " + key.getName() + ", retrying once", e);
+            tenant = this.tenantDetailsService.loadTenantById(tenantIdentifier);
+        }
+        ThreadLocalContextUtil.setTenant(tenant);
         final String jobKey = key.getName() + SchedulerServiceConstants.JOB_KEY_SEPERATOR + key.getGroup();
         String triggerType = SchedulerServiceConstants.TRIGGER_TYPE_CRON;
         if (context.getMergedJobDataMap().containsKey(SchedulerServiceConstants.TRIGGER_TYPE_REFERENCE)) {
