@@ -31,7 +31,7 @@ public class AccountingConstants {
     /*** Accounting placeholders for cash based accounting for loan products ***/
     public static enum CASH_ACCOUNTS_FOR_LOAN {
         FUND_SOURCE(1), LOAN_PORTFOLIO(2), INTEREST_ON_LOANS(3), INCOME_FROM_FEES(4), INCOME_FROM_PENALTIES(5), LOSSES_WRITTEN_OFF(6), TRANSFERS_SUSPENSE(
-                10), OVERPAYMENT(11), INCOME_FROM_RECOVERY(12);
+                10), OVERPAYMENT(11), INCOME_FROM_RECOVERY(12), THIRD_PARTY_PAYMENT_LIABILITY(13);
 
         private final Integer value;
 
@@ -64,7 +64,8 @@ public class AccountingConstants {
     /*** Accounting placeholders for accrual based accounting for loan products ***/
     public static enum ACCRUAL_ACCOUNTS_FOR_LOAN {
         FUND_SOURCE(1), LOAN_PORTFOLIO(2), INTEREST_ON_LOANS(3), INCOME_FROM_FEES(4), INCOME_FROM_PENALTIES(5), LOSSES_WRITTEN_OFF(6), INTEREST_RECEIVABLE(
-                7), FEES_RECEIVABLE(8), PENALTIES_RECEIVABLE(9), TRANSFERS_SUSPENSE(10), OVERPAYMENT(11), INCOME_FROM_RECOVERY(12);
+                7), FEES_RECEIVABLE(8), PENALTIES_RECEIVABLE(9), TRANSFERS_SUSPENSE(10), OVERPAYMENT(11), INCOME_FROM_RECOVERY(12), THIRD_PARTY_PAYMENT_LIABILITY(
+                13);
 
         private final Integer value;
 
@@ -130,7 +131,8 @@ public class AccountingConstants {
                 "incomeFromFeeAccount"), INCOME_FROM_PENALTIES("incomeFromPenaltyAccount"), LOSSES_WRITTEN_OFF("writeOffAccount"), OVERPAYMENT(
                 "overpaymentLiabilityAccount"), INTEREST_RECEIVABLE("receivableInterestAccount"), FEES_RECEIVABLE("receivableFeeAccount"), PENALTIES_RECEIVABLE(
                 "receivablePenaltyAccount"), TRANSFERS_SUSPENSE("transfersInSuspenseAccount"), INCOME_ACCOUNT_ID("incomeAccount"), INCOME_FROM_RECOVERY(
-                "incomeFromRecoveryAccount"), LIABILITY_TRANSFER_SUSPENSE("liabilityTransferInSuspenseAccount");
+                "incomeFromRecoveryAccount"), LIABILITY_TRANSFER_SUSPENSE("liabilityTransferInSuspenseAccount"), THIRD_PARTY_PAYMENT_LIABILITY(
+                "thirdPartyPaymentLiabilityAccount");
 
         private final String value;
 
