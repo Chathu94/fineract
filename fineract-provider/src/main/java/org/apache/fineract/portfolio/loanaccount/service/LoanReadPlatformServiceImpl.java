@@ -1511,7 +1511,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
         sqlBuilder.append("select ").append(rm.schema()).append(" where DATE_SUB(CURDATE(),INTERVAL ? DAY) > ls.duedate ")
                 .append(" and ls.completed_derived <> 1 and mc.charge_applies_to_enum =1 ")
                 .append(" and ls.recalculated_interest_component <> 1 ")
-                .append(" and mc.charge_time_enum = 9 and ml.loan_status_id = 300 ");
+                .append(" and mc.charge_time_enum = 9 and ml.loan_status_id = 300 ")
+                .append(" and not exists (select 1 from l_yard_loan_freeze yf where yf.loan_id = ml.id and yf.status = 'FROZEN') ");
 
         if (backdatePenalties) { return this.jdbcTemplate.query(sqlBuilder.toString(), rm, new Object[] { penaltyWaitPeriod }); }
         // Only apply for duedate = yesterday (so that we don't apply
@@ -1618,7 +1619,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                 .append(" and (((ls.fee_charges_amount <> if(ls.accrual_fee_charges_derived is null,0, ls.accrual_fee_charges_derived))")
                 .append(" or ( ls.penalty_charges_amount <> if(ls.accrual_penalty_charges_derived is null,0,ls.accrual_penalty_charges_derived))")
                 .append(" or ( ls.interest_amount <> if(ls.accrual_interest_derived is null,0,ls.accrual_interest_derived)))")
-                .append(" and loan.loan_status_id=:active and mpl.accounting_type=:type and loan.is_npa=0 and ls.duedate <= CURDATE()) ");
+                .append(" and loan.loan_status_id=:active and mpl.accounting_type=:type and loan.is_npa=0 and ls.duedate <= CURDATE()) ")
+                .append(" and not exists (select 1 from l_yard_loan_freeze yf where yf.loan_id = loan.id and yf.status = 'FROZEN' and ls.duedate > yf.yard_date) ");
         if(organisationStartDate != null){
             sqlBuilder.append(" and ls.duedate > :organisationstartdate ");
         }
@@ -1656,7 +1658,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                 .append(" or (ls.penalty_charges_amount <> if(ls.accrual_penalty_charges_derived is null,0,ls.accrual_penalty_charges_derived))")
                 .append(" or (ls.interest_amount <> if(ls.accrual_interest_derived is null,0,ls.accrual_interest_derived)))")
                 .append(" and loan.loan_status_id=:active and mpl.accounting_type=:type and (loan.closedon_date <= :tilldate or loan.closedon_date is null)")
-                .append(" and loan.is_npa=0 and (ls.duedate <= :tilldate or (ls.duedate > :tilldate and ls.fromdate < :tilldate))) ");
+                .append(" and loan.is_npa=0 and (ls.duedate <= :tilldate or (ls.duedate > :tilldate and ls.fromdate < :tilldate))) ")
+                .append(" and not exists (select 1 from l_yard_loan_freeze yf where yf.loan_id = loan.id and yf.status = 'FROZEN' and ls.duedate > yf.yard_date) ");
 //                .append(" and loan.id IN (SELECT loan_id FROM m_loan_repayment_schedule WHERE duedate = :tilldate) ");
         if(organisationStartDate != null){
             sqlBuilder.append(" and ls.duedate > :organisationstartdate ");
@@ -1845,6 +1848,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
         sqlBuilder.append(" left join  m_floating_rates_periods bfrp on  bfr.id = bfrp.floating_rates_id and bfrp.created_date >= ?");
         sqlBuilder.append(" WHERE ml.loan_status_id = ? ");
         sqlBuilder.append(" and ml.is_npa = 0 ");
+        sqlBuilder.append(" and not exists (select 1 from l_yard_loan_freeze yf where yf.loan_id = ml.id and yf.status = 'FROZEN') ");
         sqlBuilder.append(" and ((");
         sqlBuilder.append("ml.interest_recalculation_enabled = 1 ");
         sqlBuilder.append(" and (ml.interest_recalcualated_on is null or ml.interest_recalcualated_on <> ?)");
